@@ -1,0 +1,805 @@
+/* ==========================================================================
+   CATALOGO DE PRODUCTOS - DERMAKOR (Dermclar & Medical Skin 2026)
+   - Solo se asignan imagenes reales extraidas del catalogo oficial.
+   - Los productos sin fotografia oficial tienen imagen vacia ("") para no inventar imagenes.
+   - Codigo sin expresiones complejas ni funciones flecha.
+   ========================================================================== */
+
+// Archivo de respaldo en caso de navegadores locales que restrinjan fetch en file:///
+// La fuente principal de datos es el archivo: data/productos.json
+var PRODUCTOS_RESPALDO = [
+  // -------------------------------------------------------------------------
+  // LINEA EXOSOMAS (Uso en Casa) - FOTOS REALES DEL CATALOGO
+  // -------------------------------------------------------------------------
+  {
+    id: "exoface-casa",
+    nombre: "ExoFace",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Exosomas",
+    subtitulo: "Sérum bioestimulante y reafirmante",
+    descripcion: "Terapia exosomal facial que revitaliza, regenera y redensifica la piel desde niveles profundos.",
+    presentacion: "Gotero 30 ml",
+    precio: 74.00,
+    precioProfesional: 62.00,
+    imagen: "images/01_exoface.png",
+    destacadoHome: true,
+    esExosoma: true,
+    principiosActivos: [
+      "Centella Asiática Exosomes",
+      "Exosomas de Cúrcuma Longa",
+      "PDRN (Salmón DNA)",
+      "Hylasome EG-10 (Ácido Hialurónico Reticulado)",
+      "Péptidos Biomiméticos",
+      "Niacinamida",
+      "Silicio Orgánico",
+      "Complejos de Aminoácidos"
+    ],
+    beneficios: [
+      "Mejora la firmeza visible desde la segunda sesión.",
+      "Aumento significativo de la densidad dérmica.",
+      "Efecto tensor inmediato y piel más compacta.",
+      "Reestructuración progresiva de la arquitectura cutánea."
+    ],
+    modoUso: "Aplicar de 4 a 6 gotas sobre el rostro limpio por la mañana y noche con suaves movimientos circulares."
+  },
+  {
+    id: "exolumine-casa",
+    nombre: "ExoLumine",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Exosomas",
+    subtitulo: "Exosomas Despigmentantes y Antioxidantes",
+    descripcion: "Regula la actividad de los melanocitos y disminuye notablemente la inflamación cutánea y las manchas.",
+    presentacion: "Gotero 30 ml",
+    precio: 58.00,
+    precioProfesional: 48.00,
+    imagen: "images/02_exolumine.png",
+    destacadoHome: false,
+    esExosoma: true,
+    principiosActivos: [
+      "Exosomas Centella Reversa",
+      "Ácido Tranexámico",
+      "Niacinamida",
+      "Neurolight 61 G°",
+      "Alfa-Arbutina",
+      "Ácido Hialurónico de mediano peso molecular",
+      "Silicio Orgánico",
+      "Complejo Antioxidante"
+    ],
+    beneficios: [
+      "Disminución visible del tono irregular desde la 3ra semana.",
+      "Reducción de citocinas inflamatorias en la piel tratada.",
+      "Aumento de la tolerancia cutánea en pieles muy sensibles."
+    ],
+    modoUso: "Aplicar sobre el rostro limpio antes de la crema hidratante. Usar protector solar de día."
+  },
+  {
+    id: "exoblemish-casa",
+    nombre: "ExoBlemish",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Exosomas",
+    subtitulo: "Bioactivo seborregulador y calmante",
+    descripcion: "Ayuda a la regulación sebácea, tiene acción queratolítica, calmante y potente acción regeneradora.",
+    presentacion: "Gotero 30 ml",
+    precio: 58.00,
+    precioProfesional: 48.00,
+    imagen: "images/03_exoblemish.png",
+    destacadoHome: false,
+    esExosoma: true,
+    principiosActivos: [
+      "Exosomas de Cúrcuma Longa",
+      "Ácido Succínico",
+      "Niacinamida y Biotina",
+      "Zinc Sebum",
+      "Cobre II Sulfato pentahidratado",
+      "Pore Reductyl",
+      "Factor de Crecimiento Epidermal"
+    ],
+    beneficios: [
+      "Reducción visible de comedones y pápulas.",
+      "Disminución duradera de la seborrea y brillo facial.",
+      "Alivio de la inflamación e irritación en brotes de acné."
+    ],
+    modoUso: "Aplicar sobre las zonas con tendencia grasa o brotes dos veces al día después de la limpieza."
+  },
+  {
+    id: "exohair-casa",
+    nombre: "ExoHair",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Exosomas",
+    subtitulo: "Reactivación folicular desde la raíz",
+    descripcion: "Exosomas que reactivan el ciclo de vida capilar, regeneran folículos pilosos y mejoran la vascularización.",
+    presentacion: "Gotero 30 ml",
+    precio: 56.00,
+    precioProfesional: 46.00,
+    imagen: "images/04_exohair.png",
+    destacadoHome: false,
+    esExosoma: true,
+    principiosActivos: [
+      "Exosomas de Cúrcuma Longa",
+      "Biocenta Capilar",
+      "Bio Capigen PT",
+      "Hyaceramidyl (Ácido Hialurónico + Ceramidas)",
+      "D-Pantenol",
+      "Biotina y Vitamina B12",
+      "Silicio Orgánico"
+    ],
+    beneficios: [
+      "Disminuye la caída progresiva del cabello.",
+      "Estimula el nacimiento de cabello nuevo y denso.",
+      "Engrosa visiblemente el tallo piloso.",
+      "Reequilibra el ecosistema del cuero cabelludo."
+    ],
+    modoUso: "Aplicar en el cuero cabelludo seco por la noche y masajear suavemente con la yema de los dedos."
+  },
+
+  // -------------------------------------------------------------------------
+  // LINEA DE USO EN CASA - COSMETICA MOLECULAR (Sin foto oficial = imagen vacia)
+  // -------------------------------------------------------------------------
+  {
+    id: "aqua-piel-3ah",
+    nombre: "Aqua piel 3AH",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Hidratación",
+    subtitulo: "Sérum Hidratante Intenso",
+    descripcion: "Sérum restitutivo de agua y nutrientes. Su film molecular con liposomas y ácido hialurónico reticulado aporta lozanía e hidratación inmediata.",
+    presentacion: "Frasco 50 ml",
+    precio: 42.00,
+    precioProfesional: 35.00,
+    imagen: "",
+    destacadoHome: true,
+    esExosoma: false,
+    principiosActivos: [
+      "3 Tipos de Ácido Hialurónico Reticulado",
+      "Liposomas Hidratantes",
+      "Complejo Osmoprotector",
+      "Pantenol y Minerales Esenciales"
+    ],
+    beneficios: [
+      "Hidratación multicapa hasta por 72 horas.",
+      "Textura ultraligera de rápida absorción.",
+      "Piel visiblemente más rellena, suave y elástica."
+    ],
+    modoUso: "Aplicar 1 o 2 pulsaciones en la piel limpia del rostro, cuello y escote mañana y noche."
+  },
+  {
+    id: "agua-micelar-sensible",
+    nombre: "Agua micelar piel sensible",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Limpieza",
+    subtitulo: "Limpieza y desmaquillante respetuoso",
+    descripcion: "Diseñada para piel sensible con macromoléculas de Ácido Hialurónico y complejo AMC con 6 activos hidratantes.",
+    presentacion: "Frasco 260 ml",
+    precio: 27.00,
+    precioProfesional: 22.00,
+    imagen: "",
+    destacadoHome: true,
+    esExosoma: false,
+    principiosActivos: [
+      "Micelas biocompatibles",
+      "Macromoléculas de Ácido Hialurónico",
+      "Complejo Hidratante AMC con 6 activos",
+      "Extracto Botánico Calmante"
+    ],
+    beneficios: [
+      "Retira impurezas y maquillaje waterproof sin irritar.",
+      "Protege la barrera cutánea frente a la deshidratación.",
+      "Apta para contorno de ojos y pieles reactivas."
+    ],
+    modoUso: "Humedecer un disco de algodón y pasar suavemente por rostro, ojos y labios sin frotar."
+  },
+  {
+    id: "dd-cream-color",
+    nombre: "Protector solar DD Cream con color",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Protección solar",
+    subtitulo: "Protege y unifica sin sensación grasa",
+    descripcion: "Crema de defensa diaria multifuncional contra el fotoenvejecimiento y las manchas gracias a Neurolight 61.G SPF 30.",
+    presentacion: "Tubo 50 g",
+    precio: 48.00,
+    precioProfesional: 40.00,
+    imagen: "",
+    destacadoHome: true,
+    esExosoma: false,
+    principiosActivos: [
+      "Filtros Solares UVA/UVB SPF 30",
+      "Neurolight 61.G Despigmentante",
+      "Pigmentos Microencapsulados de Color Adaptable",
+      "Vitamina E Antioxidante"
+    ],
+    beneficios: [
+      "Unifica el tono de la piel con acabado mate natural.",
+      "Reduce manchas oscuras existentes.",
+      "Fórmula no comedogénica libre de aceites pesados."
+    ],
+    modoUso: "Aplicar uniformemente como último paso de la rutina facial cada mañana antes de salir."
+  },
+  {
+    id: "derm-face-serum",
+    nombre: "Derm face serum",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Cuidado facial",
+    subtitulo: "Gel facial seguro en pieles sensibles",
+    descripcion: "Contiene ácido hialurónico, péptidos y extractos naturales que hidratan a profundidad hasta por 48 horas sin sensación pegajosa.",
+    presentacion: "Frasco 30 ml",
+    precio: 41.00,
+    precioProfesional: 34.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Hialurónico Puro",
+      "Péptidos Reafirmantes",
+      "Extractos Botánicos Regeneradores",
+      "Pantenol Calmante"
+    ],
+    beneficios: [
+      "Hidratación prolongada por 48 horas.",
+      "Devuelve la firmeza y volumen natural de las facciones.",
+      "Dermatológicamente comprobado y no comedogénico."
+    ],
+    modoUso: "Distribuir en rostro y cuello con masajes ascendentes hasta que se absorba por completo."
+  },
+  {
+    id: "contorno-ojos-frio",
+    nombre: "Contorno de ojos",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Cuidado facial",
+    subtitulo: "Aplicador metálico con efecto frío",
+    descripcion: "Sérum sensorial sedoso y descongestionante formulado con extracto de meliloto, 3 tipos de AH y péptidos Eyeseryl y Argireline.",
+    presentacion: "Frasco 15 ml",
+    precio: 48.00,
+    precioProfesional: 40.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Extracto de Meliloto",
+      "3 Tipos de Ácido Hialurónico",
+      "Péptido Eyeseryl (Drenante antibolsas)",
+      "Argireline & Leuphasyl (Relajantes musculares)"
+    ],
+    beneficios: [
+      "Atenúa bolsas y ojeras oscuras rápidamente.",
+      "Relaja las líneas de expresión perioculares.",
+      "Aplicador de aleación metálica que potencia el drenaje por efecto térmico."
+    ],
+    modoUso: "Presionar suavemente y deslizar la punta metálica sobre el contorno del ojo desde el interior hacia afuera."
+  },
+  {
+    id: "luminescence-cleanser",
+    nombre: "Dermclar Luminescence Cleanser",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Limpieza",
+    subtitulo: "Loción pre-peeling limpiadora profunda",
+    descripcion: "Limpiador profundo exfoliante con acción astringente que potencializa la penetración de tratamientos aclarantes.",
+    presentacion: "Frasco 250 ml",
+    precio: 40.00,
+    precioProfesional: 33.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Salicílico",
+      "Ácido Glicólico y Láctico",
+      "Zinc Sebum con 16 aminoácidos libres",
+      "Vitamina F"
+    ],
+    beneficios: [
+      "Exfoliación microquímica diaria suave.",
+      "Equilibra la producción de sebo y reduce bacterias.",
+      "Prepara la piel para recibir peelings y sérums."
+    ],
+    modoUso: "Aplicar sobre el rostro húmedo, masajear en círculos y enjuagar con abundante agua tibia."
+  },
+  {
+    id: "proteoglycans-serum",
+    nombre: "Proteoglycans Serum",
+    marca: "Dermclar",
+    tipoUso: "casa",
+    categoria: "Cuidado facial",
+    subtitulo: "Serum de Proteoglicanos y Vitamina C",
+    descripcion: "Actúa sobre la raíz del envejecimiento celular regenerando las capas más profundas de la piel y aportando firmeza.",
+    presentacion: "Frasco 15 ml",
+    precio: 40.00,
+    precioProfesional: 32.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Proteoglicanos Puros",
+      "Vitamina C Estabilizada",
+      "Ácido Hialurónico",
+      "Antioxidantes de Alta Potencia"
+    ],
+    beneficios: [
+      "Regenera las estructuras de sostén dérmico.",
+      "Neutraliza radicales libres generados por la polución.",
+      "Aporta luminosidad radiante a pieles apagadas."
+    ],
+    modoUso: "Aplicar 3 gotas por la mañana antes de la crema de día."
+  },
+
+  // -------------------------------------------------------------------------
+  // SELECCION PROFESIONAL CLINICA - FOTOS REALES DEL CATALOGO
+  // -------------------------------------------------------------------------
+  {
+    id: "dermclar-firm-pro",
+    nombre: "DermclarFirm",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Reafirmante y tensor intensivo de la piel",
+    descripcion: "Tratamiento clínico para combatir la flacidez y las estrías. Devuelve elasticidad firme a la arquitectura cutánea.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 79.00,
+    precioProfesional: 79.00,
+    imagen: "images/08_dermclar_firm.png",
+    destacadoHome: true,
+    esExosoma: false,
+    principiosActivos: [
+      "DMAE Concentrado",
+      "Glucosaminoglicanos",
+      "Silicio Orgánico",
+      "D-Pantenol",
+      "Centella Asiática Pura"
+    ],
+    beneficios: [
+      "Efecto lifting tisular visible y sostenido.",
+      "Estimulación masiva de colágeno y elastina.",
+      "Disminuye profundidad y coloración de estrías."
+    ],
+    modoUso: "Uso exclusivo por profesionales capacitados mediante técnicas de mesoterapia o aparatología estética."
+  },
+  {
+    id: "dermclar-obes-pro",
+    nombre: "DermclarObes",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Reductor de medidas y grasa rebelde",
+    descripcion: "Fórmula #1 para reducir el volumen corporal, adiposidades localizadas rebeldes y contornear la silueta.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 98.00,
+    precioProfesional: 98.00,
+    imagen: "images/06_dermclar_obes.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Fosfatidilcolina Lipolítica",
+      "Desoxicolato de Sodio",
+      "L-Carnitina Biológica",
+      "Rutina Vasoactiva"
+    ],
+    beneficios: [
+      "Potente liporeductor en tiempo récord.",
+      "Disuelve adiposidades en abdomen, flancos y muslos.",
+      "Limita la retención hídrica en tejido adiposo."
+    ],
+    modoUso: "Protocolo clínico profesional con técnica de electroporación o mesoterapia."
+  },
+  {
+    id: "dermclar-celu-pro",
+    nombre: "DermclarCelu",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Anticelulítico y desintoxicante de tejido",
+    descripcion: "Disminuye el tamaño de los nódulos grasos celulíticos y estimula el drenaje de toxinas acumuladas.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 70.00,
+    precioProfesional: 70.00,
+    imagen: "images/07_dermclar_celu.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "L-Carnitina",
+      "Cafeína Pura",
+      "Silicio Orgánico",
+      "Centella Asiática",
+      "Extracto de Meliloto"
+    ],
+    beneficios: [
+      "Ideal para celulitis edematosa, compacta y flácida.",
+      "Alisa la piel de naranja y reafirma el tejido.",
+      "Activa la microcirculación de retorno venolinfático."
+    ],
+    modoUso: "Uso profesional en cabina estética con aparatología o técnica tópica avanzada."
+  },
+  {
+    id: "dermclar-plasmavit-pro",
+    nombre: "DermclarPlasmaVit",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Booster Tisular Revitalizante Celular",
+    descripcion: "Revitalizante que nutre intensamente los tejidos mejorando la elasticidad y acelerando los procesos celulares.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 78.00,
+    precioProfesional: 78.00,
+    imagen: "images/05_dermclar_plasmavit.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Complejo de Aminoácidos Esenciales",
+      "Vitamina C Pura",
+      "Sinadol Antioxidante"
+    ],
+    beneficios: [
+      "Aumenta el grosor y consistencia de la piel madura.",
+      "Atenúa arrugas finas y líneas de expresión.",
+      "Gran poder iluminador y despigmentante."
+    ],
+    modoUso: "Aplicación profesional facial mediante técnicas de microneedling o electroporación."
+  },
+  {
+    id: "dermclar-hair-pro",
+    nombre: "DermclarHair",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Previene la caída y aumenta la densidad capilar",
+    descripcion: "Retarda la caída, mejora la calidad y resistencia del folículo y favorece la actividad biológica en receso.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 85.00,
+    precioProfesional: 85.00,
+    imagen: "images/09_dermclar_hair.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Hialurónico",
+      "D-Pantenol",
+      "Silicio Orgánico",
+      "Rutina",
+      "Oligoelementos"
+    ],
+    beneficios: [
+      "Disminuye la fragilidad capilar.",
+      "Aporta brillo y nutrición profunda a la fibra.",
+      "Estimula el crecimiento del cabello nuevo."
+    ],
+    modoUso: "Protocolo clínico capilar aplicado en cabina."
+  },
+  {
+    id: "dermclar-face-pro",
+    nombre: "DermclarFace",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Redensifica y rejuvenece el rostro",
+    descripcion: "Solución integral para combatir el envejecimiento del rostro. Hidrata, nutre, reafirma y aclara.",
+    presentacion: "Caja 5 viales X 10ml",
+    precio: 94.00,
+    precioProfesional: 94.00,
+    imagen: "images/10_dermclar_face.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Hialurónico",
+      "Glutatión",
+      "Argireline y Leuphasyl",
+      "DMAE",
+      "Vitamina C y E"
+    ],
+    beneficios: [
+      "Mejora arrugas y líneas de expresión.",
+      "Genera efecto tensor y lifting evidente.",
+      "Alisado y homogeneización de la tez."
+    ],
+    modoUso: "Aplicación profesional con técnicas de electroporación."
+  },
+  {
+    id: "dermclar-face-v-pro",
+    nombre: "DermclarFace V",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Reafirma y tonifica la Zona V del rostro",
+    descripcion: "Ayuda a esculpir, retensar y redefinir el contorno del rostro, doble mentón y zona V.",
+    presentacion: "Caja 5 viales X 5ml",
+    precio: 105.00,
+    precioProfesional: 105.00,
+    imagen: "images/11_dermclar_face_v.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Hidrolizado de Algas Rojas",
+      "Ampelopsina",
+      "Péptidos Biomiméticos",
+      "Silicio Orgánico",
+      "DMAE"
+    ],
+    beneficios: [
+      "Remodelación visible del óvalo facial.",
+      "Disminuye grasa localizada en papada.",
+      "Aumenta la firmeza y fibras colágenas."
+    ],
+    modoUso: "Tratamiento en cabina médica para perfilamiento facial."
+  },
+  {
+    id: "dermclar-face-ob-pro",
+    nombre: "DermclarFace OB",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Reduce la papada y perfila el rostro",
+    descripcion: "Fórmula de alta tecnología que disminuye el volumen adiposo de mejillas y doble mentón.",
+    presentacion: "Caja 5 viales X 5ml",
+    precio: 110.00,
+    precioProfesional: 110.00,
+    imagen: "images/12_dermclar_face_ob.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "L-Carnitina",
+      "Silicio Orgánico",
+      "Fosfatidilcolina",
+      "Cafeína",
+      "Troxerutina"
+    ],
+    beneficios: [
+      "Desprende cúmulos grasos submentonianos.",
+      "Acción drenante para evacuar ácidos grasos.",
+      "Mejora sustancialmente el ángulo de la barbilla."
+    ],
+    modoUso: "Uso profesional en reducción submentoniana."
+  },
+  {
+    id: "dermclar-bump-up-pro",
+    nombre: "Dermclar Bump UP",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Proyecta la curvatura de los glúteos",
+    descripcion: "Péptidos biomiméticos Adifyline y Factor de Crecimiento Epidermal (EGF PLUS) para remodelar y aportar firmeza glútea.",
+    presentacion: "Caja 10 ampollas X 5ml",
+    precio: 95.00,
+    precioProfesional: 95.00,
+    imagen: "images/13_dermclar_bump_up.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Hialurónico de alto peso molecular",
+      "EGF PLUS (Factor de Crecimiento Epidermal)",
+      "Péptido Biomimético Adifyline",
+      "Vitamina C y 15 Aminoácidos",
+      "Silicio Orgánico y DMAE"
+    ],
+    beneficios: [
+      "Aporta volumen y definición a la zona glútea.",
+      "Estimula la síntesis de colágeno estructural.",
+      "Efecto reafirmante y tensor duradero."
+    ],
+    modoUso: "Uso profesional en protocolos corporales de elevación y tonificación glútea."
+  },
+  {
+    id: "dermclar-ice-up-pro",
+    nombre: "Dermclar Ice UP",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Tonifica la curvatura de las Nalgas",
+    descripcion: "Biopéptidos programados tensores y nutritivos que ayudan a reducir celulitis y flacidez.",
+    presentacion: "Caja 10 ampollas X 5ml",
+    precio: 87.00,
+    precioProfesional: 87.00,
+    imagen: "images/14_dermclar_ice_up.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Biopéptidos Programados",
+      "Hidrolizado de Colágeno y Elastina",
+      "Laureth-9 y Piruvato de Sodio",
+      "Centella Asiática y DMAE"
+    ],
+    beneficios: [
+      "Tonifica y reafirma la piel glútea.",
+      "Reduce la apariencia de celulitis flácida.",
+      "Estimula colágeno dérmico."
+    ],
+    modoUso: "Protocolo en cabina corporal."
+  },
+  {
+    id: "dermclar-golden-up-pro",
+    nombre: "Dermclar Golden UP",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Realza la curvatura de las Nalgas",
+    descripcion: "Tratamiento estético con ácido hialurónico y aminoácidos ramificados para devolver turgencia y grosor dérmico.",
+    presentacion: "Caja 10 ampollas X 5ml",
+    precio: 65.00,
+    precioProfesional: 65.00,
+    imagen: "images/15_dermclar_golden_up.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Ácido Hialurónico mediano peso",
+      "Aminoácidos Ramificados",
+      "Vitamina C",
+      "Silicio Orgánico y DMAE"
+    ],
+    beneficios: [
+      "Efecto lifting y soporte tensor.",
+      "Devuelve la turgencia y textura suave.",
+      "Reestructura el tejido dérmico glúteo."
+    ],
+    modoUso: "Protocolo profesional."
+  },
+  {
+    id: "metodo-3r-pro",
+    nombre: "Método +3R",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Revitaliza + Redensifica + Rejuvenece",
+    descripcion: "Protocolo clínico completo con Ácido Hialurónico de mediano y bajo peso molecular y micronutrientes antiedad.",
+    presentacion: "Kit Clínico Completo",
+    precio: 150.00,
+    precioProfesional: 150.00,
+    imagen: "images/16_metodo_3r.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "+ Plendor S: 2 viales X 10ml",
+      "Plasmavit: 1 vial X 10ml",
+      "Dermface: 1 vial X 10ml",
+      "Silicio Orgánico: 2 ampollas X 5ml",
+      "Hidraderm: 2 ampollas X 2ml"
+    ],
+    beneficios: [
+      "Kit integral formulado para 5 sesiones completas.",
+      "Reversión visible de signos de crono y fotoenvejecimiento.",
+      "Máxima redensificación dérmica probada clínicamente."
+    ],
+    modoUso: "Protocolo exclusivo para médicos y profesionales de la estética médica."
+  },
+  {
+    id: "metodo-hair-pro",
+    nombre: "Método Hair",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Cuidado facial",
+    subtitulo: "Hair Active A.H. Protocolo Capilar",
+    descripcion: "Combinación de ácido hialurónico, aminoácidos y oligoelementos para reactivar folículos en receso.",
+    presentacion: "Kit Clínico Capilar",
+    precio: 79.00,
+    precioProfesional: 79.00,
+    imagen: "images/17_metodo_hair.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Dermhair: 2 viales X 10ml",
+      "Plasmavit: 2 viales X 10ml",
+      "Silicio Orgánico: 2 ampollas X 5ml",
+      "Meliloto: 2 ampollas X 2ml"
+    ],
+    beneficios: [
+      "Estimulación capilar completa.",
+      "Revitalización del folículo debilitado.",
+      "Aumenta la fuerza de anclaje de la raíz."
+    ],
+    modoUso: "Uso en cabina médica capilar."
+  },
+  {
+    id: "metodo-obooster-pro",
+    nombre: "Método OBooster",
+    marca: "Dermclar",
+    tipoUso: "profesional",
+    categoria: "Corporal",
+    subtitulo: "Remodelador Corporal y Reposicionador Tisular",
+    descripcion: "Reducción de grasa localizada con armonización bioenergética y reposicionamiento de la piel luego del adelgazamiento.",
+    presentacion: "Kit Clínico Completo",
+    precio: 95.00,
+    precioProfesional: 95.00,
+    imagen: "images/18_metodo_obooster.png",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Dermobes: 2 viales X 10ml",
+      "Obooster: 2 ampollas X 5ml",
+      "Ampelopsina: 2 ampollas X 5ml",
+      "L-Carnitina: 2 ampollas X 5ml",
+      "Fosfatidilcolina: 1 ampolla X 5ml",
+      "Silicio Orgánico: 1 ampolla X 5ml"
+    ],
+    beneficios: [
+      "Actúa en todos los biotipos corporales.",
+      "Evita el descolgamiento cutáneo post-reducción.",
+      "Remodela el contorno corporal integral."
+    ],
+    modoUso: "Protocolo clínico para reducción y firmeza corporal."
+  },
+
+  // -------------------------------------------------------------------------
+  // LINEA MEDICAL SKIN (Sin fotos PNG en catalogo = imagen vacia)
+  // -------------------------------------------------------------------------
+  {
+    id: "copa-sueca-mini",
+    nombre: "Copa Sueca Mini",
+    marca: "Medical Skin",
+    tipoUso: "profesional",
+    categoria: "Metaloterapia",
+    subtitulo: "Herramienta facial de acero quirúrgico",
+    descripcion: "Facilita el drenaje linfático, disminuye líneas de expresión y redefine el óvalo facial mediante succión al vacío suave.",
+    presentacion: "Unidad individual en acero médico",
+    precio: 25.00,
+    precioProfesional: 25.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Aleación de acero médico antialérgico",
+      "Borde pulido de alta precisión",
+      "Mango ergonómico antideslizante"
+    ],
+    beneficios: [
+      "Efecto succión que moviliza el líquido estancado.",
+      "Relaja la tensión muscular nasogeniana y frontal.",
+      "Máxima durabilidad y fácil esterilización."
+    ],
+    modoUso: "Aplicar aceite facial o sérum antes del uso. Deslizar suavemente siguiendo los canales de drenaje linfático."
+  },
+  {
+    id: "mascarilla-colageno",
+    nombre: "Mascarilla Hidroplástica Colágeno",
+    marca: "Medical Skin",
+    tipoUso: "casa",
+    categoria: "Mascarillas",
+    subtitulo: "Antienvejecimiento para piel seca y desvitalizada",
+    descripcion: "Aporta elasticidad y firmeza intensa a pieles cansadas gracias al colágeno hidrolizado y alginatos marinos.",
+    presentacion: "Sobre 250 g",
+    precio: 19.00,
+    precioProfesional: 19.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Colágeno Hidrolizado",
+      "Extracto de Flor de Regaliz",
+      "Algina Natural",
+      "Tierra de Diatomeas"
+    ],
+    beneficios: [
+      "Forma una capa elástica que sella activos en la piel.",
+      "Efecto refrescante y descongestivo inmediato.",
+      "Nutre y suaviza visiblemente la textura cutánea."
+    ],
+    modoUso: "Mezclar el polvo con agua hasta formar una pasta cremosa. Aplicar en rostro y retirar tras 20 minutos de una sola pieza."
+  },
+  {
+    id: "guantes-nitrilo",
+    nombre: "Guantes de Nitrilo Quirúrgico",
+    marca: "Medical Skin",
+    tipoUso: "profesional",
+    categoria: "Insumos",
+    subtitulo: "Caja de 100 unidades grado médico",
+    descripcion: "Guantes sin polvo, alta resistencia elástica y gran sensibilidad táctil para procedimientos estéticos y médicos.",
+    presentacion: "Caja de 100 unidades",
+    precio: 5.00,
+    precioProfesional: 5.00,
+    imagen: "",
+    destacadoHome: false,
+    esExosoma: false,
+    principiosActivos: [
+      "Nitrilo libre de látex",
+      "Puntas de dedos microtexturizadas",
+      "Certificación médica hospitalaria"
+    ],
+    beneficios: [
+      "Sin riesgo de alergias al látex.",
+      "Excelente agarre de jeringas e instrumental metálico.",
+      "Barrera biológica segura y confortable."
+    ],
+    modoUso: "Descartar luego de cada paciente conforme a las normas de bioseguridad."
+  }
+];

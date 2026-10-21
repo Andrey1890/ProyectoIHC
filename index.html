@@ -1,0 +1,1086 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DERMAKOR - Cuidado experto. Tu propia rutina | Dermclar 2026</title>
+  <meta name="description" content="Tienda oficial y catálogo de dermocosmética médica Dermclar y Medical Skin 2026. Facturación electrónica formal, envíos cotizados y catálogo profesional." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+
+  <!-- =====================================================================
+       1. ENCABEZADO Y BARRA DE NAVEGACION
+       ===================================================================== -->
+  <header class="encabezado-sitio">
+    <div class="contenedor">
+      <div class="barra-superior">
+        <!-- Logotipo Principal -->
+        <div class="logo-marca" onclick="cambiarVista('inicio', 'inicio')">DERMAKOR</div>
+
+        <!-- Enlaces de Navegacion (Unico activo a la vez) -->
+        <nav class="navegacion-principal" aria-label="Navegación principal">
+          <a href="#" class="enlace-nav activo" data-nav-id="inicio">Inicio</a>
+          <a href="#" class="enlace-nav" data-nav-id="catalogo">Catálogo</a>
+          <a href="#" class="enlace-nav" data-nav-id="casa">Uso en casa</a>
+          <a href="#" class="enlace-nav" data-nav-id="profesional">Profesional</a>
+          <a href="#seccion-faq" class="enlace-nav" data-nav-id="ayuda" onclick="cambiarVista('inicio', 'inicio'); setTimeout(function(){ document.getElementById('seccion-faq').scrollIntoView({behavior:'smooth'}); }, 100);">Ayuda</a>
+        </nav>
+
+        <!-- Acciones del Encabezado: Usuario y Carrito -->
+        <div class="acciones-encabezado">
+          <!-- Widget de Sesion de Usuario Obligatorio para Compras -->
+          <div id="widget-usuario-header">
+            <button type="button" class="boton-iniciar-sesion" onclick="abrirModalAuth()">
+              <span>👤</span> Iniciar Sesión / Registrarse
+            </button>
+          </div>
+
+          <!-- Boton de Carrito -->
+          <button type="button" class="boton-carrito" onclick="cambiarVista('carrito', '')" aria-label="Abrir carrito de compras">
+            <span class="icono-bolsa">🛍️</span>
+            <span>Carrito</span>
+            <span class="contador-carrito" id="contador-items-nav">0</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Busqueda Rapida -->
+    <div class="barra-busqueda-wrap">
+      <div class="contenedor">
+        <div class="formulario-busqueda">
+          <input
+            type="text"
+            id="input-busqueda-global"
+            class="campo-busqueda"
+            placeholder="Nombre, línea o tipo de producto (ej: ExoFace, Ácido Hialurónico, Celulitis...)"
+            aria-label="Buscar productos"
+          />
+          <button type="button" id="btn-buscar" class="boton-buscar">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- =====================================================================
+       2. VISTA: INICIO (HOME)
+       ===================================================================== -->
+  <main id="vista-inicio" class="vista-pagina">
+    
+    <!-- Hero Principal -->
+    <section class="seccion-hero">
+      <div class="contenedor">
+        <div class="hero-grid">
+          <div class="hero-texto">
+            <div class="etiqueta-subtitulo">DERMACOSMÉTICA • SELECCIÓN DERMCLAR 2026</div>
+            <h1 class="titulo-hero">Cuidado experto.<br />Tu propia rutina.</h1>
+            <p class="descripcion-hero">
+              Encuentra productos para cuidar tu piel en casa y una selección diferenciada con alta tecnología científica para profesionales.
+            </p>
+            <div class="hero-botones">
+              <button type="button" class="boton-primario" onclick="limpiarFiltros(); var c = document.getElementById('filtro-uso-casa'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'casa');">Explorar uso en casa</button>
+              <button type="button" class="boton-secundario" onclick="limpiarFiltros(); var c = document.getElementById('filtro-cat-exosomas'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'catalogo');">Ver línea Exosomas</button>
+            </div>
+          </div>
+          <div class="hero-imagen-box">
+            <img src="images/hero_catalog.svg" alt="Dermclar Belleza Consciente Catálogo 2026" />
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Seccion: Encuentra tu cuidado (Categorias Rapidas) -->
+    <section class="seccion-espaciada">
+      <div class="contenedor">
+        <h2 class="titulo-seccion">Encuentra tu cuidado</h2>
+        <div class="categorias-grid">
+          <div class="tarjeta-categoria-rapida" onclick="cambiarVista('catalogo', 'catalogo'); limpiarFiltros(); document.getElementById('filtro-cat-limpieza').checked = true; filtrarCatalogo();">
+            <div class="categoria-sup">DERMCLAR</div>
+            <div class="categoria-nom">Limpieza</div>
+            <div class="categoria-cta">Explorar →</div>
+          </div>
+          <div class="tarjeta-categoria-rapida" onclick="cambiarVista('catalogo', 'catalogo'); limpiarFiltros(); document.getElementById('filtro-cat-hidratacion').checked = true; filtrarCatalogo();">
+            <div class="categoria-sup">DERMCLAR</div>
+            <div class="categoria-nom">Hidratación</div>
+            <div class="categoria-cta">Explorar →</div>
+          </div>
+          <div class="tarjeta-categoria-rapida" onclick="cambiarVista('catalogo', 'catalogo'); limpiarFiltros(); document.getElementById('filtro-cat-facial').checked = true; filtrarCatalogo();">
+            <div class="categoria-sup">DERMCLAR</div>
+            <div class="categoria-nom">Cuidado facial</div>
+            <div class="categoria-cta">Explorar →</div>
+          </div>
+          <div class="tarjeta-categoria-rapida" onclick="cambiarVista('catalogo', 'catalogo'); limpiarFiltros(); document.getElementById('filtro-cat-solar').checked = true; filtrarCatalogo();">
+            <div class="categoria-sup">DERMCLAR</div>
+            <div class="categoria-nom">Protección solar</div>
+            <div class="categoria-cta">Explorar →</div>
+          </div>
+          <div class="tarjeta-categoria-rapida" onclick="cambiarVista('catalogo', 'catalogo'); limpiarFiltros(); document.getElementById('filtro-cat-exosomas').checked = true; filtrarCatalogo();">
+            <div class="categoria-sup">DERMCLAR</div>
+            <div class="categoria-nom">Exosomas</div>
+            <div class="categoria-cta">Explorar →</div>
+          </div>
+        </div>
+
+        <!-- Seccion: Tu rutina empieza aqui (Destacados de Uso en Casa) -->
+        <div class="cabecera-con-enlace">
+          <div>
+            <div class="etiqueta-subtitulo">USO EN CASA • PVP</div>
+            <h2 class="titulo-seccion" style="margin-bottom: 0;">Tu rutina empieza aquí</h2>
+          </div>
+          <a href="#" class="enlace-ver-mas" onclick="limpiarFiltros(); var c = document.getElementById('filtro-uso-casa'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'casa');">Ver todos los productos →</a>
+        </div>
+        <div class="productos-grid" id="grid-productos-destacados">
+          <!-- Inyectados por JavaScript con fotos reales o espacio neutral -->
+        </div>
+
+        <!-- Banner Intermedio: Explora la linea Exosomas -->
+        <div class="banner-exosomas-bloque">
+          <div class="banner-exosomas-grid">
+            <div class="banner-exosomas-info">
+              <div class="tag-exosomas">FÓRMULAS INTELIGENTES</div>
+              <h3>Explora la línea Exosomas</h3>
+              <p>
+                ExoFace, ExoLumine, ExoBlemish y ExoHair. Nanotecnología con exosomas de Centella Asiática y Cúrcuma Longa para reactivación celular profunda.
+              </p>
+              <button type="button" class="boton-primario" onclick="limpiarFiltros(); var c = document.getElementById('filtro-cat-exosomas'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'catalogo');">Conocer la colección</button>
+            </div>
+            <div class="exosomas-mini-grid" id="grid-exosomas-banner">
+              <!-- Mini tarjetas de exosomas con fotos reales del catalogo -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Seccion: Una seleccion para los mas exigentes (Uso Profesional) -->
+        <div class="seccion-profesional-teaser">
+          <div class="cabecera-con-enlace">
+            <div>
+              <div class="etiqueta-subtitulo" style="color: #0056B3;">EXCLUSIVO USO PROFESIONAL</div>
+              <h3 style="font-size: 22px; font-weight: 700; color: #0F172A;">Una selección para los más exigentes</h3>
+              <p style="color: #64748B; font-size: 14px; margin-top: 4px;">
+                Productos y herramientas clínicas diferenciadas para cabina y médicos especialistas.
+              </p>
+            </div>
+            <a href="#" class="enlace-ver-mas" onclick="limpiarFiltros(); var c = document.getElementById('filtro-uso-pro'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'profesional');">Consultar selección profesional →</a>
+          </div>
+
+          <div class="pro-teaser-grid">
+            <div class="tarjeta-pro-teaser">
+              <img src="images/08_dermclar_firm.png" alt="DermclarFirm" />
+              <div class="tarjeta-pro-info">
+                <h4>DermclarFirm</h4>
+                <p>Caja de 5 viales X 10ml • Tensor tisular con DMAE y Silicio Orgánico</p>
+                <div style="font-weight: 800; font-size: 16px; color: #0056B3; margin-bottom: 8px;">$79.00 <span style="font-size: 12px; font-weight: 500; color: #64748B;">(Precio Profesional)</span></div>
+                <button type="button" class="boton-secundario" style="padding: 6px 12px; min-height: 34px; font-size: 13px;" onclick="abrirModalDetalle('dermclar-firm-pro')">Ver ficha profesional</button>
+              </div>
+            </div>
+
+            <div class="tarjeta-pro-teaser">
+              <img src="images/06_dermclar_obes.png" alt="DermclarObes" />
+              <div class="tarjeta-pro-info">
+                <h4>DermclarObes</h4>
+                <p>Caja de 5 viales X 10ml • Liporeductor potente con Fosfatidilcolina</p>
+                <div style="font-weight: 800; font-size: 16px; color: #0056B3; margin-bottom: 8px;">$98.00 <span style="font-size: 12px; font-weight: 500; color: #64748B;">(Precio Profesional)</span></div>
+                <button type="button" class="boton-secundario" style="padding: 6px 12px; min-height: 34px; font-size: 13px;" onclick="abrirModalDetalle('dermclar-obes-pro')">Ver ficha profesional</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Seccion: Elige con mas claridad (3 Pasos) -->
+        <h2 class="titulo-seccion">Elige con más claridad</h2>
+        <div class="pasos-claridad-grid">
+          <div class="tarjeta-paso">
+            <div class="paso-numero">01</div>
+            <div class="paso-titulo">Empieza por tu necesidad</div>
+            <div class="paso-desc">
+              Limpieza, hidratación o protección solar: los filtros por categoría te ayudan a acotar tu rutina en pocos clics.
+            </div>
+          </div>
+          <div class="tarjeta-paso">
+            <div class="paso-numero">02</div>
+            <div class="paso-titulo">Conoce la fórmula</div>
+            <div class="paso-desc">
+              Revisa presentación, activos e indicaciones clínicas detalladas directamente en la ficha técnica de cada producto.
+            </div>
+          </div>
+          <div class="tarjeta-paso">
+            <div class="paso-numero">03</div>
+            <div class="paso-titulo">Distingue el tipo de uso</div>
+            <div class="paso-desc">
+              La selección profesional se muestra claramente separada de la línea para uso diario en el hogar.
+            </div>
+          </div>
+        </div>
+
+        <!-- Seccion: Preguntas Frecuentes (FAQ) -->
+        <div class="seccion-faq" id="seccion-faq">
+          <div class="etiqueta-subtitulo">RESPUESTAS BREVES</div>
+          <h2 class="titulo-seccion" style="margin-bottom: 8px;">Antes de comprar</h2>
+          <p style="color: #64748B; font-size: 14px;">Resolvemos tus dudas principales para una experiencia de compra transparente y segura.</p>
+
+          <div class="lista-faq">
+            <div class="item-faq abierto">
+              <button type="button" class="faq-pregunta">
+                <span>¿Necesito registrarme para comprar y facturar?</span>
+                <span>+</span>
+              </button>
+              <div class="faq-respuesta">
+                Sí. Para garantizar la emisión correcta de tu factura electrónica con R.U.C./Cédula y asegurar el rastreo de tu envío mediante Servientrega, es obligatorio registrar tu cuenta de cliente.
+              </div>
+            </div>
+
+            <div class="item-faq">
+              <button type="button" class="faq-pregunta">
+                <span>¿Qué precio se muestra para uso en casa?</span>
+                <span>+</span>
+              </button>
+              <div class="faq-respuesta">
+                Se muestra el PVP oficial del catálogo 2026. Los precios para profesionales están identificados de forma diferenciada en su respectiva categoría.
+              </div>
+            </div>
+
+            <div class="item-faq">
+              <button type="button" class="faq-pregunta">
+                <span>¿Cómo se cotiza el costo del envío?</span>
+                <span>+</span>
+              </button>
+              <div class="faq-respuesta">
+                Contamos con cotizaciones transparentes según tu ubicación: Servientrega Urbano ($3.75), Servientrega Nacional ($6.50), Envío Express Motorizado ($5.25) o Retiro Gratuito en la distribuidora de Quito.
+              </div>
+            </div>
+
+            <div class="item-faq">
+              <button type="button" class="faq-pregunta">
+                <span>¿Dónde encuentro las indicaciones de uso?</span>
+                <span>+</span>
+              </button>
+              <div class="faq-respuesta">
+                En cada ficha de producto tienes disponible el apartado "Antes de usarlo" y los principios activos formulados por los laboratorios Dermclar.
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+  </main>
+
+  <!-- =====================================================================
+       3. VISTA: CATALOGO COMPLETO CON FILTROS
+       ===================================================================== -->
+  <main id="vista-catalogo" class="vista-pagina" style="display: none;">
+    <div class="contenedor">
+      <div style="padding-top: 24px;">
+        <span style="font-size: 13px; color: #64748B;">Inicio &gt; Catálogo de Productos</span>
+        <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">El cuidado que eliges para ti</h1>
+        <p style="color: #64748B; font-size: 15px; margin-top: 4px;">Explora las fórmulas Dermclar y Medical Skin. Compara principios activos y encuentra la solución ideal.</p>
+      </div>
+
+      <div class="layout-catalogo">
+        <!-- Sidebar de Filtros -->
+        <aside class="sidebar-filtros">
+          <div class="sidebar-cabecera">
+            <span class="sidebar-titulo">Filtrar productos</span>
+            <span class="enlace-limpiar-filtros" onclick="limpiarFiltros()">Limpiar</span>
+          </div>
+
+          <!-- Filtro: Tipo de Uso -->
+          <div class="grupo-filtro">
+            <div class="titulo-grupo-filtro">Tipo de uso</div>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-uso-casa" class="filtro-checkbox" value="casa" />
+              <span>Uso en casa</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-uso-pro" class="filtro-checkbox" value="profesional" />
+              <span>Profesional</span>
+            </label>
+          </div>
+
+          <!-- Filtro: Marca -->
+          <div class="grupo-filtro">
+            <div class="titulo-grupo-filtro">Marca</div>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-marca-dermclar" class="filtro-checkbox" value="Dermclar" />
+              <span>Dermclar</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-marca-medical" class="filtro-checkbox" value="Medical Skin" />
+              <span>Medical Skin</span>
+            </label>
+          </div>
+
+          <!-- Filtro: Categorias -->
+          <div class="grupo-filtro">
+            <div class="titulo-grupo-filtro">Categoría</div>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-exosomas" class="filtro-checkbox filtro-cat-check" value="Exosomas" />
+              <span>Exosomas</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-limpieza" class="filtro-checkbox filtro-cat-check" value="Limpieza" />
+              <span>Limpieza</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-hidratacion" class="filtro-checkbox filtro-cat-check" value="Hidratación" />
+              <span>Hidratación</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-facial" class="filtro-checkbox filtro-cat-check" value="Cuidado facial" />
+              <span>Cuidado facial</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-solar" class="filtro-checkbox filtro-cat-check" value="Protección solar" />
+              <span>Protección solar</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-corporal" class="filtro-checkbox filtro-cat-check" value="Corporal" />
+              <span>Corporal / Reductores</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-metal" class="filtro-checkbox filtro-cat-check" value="Metaloterapia" />
+              <span>Metaloterapia</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-mascaras" class="filtro-checkbox filtro-cat-check" value="Mascarillas" />
+              <span>Mascarillas</span>
+            </label>
+            <label class="opcion-filtro">
+              <input type="checkbox" id="filtro-cat-insumos" class="filtro-checkbox filtro-cat-check" value="Insumos" />
+              <span>Insumos médicos</span>
+            </label>
+          </div>
+
+          <!-- Filtro: Rango de Precios -->
+          <div class="grupo-filtro" style="border-bottom: none;">
+            <div class="titulo-grupo-filtro">Rango de precio ($)</div>
+            <div class="rango-precios-box">
+              <input type="number" id="filtro-precio-min" class="input-precio" placeholder="Min" min="0" />
+              <span>-</span>
+              <input type="number" id="filtro-precio-max" class="input-precio" placeholder="Max" min="0" />
+            </div>
+          </div>
+        </aside>
+
+        <!-- Columna de Resultados -->
+        <section class="seccion-resultados-catalogo">
+          <div class="cabecera-resultados">
+            <span id="contador-catalogo" style="font-weight: 700; color: #0F172A;">Cargando productos...</span>
+            <div>
+              <label for="selector-orden-catalogo" style="font-size: 13px; color: #64748B; margin-right: 6px;">Ordenar por:</label>
+              <select id="selector-orden-catalogo" class="selector-orden">
+                <option value="recomendados">Recomendados</option>
+                <option value="menor-precio">Precio: menor a mayor</option>
+                <option value="mayor-precio">Precio: mayor a menor</option>
+                <option value="nombre">Nombre (A - Z)</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Etiquetas activas -->
+          <div id="contenedor-etiquetas-activas" class="etiquetas-activas"></div>
+
+          <!-- Grilla de productos -->
+          <div class="productos-grid" id="grid-productos-catalogo">
+            <!-- Se inyectan con JavaScript -->
+          </div>
+
+          <!-- Paginacion -->
+          <div id="paginacion-catalogo" class="paginacion-contenedor"></div>
+        </section>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       4. VISTA: CARRITO DE COMPRAS
+       ===================================================================== -->
+  <main id="vista-carrito" class="vista-pagina" style="display: none;">
+    <div class="contenedor" style="padding-top: 24px;">
+      <span style="font-size: 13px; color: #64748B;">Inicio &gt; Tu carrito de compras</span>
+      <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Tu carrito</h1>
+      <p style="color: #64748B; font-size: 15px; margin-top: 4px;" id="carrito-total-items-badge">0 artículos seleccionados</p>
+
+      <div id="carrito-vacio-aviso" class="carrito-vacio-bloque" style="display: none; margin-top: 24px;">
+        <div style="font-size: 48px; margin-bottom: 12px;">🛍️</div>
+        <h3>Tu carrito está vacío</h3>
+        <p>Explora la selección para casa o profesional y añade los productos que necesitas.</p>
+        <button type="button" class="boton-primario" onclick="cambiarVista('catalogo', 'catalogo')">Explorar catálogo</button>
+      </div>
+
+      <div id="layout-carrito-activo" class="layout-carrito">
+        <div class="lista-items-carrito" id="contenedor-items-carrito">
+          <!-- Items del carrito -->
+        </div>
+
+        <div class="tarjeta-resumen" id="contenedor-resumen-carrito">
+          <h3 class="resumen-titulo">Resumen con IVA y Flete</h3>
+          <div class="linea-resumen">
+            <span>Subtotal (Base 15%):</span>
+            <strong id="carrito-subtotal-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>Envío estimado:</span>
+            <strong id="carrito-envio-val">$3.75</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>IVA (15%):</span>
+            <strong id="carrito-iva-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen total">
+            <span>Total a pagar:</span>
+            <strong id="carrito-total-val" style="color: #0056B3;">$0.00</strong>
+          </div>
+
+          <button type="button" class="boton-primario" style="width: 100%;" onclick="iniciarProcesoFacturacion()">
+            Proceder a Facturación y Pago →
+          </button>
+          
+          <div style="text-align: center; margin-top: 14px;">
+            <a href="#" class="enlace-ver-mas" onclick="cambiarVista('catalogo', 'catalogo')">← Seguir comprando</a>
+          </div>
+
+          <div style="margin-top: 20px; font-size: 12px; color: #64748B; line-height: 1.4;">
+            🔒 Se requiere inicio de sesión para emisión formal de factura electrónica con RUC o Cédula.
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       5. VISTA: CHECKOUT PASO 1 (FACTURACION Y ENVIO COTIZADO)
+       ===================================================================== -->
+  <main id="vista-checkout-envio" class="vista-pagina" style="display: none;">
+    <div class="contenedor" style="padding-top: 24px; max-width: 1100px;">
+      
+      <!-- Indicador de Pasos -->
+      <div class="indicador-pasos">
+        <div class="paso-item activo"><strong>1. Datos de Facturación y Envío (Actual)</strong></div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item">2. Pago Seguro</div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item">3. Factura Electrónica Emitida</div>
+      </div>
+
+      <h1 style="font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">Datos del Cliente para Facturación</h1>
+      <p style="color: #64748B; font-size: 14px; margin-bottom: 24px;">Validación en tiempo real. Los campos con * son obligatorios para la factura legal y entrega.</p>
+
+      <div id="alerta-error-envio" class="alerta-mensaje alerta-error" style="display: none;">
+        <span>⚠️</span>
+        <div>
+          <strong>Corrige los campos marcados en rojo:</strong>
+          <div>Verifica correo, nombre, cédula/RUC válida (10 o 13 dígitos), teléfono y dirección.</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: flex-start;">
+        <!-- Formulario Envio -->
+        <form onsubmit="validarPasoEnvio(event)" novalidate>
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">1. Identificación del Cliente (Facturación)</h3>
+            
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-nombre">Nombres y Apellidos / Razón Social *</label>
+                <input type="text" id="campo-nombre" class="campo-control campo-validable" placeholder="María Fernández" required minlength="3" />
+                <span class="mensaje-error-campo">Ingresa al menos 3 caracteres.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-cedula-ruc">C.I. / R.U.C. *</label>
+                <input type="text" id="campo-cedula-ruc" class="campo-control campo-validable" placeholder="1718293849 o 1792464939001" required maxlength="13" />
+                <span class="mensaje-error-campo">Debe tener 10 dígitos (Cédula) o 13 dígitos (RUC).</span>
+              </div>
+            </div>
+
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-correo">Correo electrónico para Factura *</label>
+                <input type="email" id="campo-correo" class="campo-control campo-validable" placeholder="ejemplo@correo.com" required />
+                <span class="mensaje-error-campo">Ingresa un correo electrónico válido.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-telefono">Teléfono celular / WhatsApp *</label>
+                <input type="tel" id="campo-telefono" class="campo-control campo-validable" placeholder="0996096996" required maxlength="10" />
+                <span class="mensaje-error-campo">Ingresa un teléfono celular válido de 10 dígitos.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">2. Dirección de Entrega en Ecuador</h3>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-pais">País</label>
+              <input type="text" id="campo-pais" class="campo-control" value="Ecuador" readonly style="background-color: #F8FAFC;" />
+            </div>
+
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-direccion">Calle principal y número *</label>
+              <input type="text" id="campo-direccion" class="campo-control campo-validable" placeholder="Av. República E1-136 y Atahualpa" required minlength="5" />
+              <span class="mensaje-error-campo">Por favor escribe tu calle principal y número de inmueble.</span>
+            </div>
+
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-referencia">Apartamento, piso u oficina (opcional)</label>
+              <input type="text" id="campo-referencia" class="campo-control" placeholder="Edificio La Casa, Piso 1, Of. 3" />
+            </div>
+
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-ciudad">Ciudad *</label>
+                <input type="text" id="campo-ciudad" class="campo-control campo-validable" placeholder="Quito" required />
+                <span class="mensaje-error-campo">Ingresa la ciudad.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-provincia">Provincia *</label>
+                <input type="text" id="campo-provincia" class="campo-control campo-validable" placeholder="Pichincha" required />
+                <span class="mensaje-error-campo">Ingresa la provincia.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-codigopostal">Código postal</label>
+                <input type="text" id="campo-codigopostal" class="campo-control" placeholder="170102" />
+              </div>
+            </div>
+          </div>
+
+          <!-- Opciones de Envio Realistas -->
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">3. Método de Envío Cotizado</h3>
+            <div class="lista-opciones-envio">
+              
+              <label class="tarjeta-opcion-envio seleccionada">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="servientrega_urbano" data-precio="3.75" data-nombre="Servientrega Urbano (Pichincha / Guayas)" checked />
+                  <div>
+                    <strong>Servientrega Urbano (Pichincha y Guayas)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega en 24 a 48 horas hábiles con número de guía oficial.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$3.75</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="servientrega_nacional" data-precio="6.50" data-nombre="Servientrega Nacional (Otras Provincias)" />
+                  <div>
+                    <strong>Servientrega Nacional (Otras Provincias del Ecuador)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega asegurada en 48 a 72 horas hábiles a cualquier cantón.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$6.50</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="express_motorizado" data-precio="5.25" data-nombre="Envío Express Motorizado (Mismo Día)" />
+                  <div>
+                    <strong>Envío Express Motorizado (Mismo Día - Urbano)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega el mismo día para órdenes confirmadas antes de las 14:00.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$5.25</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="retiro_oficina" data-precio="0.00" data-nombre="Retiro en Distribuidora Quito" />
+                  <div>
+                    <strong>Retiro en Distribuidor Autorizado (Quito - Edificio La Casa)</strong>
+                    <div style="font-size: 13px; color: #15803D;">Retiro inmediato en oficina sin costo de flete.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag" style="color: #15803D;">$0.00</div>
+              </label>
+
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <button type="submit" class="boton-primario" style="padding: 12px 28px;">Continuar al pago seguro →</button>
+            <button type="button" class="boton-secundario" onclick="cambiarVista('carrito', '')">Volver al carrito</button>
+          </div>
+        </form>
+
+        <!-- IHC & NIELSEN: Panel Lateral Persistente con Direccion y Productos -->
+        <aside class="tarjeta-resumen">
+          <h3 class="resumen-titulo">Resumen Seguro de Compra</h3>
+
+          <!-- Bloque Dirección en Tiempo Real (IHC) -->
+          <div class="caja-seguridad-ihc">
+            <h4><span>📍</span> Dirección de Entrega (En vivo):</h4>
+            <div id="ihc-destinatario-texto" style="font-weight: 600; color: #0F172A; margin-bottom: 2px;">Cliente</div>
+            <div id="ihc-direccion-texto" style="color: #475569; margin-bottom: 4px;">Ingresa tu dirección para confirmar</div>
+            <div id="ihc-metodo-envio-texto" style="font-weight: 600; color: #0056B3; font-size: 12px;">Servientrega Urbano - $3.75</div>
+          </div>
+
+          <!-- Bloque Productos en Tiempo Real (IHC) -->
+          <div class="caja-seguridad-ihc">
+            <h4><span>🛍️</span> Productos en tu Orden:</h4>
+            <div id="ihc-lista-mini-productos">
+              <!-- Filas compactas inyectadas por JS -->
+            </div>
+          </div>
+
+          <!-- Desglose con IVA Formal -->
+          <div class="linea-resumen">
+            <span>Subtotal (Base 15%):</span>
+            <strong class="checkout-subtotal-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>Flete / Envío cotizado:</span>
+            <strong class="checkout-envio-val" style="color: #0056B3;">$3.75</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>IVA (15%):</span>
+            <strong class="checkout-iva-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen total">
+            <span>Total Factura:</span>
+            <strong class="checkout-total-val" style="color: #0056B3;">$0.00</strong>
+          </div>
+
+          <div style="font-size: 12px; color: #64748B; line-height: 1.4;">
+            🛡️ Tus datos permanecen visibles para que verifiques a dónde irá tu pedido antes de efectuar el cobro.
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       6. VISTA: CHECKOUT PASO 2 (PAGO SEGURO)
+       ===================================================================== -->
+  <main id="vista-checkout-pago" class="vista-pagina" style="display: none;">
+    <div class="contenedor" style="padding-top: 24px; max-width: 1100px;">
+      
+      <!-- Indicador de Pasos -->
+      <div class="indicador-pasos">
+        <div class="paso-item completado">✓ 1. Datos de Facturación y Envío</div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item activo"><strong>2. Pago Seguro (Actual)</strong></div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item">3. Factura Emitida</div>
+      </div>
+
+      <h1 style="font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">Método de Pago con Tarjeta</h1>
+      <p style="color: #64748B; font-size: 14px; margin-bottom: 24px;">Validación semántica en tiempo real con encriptación SSL de 256 bits.</p>
+
+      <div id="alerta-error-pago" class="alerta-mensaje alerta-error" style="display: none;">
+        <span>⚠️</span>
+        <div>
+          <strong>Revisa los datos de tu tarjeta:</strong>
+          <div>Asegúrate de ingresar titular, 16 dígitos numéricos, vencimiento (MM/AA) y código CVV (3 o 4 dígitos).</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: flex-start;">
+        <div>
+          <form onsubmit="procesarPagoFinal(event)" novalidate>
+            <div class="caja-formulario">
+              <h3 class="subtitulo-formulario">Tarjeta de Crédito o Débito (Visa, Mastercard, Diners)</h3>
+              
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-titular-tarjeta">Titular de la tarjeta *</label>
+                <input type="text" id="campo-titular-tarjeta" class="campo-control campo-validable" placeholder="Como figura en la tarjeta" required minlength="3" value="MARIA FERNANDEZ" />
+                <span class="mensaje-error-campo">Ingresa el nombre del titular.</span>
+              </div>
+
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-numero-tarjeta">Número de tarjeta (16 dígitos) *</label>
+                <input type="text" id="campo-numero-tarjeta" class="campo-control campo-validable" placeholder="4520894512048912" maxlength="19" required pattern="[0-9\s]{16,19}" value="4520 8945 1204 8912" />
+                <span class="mensaje-error-campo">Debe contener 16 dígitos numéricos.</span>
+              </div>
+
+              <div class="fila-formulario">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="campo-fecha-caducidad">Vencimiento (MM/AA) *</label>
+                  <input type="text" id="campo-fecha-caducidad" class="campo-control campo-validable" placeholder="08/28" maxlength="5" required pattern="(0[1-9]|1[0-2])\/[0-9]{2}" value="08/28" />
+                  <span class="mensaje-error-campo">Formato MM/AA (ej: 08/28).</span>
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="campo-cvv">Código de seguridad (CVV) *</label>
+                  <input type="password" id="campo-cvv" class="campo-control campo-validable" placeholder="482" maxlength="4" required pattern="[0-9]{3,4}" value="482" />
+                  <span class="mensaje-error-campo">3 o 4 dígitos de seguridad.</span>
+                </div>
+              </div>
+            </div>
+
+            <div style="display: flex; gap: 14px;">
+              <button type="submit" class="boton-primario" style="flex: 1; padding: 14px; font-size: 15px;">
+                Confirmar y Pagar Factura (<span class="checkout-total-val">$0.00</span>)
+              </button>
+              <button type="button" class="boton-secundario" onclick="cambiarVista('checkout-envio')">
+                Volver a datos de envío
+              </button>
+            </div>
+          </form>
+        </div>
+
+        <!-- IHC & NIELSEN: Panel Lateral Persistente en Paso 2 -->
+        <aside class="tarjeta-resumen">
+          <h3 class="resumen-titulo">Verificación Final</h3>
+
+          <div class="caja-seguridad-ihc">
+            <h4><span>📍</span> Enviando a:</h4>
+            <div id="ihc-destinatario-texto-pago" style="font-weight: 600; color: #0F172A; margin-bottom: 2px;">María Fernández</div>
+            <div id="ihc-direccion-texto-pago" style="color: #475569; margin-bottom: 4px;">Av. República E1-136 y Atahualpa, Quito</div>
+            <a href="#" style="font-size: 11px; text-decoration: underline;" onclick="cambiarVista('checkout-envio')">Cambiar dirección</a>
+          </div>
+
+          <div class="linea-resumen">
+            <span>Subtotal (Base 15%):</span>
+            <strong class="checkout-subtotal-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>Flete / Envío cotizado:</span>
+            <strong class="checkout-envio-val" style="color: #0056B3;">$3.75</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>IVA (15%):</span>
+            <strong class="checkout-iva-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen total">
+            <span>Total a debitar:</span>
+            <strong class="checkout-total-val" style="color: #0056B3;">$0.00</strong>
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       7. VISTA: CONFIRMACION DE COMPRA (DOCUMENTO FORMAL DE FACTURA)
+       ===================================================================== -->
+  <main id="vista-confirmacion-aprobada" class="vista-pagina" style="display: none;">
+    <div class="contenedor" style="padding-top: 32px; max-width: 900px;">
+      
+      <div class="alerta-mensaje alerta-exito" style="padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+        <div style="font-size: 32px;">✅</div>
+        <div>
+          <h2 style="font-size: 20px; font-weight: 800; color: #15803D; margin-bottom: 2px;">Pago Aprobado y Transacción Exitosa</h2>
+          <p style="font-size: 14px; color: #166534;">
+            Tu comprobante electrónico ha sido generado válidamente. Se ha enviado una copia en formato PDF y XML a tu correo.
+          </p>
+        </div>
+      </div>
+
+      <!-- DOCUMENTO FORMAL DE FACTURA -->
+      <div class="factura-contenedor-documento" id="documento-factura-imprimible">
+        
+        <!-- Cabecera de Factura -->
+        <div class="factura-cabecera">
+          <div class="factura-emisor">
+            <h2>DERMAKOR</h2>
+            <p><strong>DISTRIBUIDOR AUTORIZADO DERMCLAR &amp; MEDICAL SKIN</strong></p>
+            <p>R.U.C.: 1792464939001</p>
+            <p>Matriz: Av. República E1-136 y Atahualpa, Edif. La Casa, Of. 3, Quito - Ecuador</p>
+            <p>Teléfono: 099-609-6996 • Email: facturacion@dermakor.com</p>
+          </div>
+          <div class="factura-numero-caja">
+            <h3>FACTURA ELECTRÓNICA</h3>
+            <p><strong>No.: </strong><span id="fac-numero">001-002-00005512</span></p>
+            <p><strong>Fecha / Hora: </strong><span id="fac-fecha">19/10/2026 21:00</span></p>
+            <p style="font-size: 11px; word-break: break-all; margin-top: 6px;">
+              <strong>Clave de Acceso SRI:</strong><br />
+              <span id="fac-clave-sri">19102026011792464939001200100200005512123456781</span>
+            </p>
+          </div>
+        </div>
+
+        <!-- Datos del Cliente / Comprador -->
+        <div class="factura-datos-grid">
+          <div class="factura-datos-col">
+            <h4>Datos de Facturación del Cliente</h4>
+            <p><strong>Razón Social / Nombre: </strong><span id="fac-cliente-nombre">María Fernández</span></p>
+            <p><strong>R.U.C. / C.I.: </strong><span id="fac-cliente-ruc">1718293849</span></p>
+            <p><strong>Correo electrónico: </strong><span id="fac-cliente-correo">cliente@correo.com</span></p>
+            <p><strong>Teléfono: </strong><span id="fac-cliente-telefono">0996096996</span></p>
+          </div>
+          <div class="factura-datos-col">
+            <h4>Información de Logística y Entrega</h4>
+            <p><strong>Dirección de Entrega: </strong><span id="fac-cliente-direccion">Av. República E1-136, Quito - Pichincha</span></p>
+            <p><strong>Método de Transporte: </strong><span id="fac-cliente-envio">Servientrega Urbano</span></p>
+            <p><strong>Forma de Pago: </strong>Tarjeta de Crédito / Débito (Aprobado)</p>
+            <p><strong>Estado del Comprobante: </strong>AUTORIZADO POR SRI</p>
+          </div>
+        </div>
+
+        <!-- Tabla Formal de Items Facturados -->
+        <table class="tabla-factura" aria-label="Desglose formal de productos facturados">
+          <thead>
+            <tr>
+              <th style="width: 60px; text-align: center;">CANT.</th>
+              <th>DESCRIPCIÓN / PRODUCTO</th>
+              <th>PRESENTACIÓN</th>
+              <th style="text-align: right; width: 110px;">P. UNITARIO</th>
+              <th style="text-align: right; width: 110px;">SUBTOTAL</th>
+            </tr>
+          </thead>
+          <tbody id="fac-tabla-items-cuerpo">
+            <!-- Filas inyectadas por JS -->
+          </tbody>
+        </table>
+
+        <!-- Sumatorias Formales de Factura -->
+        <div class="factura-sumatorias-bloque">
+          <table class="factura-sumatorias-tabla">
+            <tr>
+              <td>SUBTOTAL 15%:</td>
+              <td id="fac-subtotal-val">$0.00</td>
+            </tr>
+            <tr>
+              <td>FLETE / TRANSPORTE:</td>
+              <td id="fac-flete-val">$3.75</td>
+            </tr>
+            <tr>
+              <td>IVA (15%):</td>
+              <td id="fac-iva-val">$0.00</td>
+            </tr>
+            <tr class="total-final">
+              <td>VALOR TOTAL:</td>
+              <td id="fac-total-val">$0.00</td>
+            </tr>
+          </table>
+        </div>
+
+      </div>
+
+      <!-- Botones de Accion de la Factura -->
+      <div style="display: flex; gap: 14px; justify-content: center; margin-bottom: 48px;">
+        <button type="button" class="boton-primario" onclick="window.print()">
+          🖨️ Imprimir Factura / Guardar PDF
+        </button>
+        <button type="button" class="boton-secundario" onclick="limpiarFiltros(); cambiarVista('catalogo', 'catalogo')">
+          Volver al catálogo
+        </button>
+        <button type="button" class="boton-secundario" onclick="cambiarVista('inicio', 'inicio')">
+          Ir al inicio
+        </button>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- =====================================================================
+       8. MODAL DE AUTENTICACION / REGISTRO OBLIGATORIO DE CLIENTE
+       ===================================================================== -->
+  <div id="modal-autenticacion" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-auth-titulo">
+    <div class="modal-contenedor" style="max-width: 580px; padding: 32px;">
+      <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
+      
+      <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+        Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
+      </p>
+
+      <!-- Tabs Login vs Registro -->
+      <div class="modal-auth-tabs">
+        <div id="tab-auth-login" class="tab-auth-btn activo" onclick="cambiarTabAuth('login')">Iniciar Sesión</div>
+        <div id="tab-auth-registro" class="tab-auth-btn" onclick="cambiarTabAuth('registro')">Crear Cuenta (Facturación)</div>
+      </div>
+
+      <!-- Formulario Login -->
+      <form id="form-auth-login" onsubmit="procesarLogin(event)">
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="login-correo">Correo electrónico *</label>
+          <input type="email" id="login-correo" class="campo-control" placeholder="tu@correo.com" required value="cliente@example.com" />
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="login-clave">Contraseña *</label>
+          <input type="password" id="login-clave" class="campo-control" placeholder="••••••••" required value="123456" />
+        </div>
+        <button type="submit" class="boton-primario" style="width: 100%; margin-top: 10px;">
+          Entrar a mi cuenta y facturar →
+        </button>
+      </form>
+
+      <!-- Formulario Registro Completo -->
+      <form id="form-auth-registro" style="display: none;" onsubmit="procesarRegistro(event)">
+        <div class="fila-formulario">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-nombre">Nombre y Apellido *</label>
+            <input type="text" id="reg-nombre" class="campo-control" placeholder="María Fernández" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-cedula">C.I. o R.U.C. *</label>
+            <input type="text" id="reg-cedula" class="campo-control" placeholder="1718293849" required maxlength="13" />
+          </div>
+        </div>
+
+        <div class="fila-formulario">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-correo">Correo electrónico *</label>
+            <input type="email" id="reg-correo" class="campo-control" placeholder="maria@correo.com" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-telefono">Teléfono celular *</label>
+            <input type="tel" id="reg-telefono" class="campo-control" placeholder="0996096996" required maxlength="10" />
+          </div>
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-direccion">Dirección completa de entrega *</label>
+          <input type="text" id="reg-direccion" class="campo-control" placeholder="Av. República E1-136 y Atahualpa" required />
+        </div>
+
+        <div class="fila-formulario tres">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-ciudad">Ciudad *</label>
+            <input type="text" id="reg-ciudad" class="campo-control" placeholder="Quito" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-provincia">Provincia *</label>
+            <input type="text" id="reg-provincia" class="campo-control" placeholder="Pichincha" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-codigopostal">Cód. Postal</label>
+            <input type="text" id="reg-codigopostal" class="campo-control" placeholder="170102" />
+          </div>
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-referencia">Referencia del inmueble (opcional)</label>
+          <input type="text" id="reg-referencia" class="campo-control" placeholder="Edificio La Casa, Piso 1, Of. 3" />
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-clave">Contraseña de la cuenta *</label>
+          <input type="password" id="reg-clave" class="campo-control" placeholder="Mínimo 6 caracteres" minlength="6" required value="123456" />
+        </div>
+
+        <button type="submit" class="boton-primario" style="width: 100%; margin-top: 10px;">
+          Guardar cuenta y facturar →
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       9. MODAL DETALLE DE PRODUCTO (FICHA CLINICA COMPLETA)
+       ===================================================================== -->
+  <div id="modal-detalle-producto" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal-contenedor">
+      <button type="button" class="modal-cerrar-btn" onclick="cerrarModalDetalle()" aria-label="Cerrar ficha de producto">×</button>
+
+      <div class="modal-grid-principal">
+        <div class="modal-imagen-col" id="modal-img-box">
+          <img id="modal-img" src="" alt="Producto" />
+        </div>
+        <div class="modal-info-col">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px;">
+            <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
+            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+          </div>
+          <h2 id="modal-titulo">Nombre del Producto</h2>
+          <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
+          <div class="modal-precio" id="modal-precio">$0.00</div>
+          <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
+
+          <div class="modal-acciones-compra">
+            <div class="control-cantidad">
+              <button type="button" class="btn-qty" onclick="cambiarCantidadModal(-1)">-</button>
+              <div class="valor-qty" id="modal-qty-val">1</div>
+              <button type="button" class="btn-qty" onclick="cambiarCantidadModal(1)">+</button>
+            </div>
+            <button type="button" class="boton-primario" style="flex: 1;" onclick="agregarDesdeModal()">
+              Añadir al carrito
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-detalles-tecnicos">
+        <div class="bloque-detalle-seccion">
+          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <ul class="lista-con-vinetas" id="modal-lista-activos">
+            <!-- Activos inyectados por JS -->
+          </ul>
+        </div>
+
+        <div class="bloque-detalle-seccion">
+          <h4>✨ Beneficios Comprobados</h4>
+          <ul class="lista-con-vinetas" id="modal-lista-beneficios">
+            <!-- Beneficios inyectados por JS -->
+          </ul>
+        </div>
+
+        <div class="bloque-detalle-seccion">
+          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
+            <span id="modal-modo-uso">Instrucciones del fabricante...</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
+          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);">
+            <!-- Sugerencias inyectadas por JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       10. BANNER TOAST FLOTANTE (ACCION REVERSIBLE - WCAG)
+       ===================================================================== -->
+  <div id="toast-notificacion" class="toast-notificacion" role="status" aria-live="polite">
+    <span id="toast-mensaje-texto">Producto añadido al carrito</span>
+    <span class="toast-btn-deshacer" onclick="deshacerUltimaAdicion()">Deshacer</span>
+    <button type="button" style="color: #FFFFFF; font-weight: 700; font-size: 16px;" onclick="ocultarToastNotificacion()">×</button>
+  </div>
+
+  <!-- =====================================================================
+       11. PIE DE PAGINA (FOOTER)
+       ===================================================================== -->
+  <footer class="pie-de-pagina">
+    <div class="contenedor">
+      <div class="footer-grid">
+        <div class="footer-marca">
+          <h4>DERMAKOR</h4>
+          <p>
+            Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
+            <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
+          </p>
+          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+            Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
+          </div>
+        </div>
+
+        <div class="footer-columna">
+          <h5>Explorar</h5>
+          <ul class="footer-enlaces">
+            <li><a href="#" onclick="limpiarFiltros(); var c = document.getElementById('filtro-uso-casa'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'casa');">Uso en casa - Línea Dermclar</a></li>
+            <li><a href="#" onclick="limpiarFiltros(); var c = document.getElementById('filtro-cat-exosomas'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'catalogo');">Línea Exosomas con Nanotecnología</a></li>
+            <li><a href="#" onclick="limpiarFiltros(); var c = document.getElementById('filtro-uso-pro'); if(c){ c.checked = true; } filtrarCatalogo(); cambiarVista('catalogo', 'profesional');">Selección Profesional y Viales</a></li>
+            <li><a href="#" onclick="limpiarFiltros(); cambiarVista('catalogo', 'catalogo');">Catálogo General 2026</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-columna">
+          <h5>¿Necesitas orientación?</h5>
+          <ul class="footer-enlaces">
+            <li><a href="#seccion-faq" onclick="cambiarVista('inicio', 'inicio'); setTimeout(function(){ document.getElementById('seccion-faq').scrollIntoView({behavior:'smooth'}); }, 100);">Preguntas frecuentes</a></li>
+            <li><a href="#" onclick="cambiarVista('carrito', '')">Ver mi carrito de compras</a></li>
+            <li><a href="https://wa.me/593996096996" target="_blank" rel="noopener">Contacto WhatsApp Oficial</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-inferior">
+        <div>Información y precios según catálogo Dermclar &amp; Medical Skin 2026. Todos los derechos reservados.</div>
+        <div>Cumple con estándares WCAG 2.2 AA y principios de usabilidad Nielsen (IHC).</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/productos.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
