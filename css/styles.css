@@ -418,11 +418,9 @@ img {
 }
 
 .hero-imagen-box {
-  background-color: #F8FAFC;
+  aspect-ratio: 1;
+  background-color: #E5E7EB;
   border-radius: var(--radio-grande);
-  border: 1px solid var(--color-borde);
-  overflow: hidden;
-  box-shadow: var(--sombra-tarjeta);
 }
 
 .titulo-seccion {
