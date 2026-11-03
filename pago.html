@@ -17,13 +17,7 @@
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-<div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
-          <a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
-          <span class="badge-db-conectada" id="badge-db-indicator" title="Conexión en vivo con Supabase PostgreSQL">
-            <span style="width: 7px; height: 7px; background: #22C55E; border-radius: 50%; display: inline-block;"></span>
-            <span id="texto-estado-db">Supabase PostgreSQL (En vivo)</span>
-          </span>
-        </div>
+<a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
 
         <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
@@ -98,8 +92,8 @@
           <form onsubmit="procesarPagoFinal(event)" novalidate>
             <div class="caja-formulario">
               <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px; margin-bottom: 14px;">
-                <h2 class="subtitulo-formulario" style="margin-bottom: 0;">Tarjeta de Crédito o Débito (Visa, Mastercard, Diners, Amex)</h2>
-                <span id="badge-franquicia-tarjeta" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #F1F5F9; color: #475569;">Algoritmo Luhn (Mód. 10)</span>
+                <h2 class="subtitulo-formulario" style="margin-bottom: 0;">Tarjeta de Crédito o Débito</h2>
+                <span id="badge-franquicia-tarjeta" style="font-size: 12px; font-weight: 700; padding: 4px 10px; border-radius: 999px; background: #F1F5F9; color: #475569;">Tarjeta Débito / Crédito</span>
               </div>
               
               <div class="campo-grupo">
@@ -109,10 +103,10 @@
               </div>
 
               <div class="campo-grupo">
-                <label class="campo-etiqueta" for="campo-numero-tarjeta">Número de tarjeta (Comprobación Algoritmo de Luhn) *</label>
+                <label class="campo-etiqueta" for="campo-numero-tarjeta">Número de tarjeta *</label>
                 <input type="text" id="campo-numero-tarjeta" class="campo-control campo-validable" placeholder="Ej: 4532 0151 1283 0366" maxlength="19" required inputmode="numeric" autocomplete="cc-number" />
-                <div id="estado-luhn-tarjeta" style="font-size: 12px; margin-top: 5px; color: #475569;">Ingresa los dígitos de tu tarjeta para verificar su dígito de control mediante el Algoritmo público de Luhn (ISO/IEC 7812).</div>
-                <span class="mensaje-error-campo" role="alert" aria-live="polite" id="error-numero-tarjeta">Número de tarjeta inválido: no supera la comprobación matemática del Algoritmo de Luhn (Módulo 10).</span>
+                <div id="estado-luhn-tarjeta" style="font-size: 12px; margin-top: 5px; color: #475569;">Ingresa los 15 o 16 dígitos de tu tarjeta.</div>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite" id="error-numero-tarjeta">Por favor ingresa un número de tarjeta válido.</span>
               </div>
 
               <div class="fila-formulario">

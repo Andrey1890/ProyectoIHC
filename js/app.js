@@ -172,7 +172,7 @@ function verificarEstadoConexionDB() {
       .then(function (r) {
         if (!r.ok) throw new Error("REST");
         if (textoBadge) {
-          textoBadge.textContent = "Supabase PostgreSQL (En vivo) • Conectado";
+          // textoBadge en produccion silencioso
         }
       })
       .catch(function () {
@@ -322,7 +322,7 @@ function cargarProductosDesdeSupabaseREST() {
       LISTA_PRODUCTOS = productosMapeados;
       var textoBadge = document.getElementById("texto-estado-db");
       if (textoBadge) {
-        textoBadge.textContent = "Supabase PostgreSQL (En vivo) • " + LISTA_PRODUCTOS.length + " productos";
+        // textoBadge en produccion silencioso
       }
       inicializarVistasConProductos();
     })
@@ -959,8 +959,8 @@ function crearElementoTarjetaProducto(prod) {
   var precioEtiqueta = prod.tipoUso === "profesional" ? "PRO" : "PVP";
 
   var badgeStockHtml = estaAgotado
-    ? '<div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-bottom: 6px;">⚠️ Agotado (0 disp.)</div>'
-    : '<div style="font-size: 11px; font-weight: 600; color: #15803D; margin-bottom: 6px;">✓ Stock: ' + stockProd + ' disp.</div>';
+    ? '<div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-bottom: 6px;">⚠️ Agotado</div>'
+    : '<div style="font-size: 11px; font-weight: 600; color: #15803D; margin-bottom: 6px;">✓ ' + stockProd + ' disponibles</div>';
 
   var btnComprarHtml = estaAgotado
     ? '  <button type="button" class="boton-comprar-tarjeta" disabled style="opacity: 0.6; cursor: not-allowed; background: #94A3B8;" aria-label="' + prod.nombre + ' agotado">Agotado</button>'
@@ -1184,9 +1184,9 @@ function renderizarDatosEnFichaProducto(prod) {
   }
   if (elStock) {
     if (stockProd <= 0) {
-      elStock.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado en bodega (0 unidades disponibles)</span>';
+      elStock.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado</span>';
     } else {
-      elStock.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ Stock disponible en tiempo real: ' + stockProd + ' unidades</span>';
+      elStock.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ ' + stockProd + ' unidades disponibles</span>';
     }
   }
 
@@ -1263,7 +1263,7 @@ function cambiarCantidadFicha(delta) {
   if (valor < 1) valor = 1;
   if (valor > stockProd) {
     valor = stockProd;
-    mostrarToastNotificacion("Stock máximo disponible en tiempo real: " + stockProd + " unidades");
+    mostrarToastNotificacion("Stock máximo disponible: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
@@ -1505,9 +1505,9 @@ function abrirModalDetalle(idProducto) {
   }
   if (elStockModal) {
     if (stockProdModal <= 0) {
-      elStockModal.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado en bodega (0 unidades disponibles)</span>';
+      elStockModal.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado</span>';
     } else {
-      elStockModal.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ Stock disponible en tiempo real: ' + stockProdModal + ' unidades</span>';
+      elStockModal.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ ' + stockProdModal + ' unidades disponibles</span>';
     }
   }
 
@@ -1576,7 +1576,7 @@ function cambiarCantidadModal(delta) {
   if (valor < 1) valor = 1;
   if (valor > stockProd) {
     valor = stockProd;
-    mostrarToastNotificacion("Stock máximo disponible en tiempo real: " + stockProd + " unidades");
+    mostrarToastNotificacion("Stock máximo disponible: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
@@ -1791,7 +1791,7 @@ function aplicarCuponDescuento() {
           localStorage.setItem("dermakor_cupon", JSON.stringify(cuponActual));
           if (msg) {
             msg.style.color = "#15803D";
-            msg.innerHTML = "✓ Cupón aplicado desde BD: <strong>" + cuponActual.codigo + "</strong> (" + (cuponActual.tipo === "PORCENTAJE" ? cuponActual.valor + "%" : "$" + cuponActual.valor) + ")";
+            msg.innerHTML = "✓ Cupón aplicado: <strong>" + cuponActual.codigo + "</strong> (" + (cuponActual.tipo === "PORCENTAJE" ? cuponActual.valor + "%" : "$" + cuponActual.valor) + ")";
           }
           actualizarCalculosFormales(calcularSubtotalCarrito());
         } else {
@@ -2229,7 +2229,7 @@ function validarCampoIndividual(campo) {
     var cumpleLuhn = cumpleLongitud && validarAlgoritmoLuhn(limpioTarjeta);
 
     if (badgeFranq) {
-      badgeFranq.textContent = limpioTarjeta.length > 0 ? franquicia + " • Luhn Mód. 10" : "Algoritmo Luhn (Mód. 10)";
+      badgeFranq.textContent = limpioTarjeta.length > 0 ? franquicia : "Tarjeta Débito / Crédito";
       badgeFranq.style.background = cumpleLuhn ? "#DCFCE7" : "#F1F5F9";
       badgeFranq.style.color = cumpleLuhn ? "#15803D" : "#475569";
     }
@@ -2237,13 +2237,13 @@ function validarCampoIndividual(campo) {
     if (estadoLuhn) {
       if (limpioTarjeta.length === 0) {
         estadoLuhn.style.color = "#64748B";
-        estadoLuhn.textContent = "Ingresa los dígitos de tu tarjeta para verificar su dígito de control mediante el Algoritmo público de Luhn (ISO/IEC 7812).";
+        estadoLuhn.textContent = "Ingresa los 15 o 16 dígitos de tu tarjeta.";
       } else if (cumpleLuhn) {
         estadoLuhn.style.color = "#15803D";
-        estadoLuhn.textContent = "✓ Comprobación Algoritmo de Luhn (Módulo 10) válida — " + franquicia + " verificada.";
+        estadoLuhn.textContent = "✓ Tarjeta " + franquicia + " válida.";
       } else {
         estadoLuhn.style.color = "#B91C1C";
-        estadoLuhn.textContent = "✗ Número inválido según el Algoritmo de Luhn (la suma de control Módulo 10 no es múltiplo de 10).";
+        estadoLuhn.textContent = "✗ Número de tarjeta no válido. Revisa los dígitos.";
       }
     }
 
