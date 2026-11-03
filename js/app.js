@@ -222,6 +222,7 @@ function cargarProductosDesdeJSON() {
 function enriquecerProductosConMetadatosDB(lista) {
   for (var i = 0; i < lista.length; i++) {
     var p = lista[i];
+    var idxStr = ("000" + (i + 1)).slice(-3);
     if (!p.id_producto_db) {
       p.id_producto_db = "PRD" + ("0000000" + (i + 1)).slice(-7);
     }
@@ -229,10 +230,16 @@ function enriquecerProductosConMetadatosDB(lista) {
       p.stock_total = 145;
     }
     if (!p.lote_fefo) {
-      p.lote_fefo = "LOT-2026-" + ("000" + (i + 1)).slice(-3);
+      p.lote_fefo = "L26-QTO-" + idxStr + "A";
     }
     if (!p.fecha_vencimiento_fefo) {
-      p.fecha_vencimiento_fefo = "2027-09-30";
+      p.fecha_vencimiento_fefo = "2027-08-30";
+    }
+    if (!p.sedes_stock) {
+      p.sedes_stock = [
+        { sede: "Matriz Quito - Edificio La Casa", stock: 80 },
+        { sede: "Bodega Guayaquil - Kennedy Norte", stock: 65 }
+      ];
     }
   }
   return lista;
@@ -1995,8 +2002,8 @@ function construirObjetoFactura(payload, respuestaDb) {
     ? respuestaDb.fac_autorizacion_sri
     : dia + mes + anio + "0117924649390012001002" + Math.floor(100000000 + Math.random() * 899999999) + "12345678199";
 
-  return {
-    id_pedido: (respuestaDb && respuestaDb.id_pedido) || "PED0001051",
+  var pedidoResultado = {
+    id_pedido: (respuestaDb && respuestaDb.id_pedido) || "PED000" + Math.floor(2004 + Math.random() * 7990),
     fac_numero: secFactura,
     fac_fecha: dia + "/" + mes + "/" + anio + " " + hora + ":" + minuto,
     fac_clave_sri: claveAcceso,
@@ -2005,10 +2012,27 @@ function construirObjetoFactura(payload, respuestaDb) {
     cliente: payload.cliente,
     envio_nombre: payload.envio.nombre,
     items: payload.items && payload.items.length > 0 ? payload.items : [
-      { nombre: "ExoFace Serum Facial", presentacion: "Frasco gotero 30 ml", lote_fefo: "LOT-2026-001", cantidad: 1, precio: 52.00 }
+      { nombre: "ExoFace Serum Facial", presentacion: "Frasco gotero 30 ml", lote_fefo: "L26-QTO-001A", cantidad: 1, precio: 52.00 }
     ],
     totales: payload.totales
   };
+
+  // Guardar tambien en historial local para visualizacion inmediata en GitHub Pages / Supabase
+  try {
+    var hist = JSON.parse(localStorage.getItem("dermakor_historial_pedidos") || "[]");
+    hist.unshift({
+      id_pedido: pedidoResultado.id_pedido,
+      cliente: pedidoResultado.cliente.nombre,
+      identificacion: pedidoResultado.cliente.cedulaRuc,
+      fecha: anio + "-" + mes + "-" + dia,
+      fac_numero: pedidoResultado.fac_numero,
+      estado: "PAGADO",
+      total: pedidoResultado.totales.total
+    });
+    localStorage.setItem("dermakor_historial_pedidos", JSON.stringify(hist.slice(0, 15)));
+  } catch (e) {}
+
+  return pedidoResultado;
 }
 
 function renderizarFacturaGuardada() {
@@ -2110,30 +2134,45 @@ function cargarPedidosDesdeDB() {
   var tbody = document.getElementById("tabla-pedidos-db-cuerpo");
   if (!tbody) return;
 
+  function renderFilasPedidos(lista) {
+    tbody.innerHTML = "";
+    for (var i = 0; i < lista.length; i++) {
+      var p = lista[i];
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td><strong>' + p.id_pedido + '</strong></td>' +
+        '<td>' + p.cliente + ' <small style="color:#64748B;">(' + p.identificacion + ')</small></td>' +
+        '<td>' + p.fecha + '</td>' +
+        '<td><code>' + (p.fac_numero || "001-002-000002001") + '</code></td>' +
+        '<td><span class="badge-db-conectada">' + p.estado + '</span></td>' +
+        '<td style="text-align: right;"><strong>$' + Number(p.total).toFixed(2) + '</strong></td>';
+      tbody.appendChild(tr);
+    }
+  }
+
   fetch("/api/pedidos")
     .then(function (r) {
+      if (!r.ok) throw new Error("Usando respaldo Supabase");
       return r.json();
     })
     .then(function (data) {
       if (Array.isArray(data) && data.length > 0) {
-        tbody.innerHTML = "";
-        for (var i = 0; i < data.length; i++) {
-          var p = data[i];
-          var tr = document.createElement("tr");
-          tr.innerHTML =
-            '<td><strong>' + p.id_pedido + '</strong></td>' +
-            '<td>' + p.cliente + ' <small style="color:#64748B;">(' + p.identificacion + ')</small></td>' +
-            '<td>' + p.fecha + '</td>' +
-            '<td><code>' + (p.fac_numero || "001-001-000001001") + '</code></td>' +
-            '<td><span class="badge-db-conectada">' + p.estado + '</span></td>' +
-            '<td style="text-align: right;"><strong>$' + Number(p.total).toFixed(2) + '</strong></td>';
-          tbody.appendChild(tr);
-        }
+        renderFilasPedidos(data);
+      } else {
+        throw new Error("Sin datos");
       }
     })
     .catch(function () {
-      tbody.innerHTML =
-        '<tr><td><strong>PED0001001</strong></td><td>María Fernández (1718293849)</td><td>2026-11-02</td><td><code>001-002-000005512</code></td><td><span class="badge-db-conectada">ENTREGADO</span></td><td style="text-align:right;"><strong>$92.30</strong></td></tr>';
+      var histLocal = [];
+      try {
+        histLocal = JSON.parse(localStorage.getItem("dermakor_historial_pedidos") || "[]");
+      } catch (e) {}
+      var baseSeed = [
+        { id_pedido: "PED0002001", cliente: "María Fernández", identificacion: "1718293849", fecha: "2026-11-01", fac_numero: "001-002-000002001", estado: "ENTREGADO", total: 79.70 },
+        { id_pedido: "PED0002002", cliente: "Dr. Carlos Andrade", identificacion: "0918273645001", fecha: "2026-11-02", fac_numero: "001-002-000002002", estado: "ENVIADO", total: 203.55 },
+        { id_pedido: "PED0002003", cliente: "Dra. Valeria Salazar", identificacion: "0102938475001", fecha: "2026-11-02", fac_numero: "001-002-000002003", estado: "PAGADO", total: 109.25 }
+      ];
+      renderFilasPedidos(histLocal.concat(baseSeed));
     });
 }
 
@@ -2141,26 +2180,40 @@ function cargarSedesDesdeDB() {
   var grid = document.getElementById("grid-sedes-db");
   if (!grid) return;
 
+  function renderTarjetasSedes(data) {
+    grid.innerHTML = "";
+    for (var i = 0; i < data.length; i++) {
+      var s = data[i];
+      var card = document.createElement("div");
+      card.className = "tarjeta-mapa-sitio";
+      card.innerHTML =
+        '<h4>🏢 ' + s.id_sede + ' • ' + s.nombre + '</h4>' +
+        '<p style="font-size:13px;color:#475569;margin-bottom:4px;">' + s.direccion + ' (' + s.ciudad + ')</p>' +
+        '<div style="font-size:12px;color:#15803D;font-weight:700;">✓ Inventario FEFO activo • Coord: ' + s.latitud + ', ' + s.longitud + '</div>';
+      grid.appendChild(card);
+    }
+  }
+
   fetch("/api/sedes")
     .then(function (r) {
+      if (!r.ok) throw new Error("Usando respaldo sedes");
       return r.json();
     })
     .then(function (data) {
       if (Array.isArray(data) && data.length > 0) {
-        grid.innerHTML = "";
-        for (var i = 0; i < data.length; i++) {
-          var s = data[i];
-          var card = document.createElement("div");
-          card.className = "tarjeta-mapa-sitio";
-          card.innerHTML =
-            '<h4>🏢 ' + s.id_sede + ' • ' + s.nombre + '</h4>' +
-            '<p style="font-size:13px;color:#475569;margin-bottom:4px;">' + s.direccion + ' (' + s.ciudad + ')</p>' +
-            '<div style="font-size:12px;color:#15803D;font-weight:700;">✓ Inventario FEFO activo • Coord: ' + s.latitud + ', ' + s.longitud + '</div>';
-          grid.appendChild(card);
-        }
+        renderTarjetasSedes(data);
+      } else {
+        throw new Error("Vacio");
       }
     })
-    .catch(function () {});
+    .catch(function () {
+      renderTarjetasSedes([
+        { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", direccion: "Av. República E1-136 y Atahualpa, Of. 3", ciudad: "Quito", latitud: "-0.186590", longitud: "-78.484120" },
+        { id_sede: "SED0000002", nombre: "Bodega Guayaquil - Kennedy Norte", direccion: "Av. Francisco de Orellana y Justino Cornejo", ciudad: "Guayaquil", latitud: "-2.164890", longitud: "-79.897450" },
+        { id_sede: "SED0000003", nombre: "Centro Distribución Cuenca", direccion: "Av. Solano y Remigio Crespo", ciudad: "Cuenca", latitud: "-2.900120", longitud: "-79.005890" },
+        { id_sede: "SED0000004", nombre: "Sede Logística Ambato", direccion: "Av. Cevallos y Montalvo", ciudad: "Ambato", latitud: "-1.241670", longitud: "-78.619720" }
+      ]);
+    });
 }
 
 // --------------------------------------------------------------------------
