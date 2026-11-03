@@ -1,8 +1,7 @@
 -- =============================================================================
--- DERMAKOR E-COMMERCE (DERMCLAR & MEDICAL SKIN 2026) - POSTGRESQL & SUPABASE
--- Base de datos: postgres (Supabase: jdsqipqdcuyegjrpvgny) / dermakor_db
--- Incluye: DDL 30 Tablas, Hardening, Datos Semilla Completos (Inventario FEFO
--- + Pedidos + Facturas SRI + Envios) y Permisos API REST para GitHub Pages
+-- DERMAKOR E-COMMERCE - SCRIPT POSTGRESQL / SUPABASE
+-- 9 Categorías x 10 Productos = 90 Productos | Stock = 25 por Producto
+-- Sede activa actual: Matriz Quito (estructura lista para futuras sedes)
 -- =============================================================================
 BEGIN;
 
@@ -315,61 +314,70 @@ CREATE TABLE IF NOT EXISTS "Usuarios" (
     PRIMARY KEY (id_usuario)
 );
 
--- =============================================================================
--- 2. DATOS BASE: PAISES, CIUDADES, SEDES, ROLES, USUARIOS, CLIENTES, EMPLEADOS
--- =============================================================================
+
+-- Limpieza previa de datos transaccionales/catálogo para dejar exactamente 90 productos (10 por categoría), stock 25 y solo Sede Quito
+TRUNCATE TABLE
+  "Envios",
+  "OrdenSalidaDetalle",
+  "OrdenesSalida",
+  "Facturas",
+  "Pagos",
+  "PedidoDetalle",
+  "Pedidos",
+  "CarritoDetalle",
+  "Carritos",
+  "AjusteDetalle",
+  "AjustesInventario",
+  "OrdenEntradaDetalle",
+  "OrdenesEntrada",
+  "CompraDetalle",
+  "Compras",
+  "Lotes",
+  "ProductoImagenes",
+  "Productos",
+  "Categorias",
+  "Empleados",
+  "Sedes",
+  "Clientes"
+CASCADE;
 
 INSERT INTO "Paises" ("id_pais", "pai_codigo", "pai_nombre")
 VALUES ('PAI0000001', 'EC', 'Ecuador')
 ON CONFLICT ("id_pais") DO UPDATE SET "pai_nombre" = EXCLUDED."pai_nombre";
 
 INSERT INTO "Ciudades" ("id_ciudad", "id_pais", "ciu_nombre") VALUES
-('CIU0000001', 'PAI0000001', 'Quito'),
-('CIU0000002', 'PAI0000001', 'Guayaquil'),
-('CIU0000003', 'PAI0000001', 'Cuenca'),
-('CIU0000004', 'PAI0000001', 'Ambato')
+('CIU0000001', 'PAI0000001', 'Quito')
 ON CONFLICT ("id_ciudad") DO UPDATE SET "ciu_nombre" = EXCLUDED."ciu_nombre";
 
+-- Única sede activa actual: Matriz Quito (tabla Sedes lista para futuras sedes)
 INSERT INTO "Sedes" ("id_sede", "id_ciudad", "sed_nombre", "sed_direccion", "sed_telefono", "sed_tipo", "sed_latitud", "sed_longitud") VALUES
-('SED0000001', 'CIU0000001', 'Matriz Quito - Edificio La Casa', 'Av. República E1-136 y Atahualpa, Of. 3', '0996096996', 'MATRIZ', -0.186590, -78.484120),
-('SED0000002', 'CIU0000002', 'Bodega Guayaquil - Kennedy Norte', 'Av. Francisco de Orellana y Justino Cornejo', '0996096997', 'BODEGA', -2.164890, -79.897450),
-('SED0000003', 'CIU0000003', 'Centro Distribución Cuenca', 'Av. Solano y Remigio Crespo', '0996096998', 'SUCURSAL', -2.900120, -79.005890),
-('SED0000004', 'CIU0000004', 'Sede Logística Ambato', 'Av. Cevallos y Montalvo', '0996096999', 'SUCURSAL', -1.241670, -78.619720)
+('SED0000001', 'CIU0000001', 'Matriz Quito - Edificio La Casa', 'Av. República E1-136 y Atahualpa, Of. 3', '0996096996', 'MATRIZ', -0.186590, -78.484120)
 ON CONFLICT ("id_sede") DO UPDATE SET
   "sed_nombre" = EXCLUDED."sed_nombre",
-  "sed_direccion" = EXCLUDED."sed_direccion",
-  "sed_latitud" = EXCLUDED."sed_latitud",
-  "sed_longitud" = EXCLUDED."sed_longitud";
+  "sed_direccion" = EXCLUDED."sed_direccion";
 
 INSERT INTO "Roles" ("id_rol", "rol_nombre", "rol_descripcion", "rol_estado") VALUES
 ('ROL0000001', 'ADMIN', 'Administrador general Dermakor', 'ACTIVO'),
-('ROL0000002', 'OPERADOR', 'Operador logístico de bodega FEFO', 'ACTIVO'),
-('ROL0000003', 'CLIENTE', 'Cliente registrado E-Commerce Dermakor', 'ACTIVO')
+('ROL0000002', 'OPERADOR', 'Operador logístico de bodega', 'ACTIVO'),
+('ROL0000003', 'CLIENTE', 'Cliente registrado Dermakor', 'ACTIVO')
 ON CONFLICT ("id_rol") DO NOTHING;
 
 INSERT INTO "Usuarios" ("id_usuario", "id_rol", "usu_nombre", "usu_email", "usu_clave_hash", "usu_estado") VALUES
 ('USU0000001', 'ROL0000003', 'María Fernández', 'cliente@example.com', 'pbkdf2_sha256$2026$dermakor', 'ACTIVO'),
-('USU0000002', 'ROL0000003', 'Dr. Carlos Andrade', 'carlos.andrade@clinica.ec', 'pbkdf2_sha256$2026$dermakor', 'ACTIVO'),
-('USU0000003', 'ROL0000003', 'Dra. Valeria Salazar', 'valeria.salazar@derma.ec', 'pbkdf2_sha256$2026$dermakor', 'ACTIVO'),
-('USU0000004', 'ROL0000002', 'Andrés Villavicencio', 'bodega@dermakor.com', 'pbkdf2_sha256$2026$dermakor', 'ACTIVO')
+('USU0000002', 'ROL0000002', 'Andrés Villavicencio', 'bodega@dermakor.com', 'pbkdf2_sha256$2026$dermakor', 'ACTIVO')
 ON CONFLICT ("id_usuario") DO UPDATE SET "usu_nombre" = EXCLUDED."usu_nombre", "usu_email" = EXCLUDED."usu_email";
 
 INSERT INTO "Clientes" ("id_cliente", "id_usuario", "id_ciudad", "cli_ci_ruc", "cli_nombres", "cli_apellidos", "cli_telefono", "cli_direccion") VALUES
-('CLI0000001', 'USU0000001', 'CIU0000001', '1718293849', 'María', 'Fernández', '0996096996', 'Av. República E1-136 y Atahualpa, Edif. La Casa, Piso 1, Of. 3'),
-('CLI0000002', 'USU0000002', 'CIU0000002', '0918273645001', 'Dr. Carlos', 'Andrade', '0987654321', 'Av. Francisco de Orellana, Torre Médica II, Of. 402'),
-('CLI0000003', 'USU0000003', 'CIU0000003', '0102938475001', 'Dra. Valeria', 'Salazar', '0991122334', 'Av. Solano 4-55 y Doce de Abril, Consultorio 105')
-ON CONFLICT ("id_cliente") DO UPDATE SET "cli_nombres" = EXCLUDED."cli_nombres", "cli_apellidos" = EXCLUDED."cli_apellidos", "cli_ci_ruc" = EXCLUDED."cli_ci_ruc";
+('CLI0000001', 'USU0000001', 'CIU0000001', '1718293849', 'María', 'Fernández', '0996096996', 'Av. República E1-136 y Atahualpa, Edif. La Casa, Piso 1, Of. 3')
+ON CONFLICT ("id_cliente") DO UPDATE SET "cli_nombres" = EXCLUDED."cli_nombres", "cli_apellidos" = EXCLUDED."cli_apellidos";
 
 INSERT INTO "Departamentos" ("id_departamento", "dep_nombre", "dep_telefono", "dep_estado") VALUES
-('DEP0000001', 'Logística y Despacho FEFO', '0996096996', 'ACTIVO')
+('DEP0000001', 'Logística y Despacho Quito', '0996096996', 'ACTIVO')
 ON CONFLICT ("id_departamento") DO NOTHING;
 
 INSERT INTO "Empleados" ("id_empleado", "id_usuario", "id_departamento", "id_sede", "emp_ci", "emp_nombres", "emp_apellidos", "emp_cargo", "emp_sueldo") VALUES
-('EMP0000001', 'USU0000004', 'DEP0000001', 'SED0000001', '1712345678', 'Andrés', 'Villavicencio', 'Jefe de Despacho FEFO Quito', 1250.00),
-('EMP0000002', 'USU0000004', 'DEP0000001', 'SED0000002', '0912345678', 'Luis', 'Mendoza', 'Jefe de Despacho FEFO Guayaquil', 1200.00),
-('EMP0000003', 'USU0000004', 'DEP0000001', 'SED0000003', '0112345678', 'Sofía', 'Crespo', 'Jefe de Despacho FEFO Cuenca', 1150.00),
-('EMP0000004', 'USU0000004', 'DEP0000001', 'SED0000004', '1812345678', 'Diego', 'Naranjo', 'Jefe de Despacho FEFO Ambato', 1150.00)
-ON CONFLICT ("id_empleado") DO UPDATE SET "id_sede" = EXCLUDED."id_sede";
+('EMP0000001', 'USU0000002', 'DEP0000001', 'SED0000001', '1712345678', 'Andrés', 'Villavicencio', 'Jefe de Despacho Quito', 1250.00)
+ON CONFLICT ("id_empleado") DO NOTHING;
 
 INSERT INTO "Descuentos" ("id_descuento", "des_codigo", "des_nombre", "des_tipo", "des_valor", "des_fecha_inicio", "des_fecha_fin", "des_uso_maximo", "des_uso_actual", "des_estado") VALUES
 ('DSC0000001', 'DERMA10', 'Descuento Bienvenida Dermakor 10%', 'PORCENTAJE', 10.00, '2025-01-01', '2027-12-31', 5000, 12, 'ACTIVO'),
@@ -377,902 +385,835 @@ INSERT INTO "Descuentos" ("id_descuento", "des_codigo", "des_nombre", "des_tipo"
 ('DSC0000003', 'PRO2026', 'Bono Especialistas Cabina $15', 'MONTO_FIJO', 15.00, '2025-01-01', '2027-12-31', 1000, 8, 'ACTIVO')
 ON CONFLICT ("id_descuento") DO UPDATE SET "des_codigo" = EXCLUDED."des_codigo", "des_valor" = EXCLUDED."des_valor", "des_estado" = 'ACTIVO';
 
--- =============================================================================
--- 3. CATEGORIAS, 28 PRODUCTOS DERMCLAR 2026, IMAGENES Y LOTES FEFO
--- =============================================================================
-DELETE FROM "Lotes" WHERE "lot_numero" LIKE 'L26-%' AND "id_lote" NOT BETWEEN 'LOT0000001' AND 'LOT0000056';
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000001', 'Exosomas', 'Línea nanotecnológica regenerativa con exosomas vegetales', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000001', 'Exosomas', 'Línea nanotecnológica regenerativa con exosomas vegetales', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000002', 'Hidratación', 'Sistemas de hidratación profunda y brumas termales', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000002', 'Hidratación', 'Sistemas de hidratación profunda y brumas termales', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000003', 'Limpieza', 'Espumas, geles y soluciones limpiadoras dermo-protectoras', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000003', 'Limpieza', 'Espumas, geles y soluciones limpiadoras dermo-protectoras', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000004', 'Protección solar', 'Fotoprotección clínica de amplio espectro SPF 50+', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000004', 'Protección solar', 'Fotoprotección clínica de amplio espectro SPF 50+', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000005', 'Cuidado facial', 'Sérums, despigmentantes, contornos y cuidado facial diario', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000005', 'Cuidado facial', 'Sérums, despigmentantes, contornos y cuidado facial diario', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000006', 'Corporal', 'Liporeductores, reafirmantes, anticelulíticos y enzimas', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000006', 'Corporal', 'Liporeductores, reafirmantes, anticelulíticos y enzimas', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000007', 'Metaloterapia', ' Instrumental ergonómico de aleación ligera para cabina', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000007', 'Metaloterapia', 'Instrumental ergonómico de aleación ligera para cabina', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000008', 'Mascarillas', 'Mascarillas hidroplásticas y velos descongestivos', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000008', 'Mascarillas', 'Mascarillas hidroplásticas y velos descongestivos', 'ACTIVO');
 INSERT INTO "Categorias" ("id_categoria", "cat_nombre", "cat_descripcion", "cat_estado")
-VALUES ('CAT0000009', 'Insumos', 'Agujas hipodérmicas y dispositivos médicos estériles', 'ACTIVO')
-ON CONFLICT ("id_categoria") DO UPDATE SET "cat_nombre" = EXCLUDED."cat_nombre", "cat_descripcion" = EXCLUDED."cat_descripcion", "cat_estado" = 'ACTIVO';
+VALUES ('CAT0000009', 'Insumos', 'Agujas hipodérmicas y dispositivos médicos estériles', 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000001', 'CAT0000001', 'DRM-2026-001', 'ExoFace', 'Terapia exosomal facial que revitaliza, regenera y redensifica la piel desde niveles profundos. ||META||{"slug": "exoface-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Sérum bioestimulante y reafirmante", "presentacion": "Gotero 30 ml", "precioProfesional": 62.0, "imagen": "images/01_exoface.png", "destacadoHome": true, "principiosActivos": ["Centella Asiática Exosomes", "Exosomas de Cúrcuma Longa", "PDRN (Salmón DNA)", "Hylasome EG-10 (Ácido Hialurónico Reticulado)", "Péptidos Biomiméticos", "Niacinamida", "Silicio Orgánico", "Complejos de Aminoácidos"], "beneficios": ["Mejora la firmeza visible desde la segunda sesión.", "Aumento significativo de la densidad dérmica.", "Efecto tensor inmediato y piel más compacta.", "Reestructuración progresiva de la arquitectura cutánea."], "modoUso": "Aplicar de 4 a 6 gotas sobre el rostro limpio por la mañana y noche con suaves movimientos circulares."}', 74.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000001', 'CAT0000001', 'DK-2026-001', 'ExoFace', 'Terapia exosomal facial que revitaliza, regenera y redensifica la piel desde niveles profundos. ||META||{"slug": "exoface-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Sérum bioestimulante y reafirmante", "presentacion": "Gotero 30 ml", "precioProfesional": 62.0, "imagen": "images/01_exoface.png", "destacadoHome": true, "principiosActivos": ["Centella Asiática Exosomes", "Exosomas de Cúrcuma Longa", "PDRN (Salmón DNA)", "Hylasome EG-10 (Ácido Hialurónico Reticulado)", "Péptidos Biomiméticos", "Niacinamida", "Silicio Orgánico", "Complejos de Aminoácidos"], "beneficios": ["Mejora la firmeza visible desde la segunda sesión.", "Aumento significativo de la densidad dérmica.", "Efecto tensor inmediato y piel más compacta.", "Reestructuración progresiva de la arquitectura cutánea."], "modoUso": "Aplicar de 4 a 6 gotas sobre el rostro limpio por la mañana y noche con suaves movimientos circulares."}', 74.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000001', 'PRD0000001', 'images/01_exoface.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000001', 'PRD0000001', 'images/01_exoface.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000001', 'PRD0000001', 'SED0000001', 'L26-QTO-001A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000002', 'PRD0000001', 'SED0000002', 'L26-GYE-001B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000001', 'PRD0000001', 'SED0000001', 'LOT-QTO-001', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000002', 'CAT0000001', 'DRM-2026-002', 'ExoLumine', 'Regula la actividad de los melanocitos y disminuye notablemente la inflamación cutánea y las manchas. ||META||{"slug": "exolumine-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Exosomas Despigmentantes y Antioxidantes", "presentacion": "Gotero 30 ml", "precioProfesional": 48.0, "imagen": "images/02_exolumine.png", "destacadoHome": false, "principiosActivos": ["Exosomas Centella Reversa", "Ácido Tranexámico", "Niacinamida", "Neurolight 61 G°", "Alfa-Arbutina", "Ácido Hialurónico de mediano peso molecular", "Silicio Orgánico", "Complejo Antioxidante"], "beneficios": ["Disminución visible del tono irregular desde la 3ra semana.", "Reducción de citocinas inflamatorias en la piel tratada.", "Aumento de la tolerancia cutánea en pieles muy sensibles."], "modoUso": "Aplicar sobre el rostro limpio antes de la crema hidratante. Usar protector solar de día."}', 58.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000002', 'CAT0000001', 'DK-2026-002', 'ExoLumine', 'Regula la actividad de los melanocitos y disminuye notablemente la inflamación cutánea y las manchas. ||META||{"slug": "exolumine-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Exosomas Despigmentantes y Antioxidantes", "presentacion": "Gotero 30 ml", "precioProfesional": 48.0, "imagen": "images/02_exolumine.png", "destacadoHome": false, "principiosActivos": ["Exosomas Centella Reversa", "Ácido Tranexámico", "Niacinamida", "Neurolight 61 G°", "Alfa-Arbutina", "Ácido Hialurónico de mediano peso molecular", "Silicio Orgánico", "Complejo Antioxidante"], "beneficios": ["Disminución visible del tono irregular desde la 3ra semana.", "Reducción de citocinas inflamatorias en la piel tratada.", "Aumento de la tolerancia cutánea en pieles muy sensibles."], "modoUso": "Aplicar sobre el rostro limpio antes de la crema hidratante. Usar protector solar de día."}', 58.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000002', 'PRD0000002', 'images/02_exolumine.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000002', 'PRD0000002', 'images/02_exolumine.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000003', 'PRD0000002', 'SED0000001', 'L26-QTO-002A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000004', 'PRD0000002', 'SED0000002', 'L26-GYE-002B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000002', 'PRD0000002', 'SED0000001', 'LOT-QTO-002', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000003', 'CAT0000001', 'DRM-2026-003', 'ExoBlemish', 'Ayuda a la regulación sebácea, tiene acción queratolítica, calmante y potente acción regeneradora. ||META||{"slug": "exoblemish-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Bioactivo seborregulador y calmante", "presentacion": "Gotero 30 ml", "precioProfesional": 48.0, "imagen": "images/03_exoblemish.png", "destacadoHome": false, "principiosActivos": ["Exosomas de Cúrcuma Longa", "Ácido Succínico", "Niacinamida y Biotina", "Zinc Sebum", "Cobre II Sulfato pentahidratado", "Pore Reductyl", "Factor de Crecimiento Epidermal"], "beneficios": ["Reducción visible de comedones y pápulas.", "Disminución duradera de la seborrea y brillo facial.", "Alivio de la inflamación e irritación en brotes de acné."], "modoUso": "Aplicar sobre las zonas con tendencia grasa o brotes dos veces al día después de la limpieza."}', 58.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000003', 'CAT0000001', 'DK-2026-003', 'ExoBlemish', 'Ayuda a la regulación sebácea, tiene acción queratolítica, calmante y potente acción regeneradora. ||META||{"slug": "exoblemish-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Bioactivo seborregulador y calmante", "presentacion": "Gotero 30 ml", "precioProfesional": 48.0, "imagen": "images/03_exoblemish.png", "destacadoHome": false, "principiosActivos": ["Exosomas de Cúrcuma Longa", "Ácido Succínico", "Niacinamida y Biotina", "Zinc Sebum", "Cobre II Sulfato pentahidratado", "Pore Reductyl", "Factor de Crecimiento Epidermal"], "beneficios": ["Reducción visible de comedones y pápulas.", "Disminución duradera de la seborrea y brillo facial.", "Alivio de la inflamación e irritación en brotes de acné."], "modoUso": "Aplicar sobre las zonas con tendencia grasa o brotes dos veces al día después de la limpieza."}', 58.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000003', 'PRD0000003', 'images/03_exoblemish.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000003', 'PRD0000003', 'images/03_exoblemish.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000005', 'PRD0000003', 'SED0000001', 'L26-QTO-003A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000006', 'PRD0000003', 'SED0000002', 'L26-GYE-003B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000003', 'PRD0000003', 'SED0000001', 'LOT-QTO-003', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000004', 'CAT0000001', 'DRM-2026-004', 'ExoHair', 'Exosomas que reactivan el ciclo de vida capilar, regeneran folículos pilosos y mejoran la vascularización. ||META||{"slug": "exohair-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Reactivación folicular desde la raíz", "presentacion": "Gotero 30 ml", "precioProfesional": 46.0, "imagen": "images/04_exohair.png", "destacadoHome": false, "principiosActivos": ["Exosomas de Cúrcuma Longa", "Biocenta Capilar", "Bio Capigen PT", "Hyaceramidyl (Ácido Hialurónico + Ceramidas)", "D-Pantenol", "Biotina y Vitamina B12", "Silicio Orgánico"], "beneficios": ["Disminuye la caída progresiva del cabello.", "Estimula el nacimiento de cabello nuevo y denso.", "Engrosa visiblemente el tallo piloso.", "Reequilibra el ecosistema del cuero cabelludo."], "modoUso": "Aplicar en el cuero cabelludo seco por la noche y masajear suavemente con la yema de los dedos."}', 56.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000004', 'CAT0000001', 'DK-2026-004', 'ExoHair', 'Exosomas que reactivan el ciclo de vida capilar, regeneran folículos pilosos y mejoran la vascularización. ||META||{"slug": "exohair-casa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Reactivación folicular desde la raíz", "presentacion": "Gotero 30 ml", "precioProfesional": 46.0, "imagen": "images/04_exohair.png", "destacadoHome": false, "principiosActivos": ["Exosomas de Cúrcuma Longa", "Biocenta Capilar", "Bio Capigen PT", "Hyaceramidyl (Ácido Hialurónico + Ceramidas)", "D-Pantenol", "Biotina y Vitamina B12", "Silicio Orgánico"], "beneficios": ["Disminuye la caída progresiva del cabello.", "Estimula el nacimiento de cabello nuevo y denso.", "Engrosa visiblemente el tallo piloso.", "Reequilibra el ecosistema del cuero cabelludo."], "modoUso": "Aplicar en el cuero cabelludo seco por la noche y masajear suavemente con la yema de los dedos."}', 56.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000004', 'PRD0000004', 'images/04_exohair.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000004', 'PRD0000004', 'images/04_exohair.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000007', 'PRD0000004', 'SED0000001', 'L26-QTO-004A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000008', 'PRD0000004', 'SED0000002', 'L26-GYE-004B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000004', 'PRD0000004', 'SED0000001', 'LOT-QTO-004', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000005', 'CAT0000002', 'DRM-2026-005', 'Aqua piel 3AH', 'Sérum restitutivo de agua y nutrientes. Su film molecular con liposomas y ácido hialurónico reticulado aporta lozanía e hidratación inmediata. ||META||{"slug": "aqua-piel-3ah", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Sérum Hidratante Intenso", "presentacion": "Frasco 50 ml", "precioProfesional": 35.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["3 Tipos de Ácido Hialurónico Reticulado", "Liposomas Hidratantes", "Complejo Osmoprotector", "Pantenol y Minerales Esenciales"], "beneficios": ["Hidratación multicapa hasta por 72 horas.", "Textura ultraligera de rápida absorción.", "Piel visiblemente más rellena, suave y elástica."], "modoUso": "Aplicar 1 o 2 pulsaciones en la piel limpia del rostro, cuello y escote mañana y noche."}', 42.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000005', 'CAT0000001', 'DK-2026-005', 'ExoNeck Tensor Cuello y Escote', 'Sérum de exosomas reafirmante cervical. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exoneck-tensor-cuello-y-escote", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Sérum de exosomas reafirmante cervical", "presentacion": "Frasco airless 30 ml", "precioProfesional": 52.7, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 62.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000005', 'PRD0000005', 'images/placeholder_05.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000005', 'PRD0000005', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000009', 'PRD0000005', 'SED0000001', 'L26-QTO-005A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000010', 'PRD0000005', 'SED0000002', 'L26-GYE-005B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000005', 'PRD0000005', 'SED0000001', 'LOT-QTO-005', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000006', 'CAT0000003', 'DRM-2026-006', 'Agua micelar piel sensible', 'Diseñada para piel sensible con macromoléculas de Ácido Hialurónico y complejo AMC con 6 activos hidratantes. ||META||{"slug": "agua-micelar-sensible", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Limpieza y desmaquillante respetuoso", "presentacion": "Frasco 260 ml", "precioProfesional": 22.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["Micelas biocompatibles", "Macromoléculas de Ácido Hialurónico", "Complejo Hidratante AMC con 6 activos", "Extracto Botánico Calmante"], "beneficios": ["Retira impurezas y maquillaje waterproof sin irritar.", "Protege la barrera cutánea frente a la deshidratación.", "Apta para contorno de ojos y pieles reactivas."], "modoUso": "Humedecer un disco de algodón y pasar suavemente por rostro, ojos y labios sin frotar."}', 27.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000006', 'CAT0000001', 'DK-2026-006', 'ExoEyes Contorno Ocular Avanzado', 'Concentrado periocular con exosomas y péptidos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exoeyes-contorno-ocular-avanzado", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Concentrado periocular con exosomas y péptidos", "presentacion": "Frasco gotero 15 ml", "precioProfesional": 45.9, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 54.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000006', 'PRD0000006', 'images/placeholder_06.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000006', 'PRD0000006', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000011', 'PRD0000006', 'SED0000001', 'L26-QTO-006A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000012', 'PRD0000006', 'SED0000002', 'L26-GYE-006B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000006', 'PRD0000006', 'SED0000001', 'LOT-QTO-006', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000007', 'CAT0000004', 'DRM-2026-007', 'Protector solar DD Cream con color', 'Crema de defensa diaria multifuncional contra el fotoenvejecimiento y las manchas gracias a Neurolight 61.G SPF 30. ||META||{"slug": "dd-cream-color", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Protege y unifica sin sensación grasa", "presentacion": "Tubo 50 g", "precioProfesional": 40.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["Filtros Solares UVA/UVB SPF 30", "Neurolight 61.G Despigmentante", "Pigmentos Microencapsulados de Color Adaptable", "Vitamina E Antioxidante"], "beneficios": ["Unifica el tono de la piel con acabado mate natural.", "Reduce manchas oscuras existentes.", "Fórmula no comedogénica libre de aceites pesados."], "modoUso": "Aplicar uniformemente como último paso de la rutina facial cada mañana antes de salir."}', 48.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000007', 'CAT0000001', 'DK-2026-007', 'ExoRepair Crema Nocturna Celular', 'Regenerador intensivo nocturno con exosomas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exorepair-crema-nocturna-celular", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Regenerador intensivo nocturno con exosomas", "presentacion": "Pote 50 g", "precioProfesional": 57.8, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 68.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000007', 'PRD0000007', 'images/placeholder_07.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000007', 'PRD0000007', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000013', 'PRD0000007', 'SED0000001', 'L26-QTO-007A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000014', 'PRD0000007', 'SED0000002', 'L26-GYE-007B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000007', 'PRD0000007', 'SED0000001', 'LOT-QTO-007', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000008', 'CAT0000005', 'DRM-2026-008', 'Derm face serum', 'Contiene ácido hialurónico, péptidos y extractos naturales que hidratan a profundidad hasta por 48 horas sin sensación pegajosa. ||META||{"slug": "derm-face-serum", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Gel facial seguro en pieles sensibles", "presentacion": "Frasco 30 ml", "precioProfesional": 34.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico Puro", "Péptidos Reafirmantes", "Extractos Botánicos Regeneradores", "Pantenol Calmante"], "beneficios": ["Hidratación prolongada por 48 horas.", "Devuelve la firmeza y volumen natural de las facciones.", "Dermatológicamente comprobado y no comedogénico."], "modoUso": "Distribuir en rostro y cuello con masajes ascendentes hasta que se absorba por completo."}', 41.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000008', 'CAT0000001', 'DK-2026-008', 'ExoVial Cabina Regeneración Total', 'Viales estériles de exosomas concentrados. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exovial-cabina-regeneracion-total", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Viales estériles de exosomas concentrados", "presentacion": "Caja 5 viales x 5 ml", "precioProfesional": 97.75, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 115.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000008', 'PRD0000008', 'images/placeholder_08.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000008', 'PRD0000008', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000015', 'PRD0000008', 'SED0000001', 'L26-QTO-008A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000016', 'PRD0000008', 'SED0000002', 'L26-GYE-008B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000008', 'PRD0000008', 'SED0000001', 'LOT-QTO-008', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000009', 'CAT0000005', 'DRM-2026-009', 'Contorno de ojos', 'Sérum sensorial sedoso y descongestionante formulado con extracto de meliloto, 3 tipos de AH y péptidos Eyeseryl y Argireline. ||META||{"slug": "contorno-ojos-frio", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Aplicador metálico con efecto frío", "presentacion": "Frasco 15 ml", "precioProfesional": 40.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Extracto de Meliloto", "3 Tipos de Ácido Hialurónico", "Péptido Eyeseryl (Drenante antibolsas)", "Argireline & Leuphasyl (Relajantes musculares)"], "beneficios": ["Atenúa bolsas y ojeras oscuras rápidamente.", "Relaja las líneas de expresión perioculares.", "Aplicador de aleación metálica que potencia el drenaje por efecto térmico."], "modoUso": "Presionar suavemente y deslizar la punta metálica sobre el contorno del ojo desde el interior hacia afuera."}', 48.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000009', 'CAT0000001', 'DK-2026-009', 'ExoBooster Post-Láser Calmante', 'Fluido reparador dérmico con exosomas puros. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exobooster-post-laser-calmante", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Fluido reparador dérmico con exosomas puros", "presentacion": "Frasco 30 ml", "precioProfesional": 54.4, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 64.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000009', 'PRD0000009', 'images/placeholder_09.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000009', 'PRD0000009', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000017', 'PRD0000009', 'SED0000001', 'L26-QTO-009A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000018', 'PRD0000009', 'SED0000002', 'L26-GYE-009B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000009', 'PRD0000009', 'SED0000001', 'LOT-QTO-009', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000010', 'CAT0000003', 'DRM-2026-010', 'Dermclar Luminescence Cleanser', 'Limpiador profundo exfoliante con acción astringente que potencializa la penetración de tratamientos aclarantes. ||META||{"slug": "luminescence-cleanser", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción pre-peeling limpiadora profunda", "presentacion": "Frasco 250 ml", "precioProfesional": 33.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Ácido Salicílico", "Ácido Glicólico y Láctico", "Zinc Sebum con 16 aminoácidos libres", "Vitamina F"], "beneficios": ["Exfoliación microquímica diaria suave.", "Equilibra la producción de sebo y reduce bacterias.", "Prepara la piel para recibir peelings y sérums."], "modoUso": "Aplicar sobre el rostro húmedo, masajear en círculos y enjuagar con abundante agua tibia."}', 40.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000010', 'CAT0000001', 'DK-2026-010', 'ExoHands Rejuvenecimiento Manos', 'Emulsión despigmentante y regeneradora con exosomas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas. ||META||{"slug": "exohands-rejuvenecimiento-manos", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Emulsión despigmentante y regeneradora con exosomas", "presentacion": "Tubo 50 ml", "precioProfesional": 33.15, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de exosomas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 39.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000010', 'PRD0000010', 'images/placeholder_10.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000010', 'PRD0000010', 'images/02_exoface_serum.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000019', 'PRD0000010', 'SED0000001', 'L26-QTO-010A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000020', 'PRD0000010', 'SED0000002', 'L26-GYE-010B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000010', 'PRD0000010', 'SED0000001', 'LOT-QTO-010', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000011', 'CAT0000005', 'DRM-2026-011', 'Proteoglycans Serum', 'Actúa sobre la raíz del envejecimiento celular regenerando las capas más profundas de la piel y aportando firmeza. ||META||{"slug": "proteoglycans-serum", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Serum de Proteoglicanos y Vitamina C", "presentacion": "Frasco 15 ml", "precioProfesional": 32.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Proteoglicanos Puros", "Vitamina C Estabilizada", "Ácido Hialurónico", "Antioxidantes de Alta Potencia"], "beneficios": ["Regenera las estructuras de sostén dérmico.", "Neutraliza radicales libres generados por la polución.", "Aporta luminosidad radiante a pieles apagadas."], "modoUso": "Aplicar 3 gotas por la mañana antes de la crema de día."}', 40.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000011', 'CAT0000002', 'DK-2026-011', 'Aqua piel 3AH', 'Sérum restitutivo de agua y nutrientes. Su film molecular con liposomas y ácido hialurónico reticulado aporta lozanía e hidratación inmediata. ||META||{"slug": "aqua-piel-3ah", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Sérum Hidratante Intenso", "presentacion": "Frasco 50 ml", "precioProfesional": 35.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["3 Tipos de Ácido Hialurónico Reticulado", "Liposomas Hidratantes", "Complejo Osmoprotector", "Pantenol y Minerales Esenciales"], "beneficios": ["Hidratación multicapa hasta por 72 horas.", "Textura ultraligera de rápida absorción.", "Piel visiblemente más rellena, suave y elástica."], "modoUso": "Aplicar 1 o 2 pulsaciones en la piel limpia del rostro, cuello y escote mañana y noche."}', 42.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000011', 'PRD0000011', 'images/placeholder_11.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000011', 'PRD0000011', 'images/placeholder_11.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000021', 'PRD0000011', 'SED0000001', 'L26-QTO-011A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000022', 'PRD0000011', 'SED0000002', 'L26-GYE-011B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000011', 'PRD0000011', 'SED0000001', 'LOT-QTO-011', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000012', 'CAT0000006', 'DRM-2026-012', 'DermclarFirm', 'Tratamiento clínico para combatir la flacidez y las estrías. Devuelve elasticidad firme a la arquitectura cutánea. ||META||{"slug": "dermclar-firm-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reafirmante y tensor intensivo de la piel", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 79.0, "imagen": "images/08_dermclar_firm.png", "destacadoHome": true, "principiosActivos": ["DMAE Concentrado", "Glucosaminoglicanos", "Silicio Orgánico", "D-Pantenol", "Centella Asiática Pura"], "beneficios": ["Efecto lifting tisular visible y sostenido.", "Estimulación masiva de colágeno y elastina.", "Disminuye profundidad y coloración de estrías."], "modoUso": "Uso exclusivo por profesionales capacitados mediante técnicas de mesoterapia o aparatología estética."}', 79.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000012', 'CAT0000002', 'DK-2026-012', 'HydraGel Ácido Hialurónico Puro 2%', 'Gel biomimético de hidratación multicapa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "hydragel-acido-hialuronico-puro-2", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Gel biomimético de hidratación multicapa", "presentacion": "Frasco 50 ml", "precioProfesional": 37.4, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 44.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000012', 'PRD0000012', 'images/08_dermclar_firm.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000012', 'PRD0000012', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000023', 'PRD0000012', 'SED0000001', 'L26-QTO-012A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000024', 'PRD0000012', 'SED0000002', 'L26-GYE-012B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000012', 'PRD0000012', 'SED0000001', 'LOT-QTO-012', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000013', 'CAT0000006', 'DRM-2026-013', 'DermclarObes', 'Fórmula #1 para reducir el volumen corporal, adiposidades localizadas rebeldes y contornear la silueta. ||META||{"slug": "dermclar-obes-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reductor de medidas y grasa rebelde", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 98.0, "imagen": "images/06_dermclar_obes.png", "destacadoHome": false, "principiosActivos": ["Fosfatidilcolina Lipolítica", "Desoxicolato de Sodio", "L-Carnitina Biológica", "Rutina Vasoactiva"], "beneficios": ["Potente liporeductor en tiempo récord.", "Disuelve adiposidades en abdomen, flancos y muslos.", "Limita la retención hídrica en tejido adiposo."], "modoUso": "Protocolo clínico profesional con técnica de electroporación o mesoterapia."}', 98.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000013', 'CAT0000002', 'DK-2026-013', 'AquaCream Barrera Ceramidas', 'Crema restauradora del manto hidrolipídico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "aquacream-barrera-ceramidas", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Crema restauradora del manto hidrolipídico", "presentacion": "Pote 50 g", "precioProfesional": 39.1, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 46.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000013', 'PRD0000013', 'images/06_dermclar_obes.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000013', 'PRD0000013', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000025', 'PRD0000013', 'SED0000001', 'L26-QTO-013A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000026', 'PRD0000013', 'SED0000002', 'L26-GYE-013B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000013', 'PRD0000013', 'SED0000001', 'LOT-QTO-013', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000014', 'CAT0000006', 'DRM-2026-014', 'DermclarCelu', 'Disminuye el tamaño de los nódulos grasos celulíticos y estimula el drenaje de toxinas acumuladas. ||META||{"slug": "dermclar-celu-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Anticelulítico y desintoxicante de tejido", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 70.0, "imagen": "images/07_dermclar_celu.png", "destacadoHome": false, "principiosActivos": ["L-Carnitina", "Cafeína Pura", "Silicio Orgánico", "Centella Asiática", "Extracto de Meliloto"], "beneficios": ["Ideal para celulitis edematosa, compacta y flácida.", "Alisa la piel de naranja y reafirma el tejido.", "Activa la microcirculación de retorno venolinfático."], "modoUso": "Uso profesional en cabina estética con aparatología o técnica tópica avanzada."}', 70.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000014', 'CAT0000002', 'DK-2026-014', 'HydraLips Bálsamo Hialurónico', 'Hidratante reparador labial clínico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "hydralips-balsamo-hialuronico", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Hidratante reparador labial clínico", "presentacion": "Tubo 15 ml", "precioProfesional": 18.7, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 22.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000014', 'PRD0000014', 'images/07_dermclar_celu.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000014', 'PRD0000014', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000027', 'PRD0000014', 'SED0000001', 'L26-QTO-014A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000028', 'PRD0000014', 'SED0000002', 'L26-GYE-014B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000014', 'PRD0000014', 'SED0000001', 'LOT-QTO-014', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000015', 'CAT0000005', 'DRM-2026-015', 'DermclarPlasmaVit', 'Revitalizante que nutre intensamente los tejidos mejorando la elasticidad y acelerando los procesos celulares. ||META||{"slug": "dermclar-plasmavit-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Booster Tisular Revitalizante Celular", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 78.0, "imagen": "images/05_dermclar_plasmavit.png", "destacadoHome": false, "principiosActivos": ["Complejo de Aminoácidos Esenciales", "Vitamina C Pura", "Sinadol Antioxidante"], "beneficios": ["Aumenta el grosor y consistencia de la piel madura.", "Atenúa arrugas finas y líneas de expresión.", "Gran poder iluminador y despigmentante."], "modoUso": "Aplicación profesional facial mediante técnicas de microneedling o electroporación."}', 78.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000015', 'CAT0000002', 'DK-2026-015', 'Sérum B5 + Hialurónico Ultra', 'Concentrado calmante e hidratante profundo. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "serum-b5-hialuronico-ultra", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Concentrado calmante e hidratante profundo", "presentacion": "Gotero 30 ml", "precioProfesional": 40.8, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 48.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000015', 'PRD0000015', 'images/05_dermclar_plasmavit.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000015', 'PRD0000015', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000029', 'PRD0000015', 'SED0000001', 'L26-QTO-015A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000030', 'PRD0000015', 'SED0000002', 'L26-GYE-015B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000015', 'PRD0000015', 'SED0000001', 'LOT-QTO-015', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000016', 'CAT0000005', 'DRM-2026-016', 'DermclarHair', 'Retarda la caída, mejora la calidad y resistencia del folículo y favorece la actividad biológica en receso. ||META||{"slug": "dermclar-hair-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Previene la caída y aumenta la densidad capilar", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 85.0, "imagen": "images/09_dermclar_hair.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico", "D-Pantenol", "Silicio Orgánico", "Rutina", "Oligoelementos"], "beneficios": ["Disminuye la fragilidad capilar.", "Aporta brillo y nutrición profunda a la fibra.", "Estimula el crecimiento del cabello nuevo."], "modoUso": "Protocolo clínico capilar aplicado en cabina."}', 85.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000016', 'CAT0000002', 'DK-2026-016', 'Emulsión Hidratante Piel Grasa', 'Hidratación oil-free matificante 24h. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "emulsion-hidratante-piel-grasa", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Hidratación oil-free matificante 24h", "presentacion": "Frasco 50 ml", "precioProfesional": 32.3, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 38.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000016', 'PRD0000016', 'images/09_dermclar_hair.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000016', 'PRD0000016', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000031', 'PRD0000016', 'SED0000001', 'L26-QTO-016A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000032', 'PRD0000016', 'SED0000002', 'L26-GYE-016B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000016', 'PRD0000016', 'SED0000001', 'LOT-QTO-016', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000017', 'CAT0000005', 'DRM-2026-017', 'DermclarFace', 'Solución integral para combatir el envejecimiento del rostro. Hidrata, nutre, reafirma y aclara. ||META||{"slug": "dermclar-face-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Redensifica y rejuvenece el rostro", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 94.0, "imagen": "images/10_dermclar_face.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico", "Glutatión", "Argireline y Leuphasyl", "DMAE", "Vitamina C y E"], "beneficios": ["Mejora arrugas y líneas de expresión.", "Genera efecto tensor y lifting evidente.", "Alisado y homogeneización de la tez."], "modoUso": "Aplicación profesional con técnicas de electroporación."}', 94.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000017', 'CAT0000002', 'DK-2026-017', 'Viales HydraMesotherapy HA', 'Ácido hialurónico no reticulado para cabina. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "viales-hydramesotherapy-ha", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Ácido hialurónico no reticulado para cabina", "presentacion": "Caja 5 viales x 10 ml", "precioProfesional": 69.7, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 82.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000017', 'PRD0000017', 'images/10_dermclar_face.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000017', 'PRD0000017', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000033', 'PRD0000017', 'SED0000001', 'L26-QTO-017A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000034', 'PRD0000017', 'SED0000002', 'L26-GYE-017B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000017', 'PRD0000017', 'SED0000001', 'LOT-QTO-017', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000018', 'CAT0000005', 'DRM-2026-018', 'DermclarFace V', 'Ayuda a esculpir, retensar y redefinir el contorno del rostro, doble mentón y zona V. ||META||{"slug": "dermclar-face-v-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reafirma y tonifica la Zona V del rostro", "presentacion": "Caja 5 viales X 5ml", "precioProfesional": 105.0, "imagen": "images/11_dermclar_face_v.png", "destacadoHome": false, "principiosActivos": ["Hidrolizado de Algas Rojas", "Ampelopsina", "Péptidos Biomiméticos", "Silicio Orgánico", "DMAE"], "beneficios": ["Remodelación visible del óvalo facial.", "Disminuye grasa localizada en papada.", "Aumenta la firmeza y fibras colágenas."], "modoUso": "Tratamiento en cabina médica para perfilamiento facial."}', 105.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000018', 'CAT0000002', 'DK-2026-018', 'Bruma Termal Calmante Azuleno', 'Loción hidro-calmante para piel reactiva. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "bruma-termal-calmante-azuleno", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción hidro-calmante para piel reactiva", "presentacion": "Spray 120 ml", "precioProfesional": 23.8, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 28.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000018', 'PRD0000018', 'images/11_dermclar_face_v.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000018', 'PRD0000018', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000035', 'PRD0000018', 'SED0000001', 'L26-QTO-018A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000036', 'PRD0000018', 'SED0000002', 'L26-GYE-018B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000018', 'PRD0000018', 'SED0000001', 'LOT-QTO-018', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000019', 'CAT0000005', 'DRM-2026-019', 'DermclarFace OB', 'Fórmula de alta tecnología que disminuye el volumen adiposo de mejillas y doble mentón. ||META||{"slug": "dermclar-face-ob-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reduce la papada y perfila el rostro", "presentacion": "Caja 5 viales X 5ml", "precioProfesional": 110.0, "imagen": "images/12_dermclar_face_ob.png", "destacadoHome": false, "principiosActivos": ["L-Carnitina", "Silicio Orgánico", "Fosfatidilcolina", "Cafeína", "Troxerutina"], "beneficios": ["Desprende cúmulos grasos submentonianos.", "Acción drenante para evacuar ácidos grasos.", "Mejora sustancialmente el ángulo de la barbilla."], "modoUso": "Uso profesional en reducción submentoniana."}', 110.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000019', 'CAT0000002', 'DK-2026-019', 'Crema Nutritiva Péptidos y Colágeno', 'Hidratación estructural para piel seca. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "crema-nutritiva-peptidos-y-colageno", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Hidratación estructural para piel seca", "presentacion": "Pote 50 g", "precioProfesional": 41.65, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 49.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000019', 'PRD0000019', 'images/12_dermclar_face_ob.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000019', 'PRD0000019', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000037', 'PRD0000019', 'SED0000001', 'L26-QTO-019A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000038', 'PRD0000019', 'SED0000002', 'L26-GYE-019B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000019', 'PRD0000019', 'SED0000001', 'LOT-QTO-019', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000020', 'CAT0000006', 'DRM-2026-020', 'Dermclar Bump UP', 'Péptidos biomiméticos Adifyline y Factor de Crecimiento Epidermal (EGF PLUS) para remodelar y aportar firmeza glútea. ||META||{"slug": "dermclar-bump-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Proyecta la curvatura de los glúteos", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 95.0, "imagen": "images/13_dermclar_bump_up.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico de alto peso molecular", "EGF PLUS (Factor de Crecimiento Epidermal)", "Péptido Biomimético Adifyline", "Vitamina C y 15 Aminoácidos", "Silicio Orgánico y DMAE"], "beneficios": ["Aporta volumen y definición a la zona glútea.", "Estimula la síntesis de colágeno estructural.", "Efecto reafirmante y tensor duradero."], "modoUso": "Uso profesional en protocolos corporales de elevación y tonificación glútea."}', 95.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000020', 'CAT0000002', 'DK-2026-020', 'Dermclar Hidratación Fórmula 10', 'Tratamiento especializado de hidratación. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación. ||META||{"slug": "dermclar-hidratacion-formula-10", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Tratamiento especializado de hidratación", "presentacion": "Envase clínico 50 ml", "precioProfesional": 34.0, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de hidratación clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 40.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000020', 'PRD0000020', 'images/13_dermclar_bump_up.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000020', 'PRD0000020', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000039', 'PRD0000020', 'SED0000001', 'L26-QTO-020A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000040', 'PRD0000020', 'SED0000002', 'L26-GYE-020B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000020', 'PRD0000020', 'SED0000001', 'LOT-QTO-020', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000021', 'CAT0000006', 'DRM-2026-021', 'Dermclar Ice UP', 'Biopéptidos programados tensores y nutritivos que ayudan a reducir celulitis y flacidez. ||META||{"slug": "dermclar-ice-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Tonifica la curvatura de las Nalgas", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 87.0, "imagen": "images/14_dermclar_ice_up.png", "destacadoHome": false, "principiosActivos": ["Biopéptidos Programados", "Hidrolizado de Colágeno y Elastina", "Laureth-9 y Piruvato de Sodio", "Centella Asiática y DMAE"], "beneficios": ["Tonifica y reafirma la piel glútea.", "Reduce la apariencia de celulitis flácida.", "Estimula colágeno dérmico."], "modoUso": "Protocolo en cabina corporal."}', 87.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000021', 'CAT0000003', 'DK-2026-021', 'Agua micelar piel sensible', 'Diseñada para piel sensible con macromoléculas de Ácido Hialurónico y complejo AMC con 6 activos hidratantes. ||META||{"slug": "agua-micelar-sensible", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Limpieza y desmaquillante respetuoso", "presentacion": "Frasco 260 ml", "precioProfesional": 22.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["Micelas biocompatibles", "Macromoléculas de Ácido Hialurónico", "Complejo Hidratante AMC con 6 activos", "Extracto Botánico Calmante"], "beneficios": ["Retira impurezas y maquillaje waterproof sin irritar.", "Protege la barrera cutánea frente a la deshidratación.", "Apta para contorno de ojos y pieles reactivas."], "modoUso": "Humedecer un disco de algodón y pasar suavemente por rostro, ojos y labios sin frotar."}', 27.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000021', 'PRD0000021', 'images/14_dermclar_ice_up.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000021', 'PRD0000021', 'images/placeholder_21.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000041', 'PRD0000021', 'SED0000001', 'L26-QTO-021A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000042', 'PRD0000021', 'SED0000002', 'L26-GYE-021B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000021', 'PRD0000021', 'SED0000001', 'LOT-QTO-021', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000022', 'CAT0000006', 'DRM-2026-022', 'Dermclar Golden UP', 'Tratamiento estético con ácido hialurónico y aminoácidos ramificados para devolver turgencia y grosor dérmico. ||META||{"slug": "dermclar-golden-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Realza la curvatura de las Nalgas", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 65.0, "imagen": "images/15_dermclar_golden_up.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico mediano peso", "Aminoácidos Ramificados", "Vitamina C", "Silicio Orgánico y DMAE"], "beneficios": ["Efecto lifting y soporte tensor.", "Devuelve la turgencia y textura suave.", "Reestructura el tejido dérmico glúteo."], "modoUso": "Protocolo profesional."}', 65.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000022', 'CAT0000003', 'DK-2026-022', 'Dermclar Luminescence Cleanser', 'Limpiador profundo exfoliante con acción astringente que potencializa la penetración de tratamientos aclarantes. ||META||{"slug": "luminescence-cleanser", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción pre-peeling limpiadora profunda", "presentacion": "Frasco 250 ml", "precioProfesional": 33.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Ácido Salicílico", "Ácido Glicólico y Láctico", "Zinc Sebum con 16 aminoácidos libres", "Vitamina F"], "beneficios": ["Exfoliación microquímica diaria suave.", "Equilibra la producción de sebo y reduce bacterias.", "Prepara la piel para recibir peelings y sérums."], "modoUso": "Aplicar sobre el rostro húmedo, masajear en círculos y enjuagar con abundante agua tibia."}', 40.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000022', 'PRD0000022', 'images/15_dermclar_golden_up.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000022', 'PRD0000022', 'images/placeholder_22.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000043', 'PRD0000022', 'SED0000001', 'L26-QTO-022A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000044', 'PRD0000022', 'SED0000002', 'L26-GYE-022B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000022', 'PRD0000022', 'SED0000001', 'LOT-QTO-022', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000023', 'CAT0000005', 'DRM-2026-023', 'Método +3R', 'Protocolo clínico completo con Ácido Hialurónico de mediano y bajo peso molecular y micronutrientes antiedad. ||META||{"slug": "metodo-3r-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Revitaliza + Redensifica + Rejuvenece", "presentacion": "Kit Clínico Completo", "precioProfesional": 150.0, "imagen": "images/16_metodo_3r.png", "destacadoHome": false, "principiosActivos": ["+ Plendor S: 2 viales X 10ml", "Plasmavit: 1 vial X 10ml", "Dermface: 1 vial X 10ml", "Silicio Orgánico: 2 ampollas X 5ml", "Hidraderm: 2 ampollas X 2ml"], "beneficios": ["Kit integral formulado para 5 sesiones completas.", "Reversión visible de signos de crono y fotoenvejecimiento.", "Máxima redensificación dérmica probada clínicamente."], "modoUso": "Protocolo exclusivo para médicos y profesionales de la estética médica."}', 150.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000023', 'CAT0000003', 'DK-2026-023', 'Gel Limpiador Purificante AHA/BHA', 'Limpieza profunda para piel mixta a grasa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "gel-limpiador-purificante-aha-bha", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Limpieza profunda para piel mixta a grasa", "presentacion": "Frasco 150 ml", "precioProfesional": 24.65, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 29.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000023', 'PRD0000023', 'images/16_metodo_3r.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000023', 'PRD0000023', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000045', 'PRD0000023', 'SED0000001', 'L26-QTO-023A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000046', 'PRD0000023', 'SED0000002', 'L26-GYE-023B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000023', 'PRD0000023', 'SED0000001', 'LOT-QTO-023', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000024', 'CAT0000005', 'DRM-2026-024', 'Método Hair', 'Combinación de ácido hialurónico, aminoácidos y oligoelementos para reactivar folículos en receso. ||META||{"slug": "metodo-hair-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Hair Active A.H. Protocolo Capilar", "presentacion": "Kit Clínico Capilar", "precioProfesional": 79.0, "imagen": "images/17_metodo_hair.png", "destacadoHome": false, "principiosActivos": ["Dermhair: 2 viales X 10ml", "Plasmavit: 2 viales X 10ml", "Silicio Orgánico: 2 ampollas X 5ml", "Meliloto: 2 ampollas X 2ml"], "beneficios": ["Estimulación capilar completa.", "Revitalización del folículo debilitado.", "Aumenta la fuerza de anclaje de la raíz."], "modoUso": "Uso en cabina médica capilar."}', 79.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000024', 'CAT0000003', 'DK-2026-024', 'Leche Limpiadora Calmante Manzanilla', 'Desmaquillante suave para piel sensible. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "leche-limpiadora-calmante-manzanilla", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Desmaquillante suave para piel sensible", "presentacion": "Frasco 200 ml", "precioProfesional": 23.8, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 28.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000024', 'PRD0000024', 'images/17_metodo_hair.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000024', 'PRD0000024', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000047', 'PRD0000024', 'SED0000001', 'L26-QTO-024A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000048', 'PRD0000024', 'SED0000002', 'L26-GYE-024B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000024', 'PRD0000024', 'SED0000001', 'LOT-QTO-024', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000025', 'CAT0000006', 'DRM-2026-025', 'Método OBooster', 'Reducción de grasa localizada con armonización bioenergética y reposicionamiento de la piel luego del adelgazamiento. ||META||{"slug": "metodo-obooster-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Remodelador Corporal y Reposicionador Tisular", "presentacion": "Kit Clínico Completo", "precioProfesional": 95.0, "imagen": "images/18_metodo_obooster.png", "destacadoHome": false, "principiosActivos": ["Dermobes: 2 viales X 10ml", "Obooster: 2 ampollas X 5ml", "Ampelopsina: 2 ampollas X 5ml", "L-Carnitina: 2 ampollas X 5ml", "Fosfatidilcolina: 1 ampolla X 5ml", "Silicio Orgánico: 1 ampolla X 5ml"], "beneficios": ["Actúa en todos los biotipos corporales.", "Evita el descolgamiento cutáneo post-reducción.", "Remodela el contorno corporal integral."], "modoUso": "Protocolo clínico para reducción y firmeza corporal."}', 95.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000025', 'CAT0000003', 'DK-2026-025', 'Tónico Equilibrante pH Niacinamida', 'Loción tónica cerradora de poros. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "tonico-equilibrante-ph-niacinamida", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción tónica cerradora de poros", "presentacion": "Frasco 150 ml", "precioProfesional": 22.1, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 26.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000025', 'PRD0000025', 'images/18_metodo_obooster.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000025', 'PRD0000025', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000049', 'PRD0000025', 'SED0000001', 'L26-QTO-025A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000050', 'PRD0000025', 'SED0000002', 'L26-GYE-025B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000025', 'PRD0000025', 'SED0000001', 'LOT-QTO-025', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000026', 'CAT0000007', 'DRM-2026-026', 'Copa Sueca Mini', 'Facilita el drenaje linfático, disminuye líneas de expresión y redefine el óvalo facial mediante succión al vacío suave. ||META||{"slug": "copa-sueca-mini", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Herramienta facial de acero quirúrgico", "presentacion": "Unidad individual en acero médico", "precioProfesional": 25.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Aleación de acero médico antialérgico", "Borde pulido de alta precisión", "Mango ergonómico antideslizante"], "beneficios": ["Efecto succión que moviliza el líquido estancado.", "Relaja la tensión muscular nasogeniana y frontal.", "Máxima durabilidad y fácil esterilización."], "modoUso": "Aplicar aceite facial o sérum antes del uso. Deslizar suavemente siguiendo los canales de drenaje linfático."}', 25.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000026', 'CAT0000003', 'DK-2026-026', 'Aceite Desmaquillante Dermo-Lipídico', 'Limpiador oleoso emulsionable sin residuos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "aceite-desmaquillante-dermo-lipidico", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Limpiador oleoso emulsionable sin residuos", "presentacion": "Frasco 120 ml", "precioProfesional": 28.9, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 34.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000026', 'PRD0000026', 'images/placeholder_26.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000026', 'PRD0000026', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000051', 'PRD0000026', 'SED0000001', 'L26-QTO-026A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000052', 'PRD0000026', 'SED0000002', 'L26-GYE-026B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000026', 'PRD0000026', 'SED0000001', 'LOT-QTO-026', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000027', 'CAT0000008', 'DRM-2026-027', 'Mascarilla Hidroplástica Colágeno', 'Aporta elasticidad y firmeza intensa a pieles cansadas gracias al colágeno hidrolizado y alginatos marinos. ||META||{"slug": "mascarilla-colageno", "marca": "Medical Skin", "tipoUso": "casa", "subtitulo": "Antienvejecimiento para piel seca y desvitalizada", "presentacion": "Sobre 250 g", "precioProfesional": 19.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Colágeno Hidrolizado", "Extracto de Flor de Regaliz", "Algina Natural", "Tierra de Diatomeas"], "beneficios": ["Forma una capa elástica que sella activos en la piel.", "Efecto refrescante y descongestivo inmediato.", "Nutre y suaviza visiblemente la textura cutánea."], "modoUso": "Mezclar el polvo con agua hasta formar una pasta cremosa. Aplicar en rostro y retirar tras 20 minutos de una sola pieza."}', 19.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000027', 'CAT0000003', 'DK-2026-027', 'Exfoliante Enzimático Papaya y Avena', 'Renovador celular suave sin gránulos abrasivos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "exfoliante-enzimatico-papaya-y-avena", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Renovador celular suave sin gránulos abrasivos", "presentacion": "Tubo 100 g", "precioProfesional": 29.75, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 35.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000027', 'PRD0000027', 'images/placeholder_27.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000027', 'PRD0000027', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000053', 'PRD0000027', 'SED0000001', 'L26-QTO-027A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000054', 'PRD0000027', 'SED0000002', 'L26-GYE-027B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000027', 'PRD0000027', 'SED0000001', 'LOT-QTO-027', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
 INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
-VALUES ('PRD0000028', 'CAT0000009', 'DRM-2026-028', 'Guantes de Nitrilo Quirúrgico', 'Guantes sin polvo, alta resistencia elástica y gran sensibilidad táctil para procedimientos estéticos y médicos. ||META||{"slug": "guantes-nitrilo", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Caja de 100 unidades grado médico", "presentacion": "Caja de 100 unidades", "precioProfesional": 5.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Nitrilo libre de látex", "Puntas de dedos microtexturizadas", "Certificación médica hospitalaria"], "beneficios": ["Sin riesgo de alergias al látex.", "Excelente agarre de jeringas e instrumental metálico.", "Barrera biológica segura y confortable."], "modoUso": "Descartar luego de cada paciente conforme a las normas de bioseguridad."}', 5.00, 'ACTIVO')
-ON CONFLICT ("id_producto") DO UPDATE SET
-  "id_categoria" = EXCLUDED."id_categoria",
-  "pro_codigo" = EXCLUDED."pro_codigo",
-  "pro_nombre" = EXCLUDED."pro_nombre",
-  "pro_descripcion" = EXCLUDED."pro_descripcion",
-  "pro_precio" = EXCLUDED."pro_precio",
-  "pro_estado" = 'ACTIVO';
+VALUES ('PRD0000028', 'CAT0000003', 'DK-2026-028', 'Solución Desengransante Pre-Peeling', 'Loción preparadora clínica de cabina. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "solucion-desengransante-pre-peeling", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Loción preparadora clínica de cabina", "presentacion": "Frasco 250 ml", "precioProfesional": 27.2, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 32.00, 'ACTIVO');
 
 INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
-VALUES ('IMG0000028', 'PRD0000028', 'images/placeholder_28.png', 1, 'S')
-ON CONFLICT ("id_imagen") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "img_url" = EXCLUDED."img_url",
-  "img_es_portada" = 'S';
+VALUES ('IMG0000028', 'PRD0000028', 'images/03_hydrabrume.png', 1, 'S');
 
 INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
-VALUES
-  ('LOT0000055', 'PRD0000028', 'SED0000001', 'L26-QTO-028A', '2026-01-15', '2027-08-30', 80, 'DISPONIBLE'),
-  ('LOT0000056', 'PRD0000028', 'SED0000002', 'L26-GYE-028B', '2026-02-10', '2027-11-30', 65, 'DISPONIBLE')
-ON CONFLICT ("id_lote") DO UPDATE SET
-  "id_producto" = EXCLUDED."id_producto",
-  "id_sede" = EXCLUDED."id_sede",
-  "lot_numero" = EXCLUDED."lot_numero",
-  "lot_fecha_caducidad" = EXCLUDED."lot_fecha_caducidad",
-  "lot_stock_actual" = EXCLUDED."lot_stock_actual",
-  "lot_estado" = 'DISPONIBLE';
+VALUES ('LOT0000028', 'PRD0000028', 'SED0000001', 'LOT-QTO-028', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
--- =============================================================================
--- 4. PEDIDOS, DETALLES, ORDENES DE SALIDA FEFO, PAGOS, FACTURAS SRI Y ENVIOS
--- =============================================================================
-INSERT INTO "Pedidos" ("id_pedido", "id_cliente", "id_sede", "id_ciudad", "id_descuento", "ped_numero", "ped_direccion_entrega", "ped_latitud", "ped_longitud", "ped_fecha", "ped_subtotal", "ped_descuento", "ped_iva", "ped_total", "ped_estado") VALUES
-('PED0002001', 'CLI0000001', 'SED0000001', 'CIU0000001', 'DSC0000001', 'ORD-0002001', 'Av. República E1-136 y Atahualpa, Quito', -0.186590, -78.484120, '2026-11-01 10:30:00', 77.00, 7.70, 10.40, 79.70, 'ENTREGADO'),
-('PED0002002', 'CLI0000002', 'SED0000001', 'CIU0000002', NULL,         'ORD-0002002', 'Av. Francisco de Orellana, Guayaquil', -2.164890, -79.897450, '2026-11-02 14:15:00', 177.00, 0.00, 26.55, 203.55, 'ENVIADO'),
-('PED0002003', 'CLI0000003', 'SED0000001', 'CIU0000003', 'DSC0000003', 'ORD-0002003', 'Av. Solano 4-55, Cuenca', -2.900120, -79.005890, '2026-11-02 18:45:00', 110.00, 15.00, 14.25, 109.25, 'PAGADO')
-ON CONFLICT ("id_pedido") DO NOTHING;
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000029', 'CAT0000003', 'DK-2026-029', 'Agua Micelar Bifásica Ojos y Labios', 'Desmaquillante de alta tolerancia oftalmológica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "agua-micelar-bifasica-ojos-y-labios", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Desmaquillante de alta tolerancia oftalmológica", "presentacion": "Frasco 150 ml", "precioProfesional": 22.95, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 27.00, 'ACTIVO');
 
-INSERT INTO "PedidoDetalle" ("id_pedido", "id_producto", "pde_cantidad", "pde_precio_unit", "pde_subtotal") VALUES
-('PED0002001', 'PRD0000001', 1, 52.00, 52.00),
-('PED0002001', 'PRD0000005', 1, 25.00, 25.00),
-('PED0002002', 'PRD0000019', 1, 79.00, 79.00),
-('PED0002002', 'PRD0000020', 1, 98.00, 98.00),
-('PED0002003', 'PRD0000002', 2, 55.00, 110.00)
-ON CONFLICT ("id_pedido", "id_producto") DO NOTHING;
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000029', 'PRD0000029', 'images/03_hydrabrume.png', 1, 'S');
 
-INSERT INTO "OrdenesSalida" ("id_orden_salida", "id_pedido", "id_sede", "id_empleado", "osa_numero", "osa_fecha", "osa_observacion", "osa_estado") VALUES
-('OSA0002001', 'PED0002001', 'SED0000001', 'EMP0000001', 'OSA-0002001', '2026-11-01 11:00:00', 'Despacho FEFO Matriz Quito', 'COMPLETADA'),
-('OSA0002002', 'PED0002002', 'SED0000001', 'EMP0000001', 'OSA-0002002', '2026-11-02 15:00:00', 'Despacho FEFO Matriz Quito', 'COMPLETADA'),
-('OSA0002003', 'PED0002003', 'SED0000001', 'EMP0000001', 'OSA-0002003', '2026-11-02 19:00:00', 'Despacho FEFO Matriz Quito', 'COMPLETADA')
-ON CONFLICT ("id_orden_salida") DO NOTHING;
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000029', 'PRD0000029', 'SED0000001', 'LOT-QTO-029', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
-INSERT INTO "OrdenSalidaDetalle" ("id_orden_salida", "id_lote", "osd_cantidad_despachada", "osd_precio_unit", "osd_subtotal") VALUES
-('OSA0002001', 'LOT0000001', 1, 52.00, 52.00),
-('OSA0002001', 'LOT0000009', 1, 25.00, 25.00),
-('OSA0002002', 'LOT0000037', 1, 79.00, 79.00),
-('OSA0002002', 'LOT0000039', 1, 98.00, 98.00),
-('OSA0002003', 'LOT0000003', 2, 55.00, 110.00)
-ON CONFLICT ("id_orden_salida", "id_lote") DO NOTHING;
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000030', 'CAT0000003', 'DK-2026-030', 'Espuma Limpiadora Ácido Mandélico', 'Higiene diaria renovadora y antibacteriana. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza. ||META||{"slug": "espuma-limpiadora-acido-mandelico", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Higiene diaria renovadora y antibacteriana", "presentacion": "Frasco 160 ml", "precioProfesional": 26.35, "imagen": "images/03_hydrabrume.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de limpieza clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 31.00, 'ACTIVO');
 
-INSERT INTO "Pagos" ("id_pago", "id_pedido", "pag_metodo", "pag_monto", "pag_fecha", "pag_referencia", "pag_estado") VALUES
-('PAG0002001', 'PED0002001', 'TARJETA_CREDITO', 79.70, '2026-11-01 10:31:00', 'TX-WEB-902001', 'APROBADO'),
-('PAG0002002', 'PED0002002', 'TARJETA_CREDITO', 203.55, '2026-11-02 14:16:00', 'TX-WEB-902002', 'APROBADO'),
-('PAG0002003', 'PED0002003', 'TARJETA_CREDITO', 109.25, '2026-11-02 18:46:00', 'TX-WEB-902003', 'APROBADO')
-ON CONFLICT ("id_pago") DO NOTHING;
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000030', 'PRD0000030', 'images/03_hydrabrume.png', 1, 'S');
 
-INSERT INTO "Facturas" ("id_factura", "id_pedido", "fac_numero", "fac_autorizacion_sri", "fac_fecha_emision", "fac_total", "fac_estado") VALUES
-('FAC0002001', 'PED0002001', '001-002-000002001', '0111202601179246493900120010020000020011234567819', '2026-11-01 10:32:00', 79.70, 'EMITIDA'),
-('FAC0002002', 'PED0002002', '001-002-000002002', '0211202601179246493900120010020000020021234567819', '2026-11-02 14:17:00', 203.55, 'EMITIDA'),
-('FAC0002003', 'PED0002003', '001-002-000002003', '0211202601179246493900120010020000020031234567819', '2026-11-02 18:47:00', 109.25, 'EMITIDA')
-ON CONFLICT ("id_factura") DO NOTHING;
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000030', 'PRD0000030', 'SED0000001', 'LOT-QTO-030', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
 
-INSERT INTO "Envios" ("id_envio", "id_orden_salida", "env_direccion_entrega", "env_transportista", "env_numero_guia", "env_fecha_envio", "env_estado") VALUES
-('ENV0002001', 'OSA0002001', 'Av. República E1-136 y Atahualpa, Quito', 'Servientrega Urbano', 'GUI-2026-200001', '2026-11-01 12:00:00', 'ENTREGADO'),
-('ENV0002002', 'OSA0002002', 'Av. Francisco de Orellana, Guayaquil', 'Servientrega Nacional', 'GUI-2026-200002', '2026-11-02 16:00:00', 'EN_RUTA'),
-('ENV0002003', 'OSA0002003', 'Av. Solano 4-55, Cuenca', 'Servientrega Nacional', 'GUI-2026-200003', '2026-11-02 19:30:00', 'EN_RUTA')
-ON CONFLICT ("id_envio") DO NOTHING;
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000031', 'CAT0000004', 'DK-2026-031', 'Protector solar DD Cream con color', 'Crema de defensa diaria multifuncional contra el fotoenvejecimiento y las manchas gracias a Neurolight 61.G SPF 30. ||META||{"slug": "dd-cream-color", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Protege y unifica sin sensación grasa", "presentacion": "Tubo 50 g", "precioProfesional": 40.0, "imagen": "", "destacadoHome": true, "principiosActivos": ["Filtros Solares UVA/UVB SPF 30", "Neurolight 61.G Despigmentante", "Pigmentos Microencapsulados de Color Adaptable", "Vitamina E Antioxidante"], "beneficios": ["Unifica el tono de la piel con acabado mate natural.", "Reduce manchas oscuras existentes.", "Fórmula no comedogénica libre de aceites pesados."], "modoUso": "Aplicar uniformemente como último paso de la rutina facial cada mañana antes de salir."}', 48.00, 'ACTIVO');
 
--- =============================================================================
--- 5. PERMISOS PARA SUPABASE REST API (PERMITE CONEXION DESDE GITHUB PAGES)
--- =============================================================================
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000031', 'PRD0000031', 'images/placeholder_31.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000031', 'PRD0000031', 'SED0000001', 'LOT-QTO-031', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000032', 'CAT0000004', 'DK-2026-032', 'SunBlock Gel Invisible SPF 50+', 'Fotoprotector toque seco para piel grasa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "sunblock-gel-invisible-spf-50", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Fotoprotector toque seco para piel grasa", "presentacion": "Tubo 60 g", "precioProfesional": 32.3, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 38.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000032', 'PRD0000032', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000032', 'PRD0000032', 'SED0000001', 'LOT-QTO-032', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000033', 'CAT0000004', 'DK-2026-033', 'Solar Fluid Mineral Pediátrico SPF 50+', 'Pantalla 100% mineral para piel intolerante. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "solar-fluid-mineral-pediatrico-spf-50", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Pantalla 100% mineral para piel intolerante", "presentacion": "Frasco 50 ml", "precioProfesional": 35.7, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 42.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000033', 'PRD0000033', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000033', 'PRD0000033', 'SED0000001', 'LOT-QTO-033', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000034', 'CAT0000004', 'DK-2026-034', 'Compacto Solar Dermclar SPF 50+ Tono Claro', 'Maquillaje dermatológico fotoprotector. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "compacto-solar-dermclar-spf-50-tono-claro", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Maquillaje dermatológico fotoprotector", "presentacion": "Estuche 12 g", "precioProfesional": 38.25, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 45.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000034', 'PRD0000034', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000034', 'PRD0000034', 'SED0000001', 'LOT-QTO-034', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000035', 'CAT0000004', 'DK-2026-035', 'Compacto Solar Dermclar SPF 50+ Tono Medio', 'Cobertura correctora con filtros UV/IR. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "compacto-solar-dermclar-spf-50-tono-medio", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Cobertura correctora con filtros UV/IR", "presentacion": "Estuche 12 g", "precioProfesional": 38.25, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 45.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000035', 'PRD0000035', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000035', 'PRD0000035', 'SED0000001', 'LOT-QTO-035', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000036', 'CAT0000004', 'DK-2026-036', 'Bruma Solar Reaplicación Facial SPF 50', 'Spray fotoprotector invisible sobre maquillaje. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "bruma-solar-reaplicacion-facial-spf-50", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Spray fotoprotector invisible sobre maquillaje", "presentacion": "Aerosol 75 ml", "precioProfesional": 33.15, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 39.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000036', 'PRD0000036', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000036', 'PRD0000036', 'SED0000001', 'LOT-QTO-036', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000037', 'CAT0000004', 'DK-2026-037', 'Solar Corporal Familiar SPF 50+ Resistente', 'Loción fotoprotectora resistente al agua. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "solar-corporal-familiar-spf-50-resistente", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción fotoprotectora resistente al agua", "presentacion": "Frasco 200 ml", "precioProfesional": 40.8, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 48.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000037', 'PRD0000037', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000037', 'PRD0000037', 'SED0000001', 'LOT-QTO-037', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000038', 'CAT0000004', 'DK-2026-038', 'Stick Solar Zonas Sensibles SPF 50+', 'Barra fotoprotectora para manchas y cicatrices. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "stick-solar-zonas-sensibles-spf-50", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Barra fotoprotectora para manchas y cicatrices", "presentacion": "Stick 15 g", "precioProfesional": 27.2, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 32.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000038', 'PRD0000038', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000038', 'PRD0000038', 'SED0000001', 'LOT-QTO-038', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000039', 'CAT0000004', 'DK-2026-039', 'Emulsión Post-Solar Reparadora ADN', 'Loción descongestiva con Aloe y Pantenol. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "emulsion-post-solar-reparadora-adn", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Loción descongestiva con Aloe y Pantenol", "presentacion": "Frasco 150 ml", "precioProfesional": 25.5, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 30.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000039', 'PRD0000039', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000039', 'PRD0000039', 'SED0000001', 'LOT-QTO-039', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000040', 'CAT0000004', 'DK-2026-040', 'Fluido Solar Antimanchas Ácido Tranexámico', 'Fotoprotección despigmentante diaria SPF 50+. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar. ||META||{"slug": "fluido-solar-antimanchas-acido-tranexamico", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Fotoprotección despigmentante diaria SPF 50+", "presentacion": "Frasco 50 ml", "precioProfesional": 39.1, "imagen": "images/04_solar_dd_cream.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de protección solar clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 46.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000040', 'PRD0000040', 'images/04_solar_dd_cream.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000040', 'PRD0000040', 'SED0000001', 'LOT-QTO-040', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000041', 'CAT0000005', 'DK-2026-041', 'Derm face serum', 'Contiene ácido hialurónico, péptidos y extractos naturales que hidratan a profundidad hasta por 48 horas sin sensación pegajosa. ||META||{"slug": "derm-face-serum", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Gel facial seguro en pieles sensibles", "presentacion": "Frasco 30 ml", "precioProfesional": 34.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico Puro", "Péptidos Reafirmantes", "Extractos Botánicos Regeneradores", "Pantenol Calmante"], "beneficios": ["Hidratación prolongada por 48 horas.", "Devuelve la firmeza y volumen natural de las facciones.", "Dermatológicamente comprobado y no comedogénico."], "modoUso": "Distribuir en rostro y cuello con masajes ascendentes hasta que se absorba por completo."}', 41.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000041', 'PRD0000041', 'images/placeholder_41.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000041', 'PRD0000041', 'SED0000001', 'LOT-QTO-041', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000042', 'CAT0000005', 'DK-2026-042', 'Contorno de ojos', 'Sérum sensorial sedoso y descongestionante formulado con extracto de meliloto, 3 tipos de AH y péptidos Eyeseryl y Argireline. ||META||{"slug": "contorno-ojos-frio", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Aplicador metálico con efecto frío", "presentacion": "Frasco 15 ml", "precioProfesional": 40.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Extracto de Meliloto", "3 Tipos de Ácido Hialurónico", "Péptido Eyeseryl (Drenante antibolsas)", "Argireline & Leuphasyl (Relajantes musculares)"], "beneficios": ["Atenúa bolsas y ojeras oscuras rápidamente.", "Relaja las líneas de expresión perioculares.", "Aplicador de aleación metálica que potencia el drenaje por efecto térmico."], "modoUso": "Presionar suavemente y deslizar la punta metálica sobre el contorno del ojo desde el interior hacia afuera."}', 48.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000042', 'PRD0000042', 'images/placeholder_42.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000042', 'PRD0000042', 'SED0000001', 'LOT-QTO-042', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000043', 'CAT0000005', 'DK-2026-043', 'Proteoglycans Serum', 'Actúa sobre la raíz del envejecimiento celular regenerando las capas más profundas de la piel y aportando firmeza. ||META||{"slug": "proteoglycans-serum", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Serum de Proteoglicanos y Vitamina C", "presentacion": "Frasco 15 ml", "precioProfesional": 32.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Proteoglicanos Puros", "Vitamina C Estabilizada", "Ácido Hialurónico", "Antioxidantes de Alta Potencia"], "beneficios": ["Regenera las estructuras de sostén dérmico.", "Neutraliza radicales libres generados por la polución.", "Aporta luminosidad radiante a pieles apagadas."], "modoUso": "Aplicar 3 gotas por la mañana antes de la crema de día."}', 40.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000043', 'PRD0000043', 'images/placeholder_43.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000043', 'PRD0000043', 'SED0000001', 'LOT-QTO-043', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000044', 'CAT0000005', 'DK-2026-044', 'DermclarPlasmaVit', 'Revitalizante que nutre intensamente los tejidos mejorando la elasticidad y acelerando los procesos celulares. ||META||{"slug": "dermclar-plasmavit-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Booster Tisular Revitalizante Celular", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 78.0, "imagen": "images/05_dermclar_plasmavit.png", "destacadoHome": false, "principiosActivos": ["Complejo de Aminoácidos Esenciales", "Vitamina C Pura", "Sinadol Antioxidante"], "beneficios": ["Aumenta el grosor y consistencia de la piel madura.", "Atenúa arrugas finas y líneas de expresión.", "Gran poder iluminador y despigmentante."], "modoUso": "Aplicación profesional facial mediante técnicas de microneedling o electroporación."}', 78.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000044', 'PRD0000044', 'images/05_dermclar_plasmavit.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000044', 'PRD0000044', 'SED0000001', 'LOT-QTO-044', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000045', 'CAT0000005', 'DK-2026-045', 'DermclarHair', 'Retarda la caída, mejora la calidad y resistencia del folículo y favorece la actividad biológica en receso. ||META||{"slug": "dermclar-hair-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Previene la caída y aumenta la densidad capilar", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 85.0, "imagen": "images/09_dermclar_hair.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico", "D-Pantenol", "Silicio Orgánico", "Rutina", "Oligoelementos"], "beneficios": ["Disminuye la fragilidad capilar.", "Aporta brillo y nutrición profunda a la fibra.", "Estimula el crecimiento del cabello nuevo."], "modoUso": "Protocolo clínico capilar aplicado en cabina."}', 85.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000045', 'PRD0000045', 'images/09_dermclar_hair.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000045', 'PRD0000045', 'SED0000001', 'LOT-QTO-045', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000046', 'CAT0000005', 'DK-2026-046', 'DermclarFace', 'Solución integral para combatir el envejecimiento del rostro. Hidrata, nutre, reafirma y aclara. ||META||{"slug": "dermclar-face-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Redensifica y rejuvenece el rostro", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 94.0, "imagen": "images/10_dermclar_face.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico", "Glutatión", "Argireline y Leuphasyl", "DMAE", "Vitamina C y E"], "beneficios": ["Mejora arrugas y líneas de expresión.", "Genera efecto tensor y lifting evidente.", "Alisado y homogeneización de la tez."], "modoUso": "Aplicación profesional con técnicas de electroporación."}', 94.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000046', 'PRD0000046', 'images/10_dermclar_face.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000046', 'PRD0000046', 'SED0000001', 'LOT-QTO-046', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000047', 'CAT0000005', 'DK-2026-047', 'DermclarFace V', 'Ayuda a esculpir, retensar y redefinir el contorno del rostro, doble mentón y zona V. ||META||{"slug": "dermclar-face-v-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reafirma y tonifica la Zona V del rostro", "presentacion": "Caja 5 viales X 5ml", "precioProfesional": 105.0, "imagen": "images/11_dermclar_face_v.png", "destacadoHome": false, "principiosActivos": ["Hidrolizado de Algas Rojas", "Ampelopsina", "Péptidos Biomiméticos", "Silicio Orgánico", "DMAE"], "beneficios": ["Remodelación visible del óvalo facial.", "Disminuye grasa localizada en papada.", "Aumenta la firmeza y fibras colágenas."], "modoUso": "Tratamiento en cabina médica para perfilamiento facial."}', 105.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000047', 'PRD0000047', 'images/11_dermclar_face_v.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000047', 'PRD0000047', 'SED0000001', 'LOT-QTO-047', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000048', 'CAT0000005', 'DK-2026-048', 'DermclarFace OB', 'Fórmula de alta tecnología que disminuye el volumen adiposo de mejillas y doble mentón. ||META||{"slug": "dermclar-face-ob-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reduce la papada y perfila el rostro", "presentacion": "Caja 5 viales X 5ml", "precioProfesional": 110.0, "imagen": "images/12_dermclar_face_ob.png", "destacadoHome": false, "principiosActivos": ["L-Carnitina", "Silicio Orgánico", "Fosfatidilcolina", "Cafeína", "Troxerutina"], "beneficios": ["Desprende cúmulos grasos submentonianos.", "Acción drenante para evacuar ácidos grasos.", "Mejora sustancialmente el ángulo de la barbilla."], "modoUso": "Uso profesional en reducción submentoniana."}', 110.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000048', 'PRD0000048', 'images/12_dermclar_face_ob.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000048', 'PRD0000048', 'SED0000001', 'LOT-QTO-048', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000049', 'CAT0000005', 'DK-2026-049', 'Método +3R', 'Protocolo clínico completo con Ácido Hialurónico de mediano y bajo peso molecular y micronutrientes antiedad. ||META||{"slug": "metodo-3r-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Revitaliza + Redensifica + Rejuvenece", "presentacion": "Kit Clínico Completo", "precioProfesional": 150.0, "imagen": "images/16_metodo_3r.png", "destacadoHome": false, "principiosActivos": ["+ Plendor S: 2 viales X 10ml", "Plasmavit: 1 vial X 10ml", "Dermface: 1 vial X 10ml", "Silicio Orgánico: 2 ampollas X 5ml", "Hidraderm: 2 ampollas X 2ml"], "beneficios": ["Kit integral formulado para 5 sesiones completas.", "Reversión visible de signos de crono y fotoenvejecimiento.", "Máxima redensificación dérmica probada clínicamente."], "modoUso": "Protocolo exclusivo para médicos y profesionales de la estética médica."}', 150.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000049', 'PRD0000049', 'images/16_metodo_3r.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000049', 'PRD0000049', 'SED0000001', 'LOT-QTO-049', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000050', 'CAT0000005', 'DK-2026-050', 'Método Hair', 'Combinación de ácido hialurónico, aminoácidos y oligoelementos para reactivar folículos en receso. ||META||{"slug": "metodo-hair-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Hair Active A.H. Protocolo Capilar", "presentacion": "Kit Clínico Capilar", "precioProfesional": 79.0, "imagen": "images/17_metodo_hair.png", "destacadoHome": false, "principiosActivos": ["Dermhair: 2 viales X 10ml", "Plasmavit: 2 viales X 10ml", "Silicio Orgánico: 2 ampollas X 5ml", "Meliloto: 2 ampollas X 2ml"], "beneficios": ["Estimulación capilar completa.", "Revitalización del folículo debilitado.", "Aumenta la fuerza de anclaje de la raíz."], "modoUso": "Uso en cabina médica capilar."}', 79.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000050', 'PRD0000050', 'images/17_metodo_hair.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000050', 'PRD0000050', 'SED0000001', 'LOT-QTO-050', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000051', 'CAT0000006', 'DK-2026-051', 'DermclarFirm', 'Tratamiento clínico para combatir la flacidez y las estrías. Devuelve elasticidad firme a la arquitectura cutánea. ||META||{"slug": "dermclar-firm-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reafirmante y tensor intensivo de la piel", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 79.0, "imagen": "images/08_dermclar_firm.png", "destacadoHome": true, "principiosActivos": ["DMAE Concentrado", "Glucosaminoglicanos", "Silicio Orgánico", "D-Pantenol", "Centella Asiática Pura"], "beneficios": ["Efecto lifting tisular visible y sostenido.", "Estimulación masiva de colágeno y elastina.", "Disminuye profundidad y coloración de estrías."], "modoUso": "Uso exclusivo por profesionales capacitados mediante técnicas de mesoterapia o aparatología estética."}', 79.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000051', 'PRD0000051', 'images/08_dermclar_firm.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000051', 'PRD0000051', 'SED0000001', 'LOT-QTO-051', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000052', 'CAT0000006', 'DK-2026-052', 'DermclarObes', 'Fórmula #1 para reducir el volumen corporal, adiposidades localizadas rebeldes y contornear la silueta. ||META||{"slug": "dermclar-obes-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Reductor de medidas y grasa rebelde", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 98.0, "imagen": "images/06_dermclar_obes.png", "destacadoHome": false, "principiosActivos": ["Fosfatidilcolina Lipolítica", "Desoxicolato de Sodio", "L-Carnitina Biológica", "Rutina Vasoactiva"], "beneficios": ["Potente liporeductor en tiempo récord.", "Disuelve adiposidades en abdomen, flancos y muslos.", "Limita la retención hídrica en tejido adiposo."], "modoUso": "Protocolo clínico profesional con técnica de electroporación o mesoterapia."}', 98.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000052', 'PRD0000052', 'images/06_dermclar_obes.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000052', 'PRD0000052', 'SED0000001', 'LOT-QTO-052', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000053', 'CAT0000006', 'DK-2026-053', 'DermclarCelu', 'Disminuye el tamaño de los nódulos grasos celulíticos y estimula el drenaje de toxinas acumuladas. ||META||{"slug": "dermclar-celu-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Anticelulítico y desintoxicante de tejido", "presentacion": "Caja 5 viales X 10ml", "precioProfesional": 70.0, "imagen": "images/07_dermclar_celu.png", "destacadoHome": false, "principiosActivos": ["L-Carnitina", "Cafeína Pura", "Silicio Orgánico", "Centella Asiática", "Extracto de Meliloto"], "beneficios": ["Ideal para celulitis edematosa, compacta y flácida.", "Alisa la piel de naranja y reafirma el tejido.", "Activa la microcirculación de retorno venolinfático."], "modoUso": "Uso profesional en cabina estética con aparatología o técnica tópica avanzada."}', 70.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000053', 'PRD0000053', 'images/07_dermclar_celu.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000053', 'PRD0000053', 'SED0000001', 'LOT-QTO-053', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000054', 'CAT0000006', 'DK-2026-054', 'Dermclar Bump UP', 'Péptidos biomiméticos Adifyline y Factor de Crecimiento Epidermal (EGF PLUS) para remodelar y aportar firmeza glútea. ||META||{"slug": "dermclar-bump-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Proyecta la curvatura de los glúteos", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 95.0, "imagen": "images/13_dermclar_bump_up.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico de alto peso molecular", "EGF PLUS (Factor de Crecimiento Epidermal)", "Péptido Biomimético Adifyline", "Vitamina C y 15 Aminoácidos", "Silicio Orgánico y DMAE"], "beneficios": ["Aporta volumen y definición a la zona glútea.", "Estimula la síntesis de colágeno estructural.", "Efecto reafirmante y tensor duradero."], "modoUso": "Uso profesional en protocolos corporales de elevación y tonificación glútea."}', 95.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000054', 'PRD0000054', 'images/13_dermclar_bump_up.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000054', 'PRD0000054', 'SED0000001', 'LOT-QTO-054', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000055', 'CAT0000006', 'DK-2026-055', 'Dermclar Ice UP', 'Biopéptidos programados tensores y nutritivos que ayudan a reducir celulitis y flacidez. ||META||{"slug": "dermclar-ice-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Tonifica la curvatura de las Nalgas", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 87.0, "imagen": "images/14_dermclar_ice_up.png", "destacadoHome": false, "principiosActivos": ["Biopéptidos Programados", "Hidrolizado de Colágeno y Elastina", "Laureth-9 y Piruvato de Sodio", "Centella Asiática y DMAE"], "beneficios": ["Tonifica y reafirma la piel glútea.", "Reduce la apariencia de celulitis flácida.", "Estimula colágeno dérmico."], "modoUso": "Protocolo en cabina corporal."}', 87.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000055', 'PRD0000055', 'images/14_dermclar_ice_up.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000055', 'PRD0000055', 'SED0000001', 'LOT-QTO-055', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000056', 'CAT0000006', 'DK-2026-056', 'Dermclar Golden UP', 'Tratamiento estético con ácido hialurónico y aminoácidos ramificados para devolver turgencia y grosor dérmico. ||META||{"slug": "dermclar-golden-up-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Realza la curvatura de las Nalgas", "presentacion": "Caja 10 ampollas X 5ml", "precioProfesional": 65.0, "imagen": "images/15_dermclar_golden_up.png", "destacadoHome": false, "principiosActivos": ["Ácido Hialurónico mediano peso", "Aminoácidos Ramificados", "Vitamina C", "Silicio Orgánico y DMAE"], "beneficios": ["Efecto lifting y soporte tensor.", "Devuelve la turgencia y textura suave.", "Reestructura el tejido dérmico glúteo."], "modoUso": "Protocolo profesional."}', 65.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000056', 'PRD0000056', 'images/15_dermclar_golden_up.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000056', 'PRD0000056', 'SED0000001', 'LOT-QTO-056', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000057', 'CAT0000006', 'DK-2026-057', 'Método OBooster', 'Reducción de grasa localizada con armonización bioenergética y reposicionamiento de la piel luego del adelgazamiento. ||META||{"slug": "metodo-obooster-pro", "marca": "Dermclar", "tipoUso": "profesional", "subtitulo": "Remodelador Corporal y Reposicionador Tisular", "presentacion": "Kit Clínico Completo", "precioProfesional": 95.0, "imagen": "images/18_metodo_obooster.png", "destacadoHome": false, "principiosActivos": ["Dermobes: 2 viales X 10ml", "Obooster: 2 ampollas X 5ml", "Ampelopsina: 2 ampollas X 5ml", "L-Carnitina: 2 ampollas X 5ml", "Fosfatidilcolina: 1 ampolla X 5ml", "Silicio Orgánico: 1 ampolla X 5ml"], "beneficios": ["Actúa en todos los biotipos corporales.", "Evita el descolgamiento cutáneo post-reducción.", "Remodela el contorno corporal integral."], "modoUso": "Protocolo clínico para reducción y firmeza corporal."}', 95.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000057', 'PRD0000057', 'images/18_metodo_obooster.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000057', 'PRD0000057', 'SED0000001', 'LOT-QTO-057', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000058', 'CAT0000006', 'DK-2026-058', 'Gel Criogénico Reafirmante Corporal', 'Efecto frío tonificante para flacidez. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal. ||META||{"slug": "gel-criogenico-reafirmante-corporal", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Efecto frío tonificante para flacidez", "presentacion": "Pote 500 g", "precioProfesional": 38.25, "imagen": "images/06_dermclar_obes.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de corporal clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 45.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000058', 'PRD0000058', 'images/06_dermclar_obes.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000058', 'PRD0000058', 'SED0000001', 'LOT-QTO-058', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000059', 'CAT0000006', 'DK-2026-059', 'Crema Anticelulítica Cafeína y Centella', 'Emulsión reductora de piel de naranja. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal. ||META||{"slug": "crema-anticelulitica-cafeina-y-centella", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Emulsión reductora de piel de naranja", "presentacion": "Frasco 250 ml", "precioProfesional": 35.7, "imagen": "images/06_dermclar_obes.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de corporal clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 42.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000059', 'PRD0000059', 'images/06_dermclar_obes.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000059', 'PRD0000059', 'SED0000001', 'LOT-QTO-059', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000060', 'CAT0000006', 'DK-2026-060', 'Crema Prevención Estrías Rosa Mosqueta', 'Elasticidad dérmica intensiva corporal. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal. ||META||{"slug": "crema-prevencion-estrias-rosa-mosqueta", "marca": "Dermclar", "tipoUso": "casa", "subtitulo": "Elasticidad dérmica intensiva corporal", "presentacion": "Tubo 200 ml", "precioProfesional": 32.3, "imagen": "images/06_dermclar_obes.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de corporal clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 38.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000060', 'PRD0000060', 'images/06_dermclar_obes.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000060', 'PRD0000060', 'SED0000001', 'LOT-QTO-060', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000061', 'CAT0000007', 'DK-2026-061', 'Copa Sueca Mini', 'Facilita el drenaje linfático, disminuye líneas de expresión y redefine el óvalo facial mediante succión al vacío suave. ||META||{"slug": "copa-sueca-mini", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Herramienta facial de acero quirúrgico", "presentacion": "Unidad individual en acero médico", "precioProfesional": 25.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Aleación de acero médico antialérgico", "Borde pulido de alta precisión", "Mango ergonómico antideslizante"], "beneficios": ["Efecto succión que moviliza el líquido estancado.", "Relaja la tensión muscular nasogeniana y frontal.", "Máxima durabilidad y fácil esterilización."], "modoUso": "Aplicar aceite facial o sérum antes del uso. Deslizar suavemente siguiendo los canales de drenaje linfático."}', 25.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000061', 'PRD0000061', 'images/placeholder_61.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000061', 'PRD0000061', 'SED0000001', 'LOT-QTO-061', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000062', 'CAT0000007', 'DK-2026-062', 'Copa Sueca Metaloterapia Corporal', 'Succión y vacumterapia manual ergonómica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "copa-sueca-metaloterapia-corporal", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Succión y vacumterapia manual ergonómica", "presentacion": "Unidad", "precioProfesional": 40.8, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 48.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000062', 'PRD0000062', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000062', 'PRD0000062', 'SED0000001', 'LOT-QTO-062', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000063', 'CAT0000007', 'DK-2026-063', 'Tabla Moldeadora Corporal Metal', 'Perfilado y drenaje linfático de cintura. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "tabla-moldeadora-corporal-metal", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Perfilado y drenaje linfático de cintura", "presentacion": "Unidad", "precioProfesional": 44.2, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 52.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000063', 'PRD0000063', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000063', 'PRD0000063', 'SED0000001', 'LOT-QTO-063', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000064', 'CAT0000007', 'DK-2026-064', 'Rodillo Estriado Activador Circulatorio', 'Hiperemia controlada y preparación adiposa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "rodillo-estriado-activador-circulatorio", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Hiperemia controlada y preparación adiposa", "presentacion": "Unidad", "precioProfesional": 41.65, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 49.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000064', 'PRD0000064', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000064', 'PRD0000064', 'SED0000001', 'LOT-QTO-064', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000065', 'CAT0000007', 'DK-2026-065', 'Hongo Reductor Metaloterapia Corporal', 'Combate celulitis compacta y adiposidad. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "hongo-reductor-metaloterapia-corporal", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Combate celulitis compacta y adiposidad", "presentacion": "Unidad", "precioProfesional": 39.1, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 46.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000065', 'PRD0000065', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000065', 'PRD0000065', 'SED0000001', 'LOT-QTO-065', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000066', 'CAT0000007', 'DK-2026-066', 'Cinturón Masajeador Articulado Metal', 'Masaje simétrico en espalda, muslos y glúteos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "cinturon-masajeador-articulado-metal", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Masaje simétrico en espalda, muslos y glúteos", "presentacion": "Unidad", "precioProfesional": 54.4, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 64.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000066', 'PRD0000066', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000066', 'PRD0000066', 'SED0000001', 'LOT-QTO-066', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000067', 'CAT0000007', 'DK-2026-067', 'Copa Facial Lift Contorno Ocular', 'Drenaje periocular y elevación de pómulos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "copa-facial-lift-contorno-ocular", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Drenaje periocular y elevación de pómulos", "presentacion": "Unidad", "precioProfesional": 29.75, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 35.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000067', 'PRD0000067', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000067', 'PRD0000067', 'SED0000001', 'LOT-QTO-067', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000068', 'CAT0000007', 'DK-2026-068', 'Espátula Escultora Mandibular Metal', 'Definición del óvalo facial y papada. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "espatula-escultora-mandibular-metal", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Definición del óvalo facial y papada", "presentacion": "Unidad", "precioProfesional": 30.6, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 36.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000068', 'PRD0000068', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000068', 'PRD0000068', 'SED0000001', 'LOT-QTO-068', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000069', 'CAT0000007', 'DK-2026-069', 'Esferas Criogénicas Faciales Par', 'Crioterapia reafirmante y descongestiva. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "esferas-criogenicas-faciales-par", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Crioterapia reafirmante y descongestiva", "presentacion": "Caja x 2 unidades", "precioProfesional": 37.4, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 44.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000069', 'PRD0000069', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000069', 'PRD0000069', 'SED0000001', 'LOT-QTO-069', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000070', 'CAT0000007', 'DK-2026-070', 'Medical Skin Metaloterapia Fórmula 10', 'Tratamiento especializado de metaloterapia. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia. ||META||{"slug": "medical-skin-metaloterapia-formula-10", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Tratamiento especializado de metaloterapia", "presentacion": "Envase clínico 50 ml", "precioProfesional": 34.0, "imagen": "images/11_kit_metaloterapia_facial.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de metaloterapia clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 40.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000070', 'PRD0000070', 'images/11_kit_metaloterapia_facial.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000070', 'PRD0000070', 'SED0000001', 'LOT-QTO-070', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000071', 'CAT0000008', 'DK-2026-071', 'Mascarilla Hidroplástica Colágeno', 'Aporta elasticidad y firmeza intensa a pieles cansadas gracias al colágeno hidrolizado y alginatos marinos. ||META||{"slug": "mascarilla-colageno", "marca": "Medical Skin", "tipoUso": "casa", "subtitulo": "Antienvejecimiento para piel seca y desvitalizada", "presentacion": "Sobre 250 g", "precioProfesional": 19.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Colágeno Hidrolizado", "Extracto de Flor de Regaliz", "Algina Natural", "Tierra de Diatomeas"], "beneficios": ["Forma una capa elástica que sella activos en la piel.", "Efecto refrescante y descongestivo inmediato.", "Nutre y suaviza visiblemente la textura cutánea."], "modoUso": "Mezclar el polvo con agua hasta formar una pasta cremosa. Aplicar en rostro y retirar tras 20 minutos de una sola pieza."}', 19.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000071', 'PRD0000071', 'images/placeholder_71.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000071', 'PRD0000071', 'SED0000001', 'LOT-QTO-071', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000072', 'CAT0000008', 'DK-2026-072', 'Mascarilla Hidroplástica Oro 24K', 'Nutrición luminosa y efecto tensor inmediato. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-hidroplastica-oro-24k", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Nutrición luminosa y efecto tensor inmediato", "presentacion": "Sobre 100 g", "precioProfesional": 22.1, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 26.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000072', 'PRD0000072', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000072', 'PRD0000072', 'SED0000001', 'LOT-QTO-072', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000073', 'CAT0000008', 'DK-2026-073', 'Mascarilla Alginato Carbón Activado', 'Detoxificante profunda para piel acneica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-alginato-carbon-activado", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Detoxificante profunda para piel acneica", "presentacion": "Sobre 100 g", "precioProfesional": 20.4, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 24.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000073', 'PRD0000073', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000073', 'PRD0000073', 'SED0000001', 'LOT-QTO-073', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000074', 'CAT0000008', 'DK-2026-074', 'Mascarilla Calmante Azuleno y Avena', 'Descongestión post-peeling o micropunción. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-calmante-azuleno-y-avena", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Descongestión post-peeling o micropunción", "presentacion": "Pote 200 g", "precioProfesional": 28.9, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 34.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000074', 'PRD0000074', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000074', 'PRD0000074', 'SED0000001', 'LOT-QTO-074', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000075', 'CAT0000008', 'DK-2026-075', 'Mascarilla Vitamina C Iluminadora', 'Antioxidante intensiva para pieles apagadas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-vitamina-c-iluminadora", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Antioxidante intensiva para pieles apagadas", "presentacion": "Pote 200 g", "precioProfesional": 30.6, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 36.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000075', 'PRD0000075', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000075', 'PRD0000075', 'SED0000001', 'LOT-QTO-075', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000076', 'CAT0000008', 'DK-2026-076', 'Velo de Colágeno Nativo Hidrogel', 'Lámina facial bio-activa reestructurante. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "velo-de-colageno-nativo-hidrogel", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Lámina facial bio-activa reestructurante", "presentacion": "Caja x 5 velos", "precioProfesional": 35.7, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 42.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000076', 'PRD0000076', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000076', 'PRD0000076', 'SED0000001', 'LOT-QTO-076', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000077', 'CAT0000008', 'DK-2026-077', 'Mascarilla Arcilla Blanca Seborreguladora', 'Control de brillo y cierre de poros dilatados. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-arcilla-blanca-seborreguladora", "marca": "Medical Skin", "tipoUso": "casa", "subtitulo": "Control de brillo y cierre de poros dilatados", "presentacion": "Tubo 150 g", "precioProfesional": 23.8, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 28.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000077', 'PRD0000077', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000077', 'PRD0000077', 'SED0000001', 'LOT-QTO-077', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000078', 'CAT0000008', 'DK-2026-078', 'Mascarilla Nocturna Ácido Hialurónico', 'Sleeping mask de recuperación hídrica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-nocturna-acido-hialuronico", "marca": "Medical Skin", "tipoUso": "casa", "subtitulo": "Sleeping mask de recuperación hídrica", "presentacion": "Pote 60 g", "precioProfesional": 29.75, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 35.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000078', 'PRD0000078', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000078', 'PRD0000078', 'SED0000001', 'LOT-QTO-078', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000079', 'CAT0000008', 'DK-2026-079', 'Mascarilla Enzimática Renovadora', 'Micro-exfoliación biológica iluminadora. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "mascarilla-enzimatica-renovadora", "marca": "Medical Skin", "tipoUso": "casa", "subtitulo": "Micro-exfoliación biológica iluminadora", "presentacion": "Tubo 100 g", "precioProfesional": 27.2, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 32.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000079', 'PRD0000079', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000079', 'PRD0000079', 'SED0000001', 'LOT-QTO-079', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000080', 'CAT0000008', 'DK-2026-080', 'Medical Skin Mascarillas Fórmula 10', 'Tratamiento especializado de mascarillas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas. ||META||{"slug": "medical-skin-mascarillas-formula-10", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Tratamiento especializado de mascarillas", "presentacion": "Envase clínico 50 ml", "precioProfesional": 34.0, "imagen": "images/02_exoface_serum.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de mascarillas clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 40.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000080', 'PRD0000080', 'images/02_exoface_serum.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000080', 'PRD0000080', 'SED0000001', 'LOT-QTO-080', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000081', 'CAT0000009', 'DK-2026-081', 'Guantes de Nitrilo Quirúrgico', 'Guantes sin polvo, alta resistencia elástica y gran sensibilidad táctil para procedimientos estéticos y médicos. ||META||{"slug": "guantes-nitrilo", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Caja de 100 unidades grado médico", "presentacion": "Caja de 100 unidades", "precioProfesional": 5.0, "imagen": "", "destacadoHome": false, "principiosActivos": ["Nitrilo libre de látex", "Puntas de dedos microtexturizadas", "Certificación médica hospitalaria"], "beneficios": ["Sin riesgo de alergias al látex.", "Excelente agarre de jeringas e instrumental metálico.", "Barrera biológica segura y confortable."], "modoUso": "Descartar luego de cada paciente conforme a las normas de bioseguridad."}', 5.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000081', 'PRD0000081', 'images/placeholder_81.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000081', 'PRD0000081', 'SED0000001', 'LOT-QTO-081', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000082', 'CAT0000009', 'DK-2026-082', 'Cánulas Flexibles Dermatológicas 25G x 50mm', 'Microcánulas de punta roma atraumática. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "canulas-flexibles-dermatologicas-25g-x-50mm", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Microcánulas de punta roma atraumática", "presentacion": "Caja x 20 unidades", "precioProfesional": 55.25, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 65.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000082', 'PRD0000082', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000082', 'PRD0000082', 'SED0000001', 'LOT-QTO-082', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000083', 'CAT0000009', 'DK-2026-083', 'Jeringas Luer-Lock Precisión 3 ml', 'Jeringas estériles sin espacio muerto. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "jeringas-luer-lock-precision-3-ml", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Jeringas estériles sin espacio muerto", "presentacion": "Caja x 100 unidades", "precioProfesional": 23.8, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 28.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000083', 'PRD0000083', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000083', 'PRD0000083', 'SED0000001', 'LOT-QTO-083', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000084', 'CAT0000009', 'DK-2026-084', 'Cartuchos Nanopore / Dermapen 36 Pines', 'Repuestos estériles para micropunción eléctrica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "cartuchos-nanopore-dermapen-36-pines", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Repuestos estériles para micropunción eléctrica", "presentacion": "Caja x 10 unidades", "precioProfesional": 29.75, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 35.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000084', 'PRD0000084', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000084', 'PRD0000084', 'SED0000001', 'LOT-QTO-084', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000085', 'CAT0000009', 'DK-2026-085', 'Cartuchos Nanopore / Dermapen 12 Pines', 'Inducción de colágeno cicatrizal y estrías. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "cartuchos-nanopore-dermapen-12-pines", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Inducción de colágeno cicatrizal y estrías", "presentacion": "Caja x 10 unidades", "precioProfesional": 29.75, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 35.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000085', 'PRD0000085', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000085', 'PRD0000085', 'SED0000001', 'LOT-QTO-085', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000086', 'CAT0000009', 'DK-2026-086', 'Dispositivo Dermapen Inalámbrico Pro', 'Equipo médico de micropunción regulable. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "dispositivo-dermapen-inalambrico-pro", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Equipo médico de micropunción regulable", "presentacion": "Kit maletín", "precioProfesional": 123.25, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 145.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000086', 'PRD0000086', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000086', 'PRD0000086', 'SED0000001', 'LOT-QTO-086', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000087', 'CAT0000009', 'DK-2026-087', 'Rodillo Dermaroller Titanio 0.5 mm', 'Terapia de inducción percutánea de activos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "rodillo-dermaroller-titanio-0-5-mm", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Terapia de inducción percutánea de activos", "presentacion": "Unidad estéril", "precioProfesional": 18.7, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 22.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000087', 'PRD0000087', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000087', 'PRD0000087', 'SED0000001', 'LOT-QTO-087', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000088', 'CAT0000009', 'DK-2026-088', 'Gasas No Tejidas Estériles Cabina', 'Compresas suaves sin pelusa uso clínico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "gasas-no-tejidas-esteriles-cabina", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Compresas suaves sin pelusa uso clínico", "presentacion": "Paquete x 200 uds", "precioProfesional": 11.9, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 14.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000088', 'PRD0000088', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000088', 'PRD0000088', 'SED0000001', 'LOT-QTO-088', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000089', 'CAT0000009', 'DK-2026-089', 'Guantes Nitrilo Quirúrgico Sin Polvo', 'Protección clínica hipoalergénica talla M. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "guantes-nitrilo-quirurgico-sin-polvo", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Protección clínica hipoalergénica talla M", "presentacion": "Caja x 100 uds", "precioProfesional": 13.6, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 16.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000089', 'PRD0000089', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000089', 'PRD0000089', 'SED0000001', 'LOT-QTO-089', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
+INSERT INTO "Productos" ("id_producto", "id_categoria", "pro_codigo", "pro_nombre", "pro_descripcion", "pro_precio", "pro_estado")
+VALUES ('PRD0000090', 'CAT0000009', 'DK-2026-090', 'Banda Elástica Clínica Sujeción Facial', 'Vincha ajustable lavable para cabina estética. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos. ||META||{"slug": "banda-elastica-clinica-sujecion-facial", "marca": "Medical Skin", "tipoUso": "profesional", "subtitulo": "Vincha ajustable lavable para cabina estética", "presentacion": "Paquete x 3 uds", "precioProfesional": 12.75, "imagen": "images/13_agujas_mesoterapia.png", "destacadoHome": false, "principiosActivos": ["Complejo Dermclar Bio-Active", "Péptidos biomiméticos de alta pureza", "Vehículo liposomado de absorción profunda"], "beneficios": ["Acción específica de insumos clínicamente probada", "Alta tolerancia cutánea dermatológicamente testeada", "Resultados progresivos desde las primeras aplicaciones"], "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."}', 15.00, 'ACTIVO');
+
+INSERT INTO "ProductoImagenes" ("id_imagen", "id_producto", "img_url", "img_orden", "img_es_portada")
+VALUES ('IMG0000090', 'PRD0000090', 'images/13_agujas_mesoterapia.png', 1, 'S');
+
+INSERT INTO "Lotes" ("id_lote", "id_producto", "id_sede", "lot_numero", "lot_fecha_fabricacion", "lot_fecha_caducidad", "lot_stock_actual", "lot_estado")
+VALUES ('LOT0000090', 'PRD0000090', 'SED0000001', 'LOT-QTO-090', '2026-01-15', '2027-12-31', 25, 'ACTIVO');
+
 DO $$
 BEGIN
     IF EXISTS (SELECT 1 FROM pg_roles WHERE rolname = 'anon') THEN
@@ -1284,21 +1225,19 @@ END $$;
 COMMIT;
 
 -- =============================================================================
--- 6. CONSULTA FINAL DE VERIFICACION DE INVENTARIO FEFO Y CATALOGO (28 PRODUCTOS)
--- (Nota: en pgAdmin se muestra la salida del último SELECT ejecutado)
+-- CONSULTA DE VERIFICACION: 90 PRODUCTOS (10 POR CATEGORIA) CON STOCK = 25 EN QUITO
 -- =============================================================================
 SELECT
     p.id_producto,
-    p.pro_codigo AS sku,
+    TRIM(p.pro_codigo) AS sku,
     p.pro_nombre AS producto,
     c.cat_nombre AS categoria,
     p.pro_precio AS precio_usd,
-    COALESCE(SUM(l.lot_stock_actual), 0) AS stock_total_fefo,
-    MIN(l.lot_numero) AS lote_fefo_prioritario,
-    MIN(l.lot_fecha_caducidad) AS vencimiento_mas_proximo
+    COALESCE(SUM(l.lot_stock_actual), 0) AS stock_actual,
+    s.sed_nombre AS sede
 FROM "Productos" p
 JOIN "Categorias" c ON c.id_categoria = p.id_categoria
-LEFT JOIN "Lotes" l ON l.id_producto = p.id_producto AND TRIM(l.lot_estado) = 'DISPONIBLE'
-WHERE p.id_producto BETWEEN 'PRD0000001' AND 'PRD0000028'
-GROUP BY p.id_producto, p.pro_codigo, p.pro_nombre, c.cat_nombre, p.pro_precio
-ORDER BY p.id_producto ASC;
+JOIN "Lotes" l ON l.id_producto = p.id_producto
+JOIN "Sedes" s ON s.id_sede = l.id_sede
+GROUP BY p.id_producto, p.pro_codigo, p.pro_nombre, c.cat_nombre, p.pro_precio, s.sed_nombre
+ORDER BY c.cat_nombre ASC, p.id_producto ASC;

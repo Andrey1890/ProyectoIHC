@@ -208,41 +208,15 @@ function cargarProductosDesdeJSON() {
       return respuesta.json();
     })
     .then(function (datosJson) {
-      LISTA_PRODUCTOS = enriquecerProductosConMetadatosDB(datosJson);
+      LISTA_PRODUCTOS = datosJson;
       inicializarVistasConProductos();
     })
     .catch(function () {
       if (typeof PRODUCTOS_RESPALDO !== "undefined") {
-        LISTA_PRODUCTOS = enriquecerProductosConMetadatosDB(PRODUCTOS_RESPALDO.slice(0));
+        LISTA_PRODUCTOS = PRODUCTOS_RESPALDO.slice(0);
         inicializarVistasConProductos();
       }
     });
-}
-
-function enriquecerProductosConMetadatosDB(lista) {
-  for (var i = 0; i < lista.length; i++) {
-    var p = lista[i];
-    var idxStr = ("000" + (i + 1)).slice(-3);
-    if (!p.id_producto_db) {
-      p.id_producto_db = "PRD" + ("0000000" + (i + 1)).slice(-7);
-    }
-    if (typeof p.stock_total !== "number") {
-      p.stock_total = 145;
-    }
-    if (!p.lote_fefo) {
-      p.lote_fefo = "L26-QTO-" + idxStr + "A";
-    }
-    if (!p.fecha_vencimiento_fefo) {
-      p.fecha_vencimiento_fefo = "2027-08-30";
-    }
-    if (!p.sedes_stock) {
-      p.sedes_stock = [
-        { sede: "Matriz Quito - Edificio La Casa", stock: 80 },
-        { sede: "Bodega Guayaquil - Kennedy Norte", stock: 65 }
-      ];
-    }
-  }
-  return lista;
 }
 
 function inicializarVistasConProductos() {
@@ -669,9 +643,6 @@ function crearElementoTarjetaProducto(prod) {
   var precioTexto = "$" + prod.precio.toFixed(2);
   var precioEtiqueta = prod.tipoUso === "profesional" ? "PRO" : "PVP";
 
-  var stockTotal = typeof prod.stock_total === "number" ? prod.stock_total : 120;
-  var cadFefo = prod.fecha_vencimiento_fefo || "2027-09-30";
-
   var bloqueImagenHtml = "";
   if (prod.imagen && prod.imagen !== "") {
     bloqueImagenHtml =
@@ -869,36 +840,6 @@ function renderizarDatosEnFichaProducto(prod) {
 
   var elPres = document.getElementById("ficha-presentacion");
   if (elPres) elPres.textContent = prod.presentacion;
-
-  var stockTotal = typeof prod.stock_total === "number" ? prod.stock_total : 145;
-  var loteFefo = prod.lote_fefo || "LOT-2026-001";
-  var cadFefo = prod.fecha_vencimiento_fefo || "2027-09-30";
-
-  var elStockRes = document.getElementById("ficha-stock-resumen");
-  if (elStockRes) {
-    elStockRes.textContent = "✓ Stock Total Disponible en PostgreSQL: " + stockTotal + " unidades";
-  }
-
-  var elLoteDet = document.getElementById("ficha-lote-fefo-detalle");
-  if (elLoteDet) {
-    elLoteDet.innerHTML =
-      "Lote prioritario FEFO: <strong>" + loteFefo + "</strong> • Fecha de vencimiento: <strong>" + cadFefo + "</strong>";
-  }
-
-  var elSedesLista = document.getElementById("ficha-sedes-stock-lista");
-  if (elSedesLista) {
-    var sedes = prod.sedes_stock || [
-      { sede: "Matriz Quito", stock: Math.round(stockTotal * 0.55) },
-      { sede: "Bodega Guayaquil", stock: Math.max(10, stockTotal - Math.round(stockTotal * 0.55)) }
-    ];
-    elSedesLista.innerHTML = "";
-    for (var s = 0; s < sedes.length; s++) {
-      var badgeSede = document.createElement("span");
-      badgeSede.style.cssText = "font-size: 11px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px; color: #334155;";
-      badgeSede.innerHTML = "📍 <strong>" + sedes[s].sede + ":</strong> " + sedes[s].stock + " uds.";
-      elSedesLista.appendChild(badgeSede);
-    }
-  }
 
   var elPrecio = document.getElementById("ficha-precio");
   if (elPrecio) {
@@ -1179,11 +1120,6 @@ function abrirModalDetalle(idProducto) {
   document.getElementById("modal-descripcion").textContent = prod.descripcion;
   document.getElementById("modal-qty-val").textContent = "1";
 
-  var stTxt = document.getElementById("modal-stock-texto");
-  if (stTxt) stTxt.textContent = "✓ Stock DB: " + (prod.stock_total || 145) + " uds.";
-  var ltTxt = document.getElementById("modal-lote-texto");
-  if (ltTxt) ltTxt.textContent = "Lote FEFO: " + (prod.lote_fefo || "LOT-2026-001") + " (Cad: " + (prod.fecha_vencimiento_fefo || "2027-09-30") + ")";
-
   var enlaceFicha = document.getElementById("modal-enlace-pagina-ficha");
   if (enlaceFicha) enlaceFicha.href = "producto.html?id=" + encodeURIComponent(prod.id);
 
@@ -1296,7 +1232,6 @@ function agregarAlCarrito(idProducto, cantidad) {
       precio: prod.precio,
       imagen: prod.imagen,
       tipoUso: prod.tipoUso,
-      lote_fefo: prod.lote_fefo || "LOT-2026-001",
       cantidad: cantidad
     });
   }
@@ -1549,23 +1484,9 @@ function configurarOpcionesEnvio() {
   }
 }
 
-function actualizarSedeMasCercanaPorCiudad(ciudadTexto) {
-  var c = (ciudadTexto || "").trim().toLowerCase();
-  if (c.indexOf("guayaquil") !== -1 || c.indexOf("samborond") !== -1 || c.indexOf("daule") !== -1 || c.indexOf("manta") !== -1 || c.indexOf("machala") !== -1) {
-    sedeAsignadaActual = { id_sede: "SED0000002", nombre: "Bodega Guayaquil - Parque California", ciudad: "Guayaquil" };
-  } else if (c.indexOf("cuenca") !== -1 || c.indexOf("loja") !== -1 || c.indexOf("azogues") !== -1) {
-    sedeAsignadaActual = { id_sede: "SED0000003", nombre: "Centro Distribución Cuenca", ciudad: "Cuenca" };
-  } else if (c.indexOf("ambato") !== -1 || c.indexOf("riobamba") !== -1 || c.indexOf("latacunga") !== -1) {
-    sedeAsignadaActual = { id_sede: "SED0000004", nombre: "Sede Logística Ambato", ciudad: "Ambato" };
-  } else {
-    sedeAsignadaActual = { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", ciudad: "Quito" };
-  }
-
+function actualizarSedeMasCercanaPorCiudad() {
+  sedeAsignadaActual = { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", ciudad: "Quito" };
   guardarEnvioPersistente();
-  var elSede = document.getElementById("texto-sede-asignada-checkout");
-  if (elSede) {
-    elSede.textContent = sedeAsignadaActual.id_sede + " - " + sedeAsignadaActual.nombre + " (Despacho FEFO inmediato)";
-  }
 }
 
 function calcularSubtotalCarrito() {
@@ -2195,10 +2116,7 @@ function cargarSedesDesdeDB() {
     })
     .catch(function () {
       renderTarjetasSedes([
-        { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", direccion: "Av. República E1-136 y Atahualpa, Of. 3", ciudad: "Quito", latitud: "-0.186590", longitud: "-78.484120" },
-        { id_sede: "SED0000002", nombre: "Bodega Guayaquil - Kennedy Norte", direccion: "Av. Francisco de Orellana y Justino Cornejo", ciudad: "Guayaquil", latitud: "-2.164890", longitud: "-79.897450" },
-        { id_sede: "SED0000003", nombre: "Centro Distribución Cuenca", direccion: "Av. Solano y Remigio Crespo", ciudad: "Cuenca", latitud: "-2.900120", longitud: "-79.005890" },
-        { id_sede: "SED0000004", nombre: "Sede Logística Ambato", direccion: "Av. Cevallos y Montalvo", ciudad: "Ambato", latitud: "-1.241670", longitud: "-78.619720" }
+        { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", direccion: "Av. República E1-136 y Atahualpa, Of. 3", ciudad: "Quito" }
       ]);
     });
 }

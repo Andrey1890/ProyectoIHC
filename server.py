@@ -12,12 +12,9 @@ SUPABASE_PORT = 5432
 SUPABASE_DB = "postgres"
 SUPABASE_USER = "postgres.jdsqipqdcuyegjrpvgny"
 SUPABASE_REST_URL = "https://jdsqipqdcuyegjrpvgny.supabase.co/rest/v1/"
-SUPABASE_PASSWORD = os.environ.get("SUPABASE_PASSWORD", "").strip()
+SUPABASE_PASSWORD = os.environ.get("SUPABASE_PASSWORD", "Pichicopito_42").strip()
 
-if SUPABASE_PASSWORD and SUPABASE_PASSWORD != "[YOUR-PASSWORD]":
-    DB_DSN = f"postgresql://{SUPABASE_USER}:{SUPABASE_PASSWORD}@{SUPABASE_HOST}:{SUPABASE_PORT}/{SUPABASE_DB}"
-else:
-    DB_DSN = os.environ.get("SUPABASE_DB_URL", "postgresql://postgres:toor@localhost:5432/dermakor_db")
+DB_DSN = f"postgresql://{SUPABASE_USER}:{SUPABASE_PASSWORD}@{SUPABASE_HOST}:{SUPABASE_PORT}/{SUPABASE_DB}"
 WEB_ROOT = os.path.dirname(os.path.abspath(__file__))
 PORT = 8080
 
@@ -132,45 +129,14 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                             COALESCE(
                                 (SELECT img_url FROM "ProductoImagenes" pi WHERE pi.id_producto = p.id_producto AND pi.img_es_portada = 'S' LIMIT 1),
                                 ''
-                            ) AS imagen_db,
-                            COALESCE(
-                                (SELECT SUM(l.lot_stock_actual) FROM "Lotes" l WHERE l.id_producto = p.id_producto AND TRIM(l.lot_estado) = 'DISPONIBLE' AND l.lot_fecha_caducidad > CURRENT_DATE),
-                                120
-                            ) AS stock_total,
-                            COALESCE(
-                                (SELECT l.lot_numero FROM "Lotes" l WHERE l.id_producto = p.id_producto AND TRIM(l.lot_estado) = 'DISPONIBLE' AND l.lot_fecha_caducidad > CURRENT_DATE ORDER BY l.lot_fecha_caducidad ASC LIMIT 1),
-                                'LOT-2026-001'
-                            ) AS lote_fefo,
-                            COALESCE(
-                                (SELECT l.lot_fecha_caducidad::text FROM "Lotes" l WHERE l.id_producto = p.id_producto AND TRIM(l.lot_estado) = 'DISPONIBLE' AND l.lot_fecha_caducidad > CURRENT_DATE ORDER BY l.lot_fecha_caducidad ASC LIMIT 1),
-                                '2027-09-30'
-                            ) AS fecha_vencimiento_fefo
+                            ) AS imagen_db
                         FROM "Productos" p
                         JOIN "Categorias" c ON c.id_categoria = p.id_categoria
-                        WHERE p.id_producto BETWEEN 'PRD0000001' AND 'PRD0000028'
+                        WHERE p.id_producto BETWEEN 'PRD0000001' AND 'PRD0000090'
                         ORDER BY p.id_producto ASC
                         """
                     )
                     rows = cur.fetchall()
-
-                    cur.execute(
-                        """
-                        SELECT l.id_producto, s.sed_nombre AS sede, SUM(l.lot_stock_actual) AS stock
-                        FROM "Lotes" l
-                        JOIN "Sedes" s ON s.id_sede = l.id_sede
-                        WHERE l.id_producto BETWEEN 'PRD0000001' AND 'PRD0000028'
-                          AND TRIM(l.lot_estado) = 'DISPONIBLE'
-                          AND l.lot_fecha_caducidad > CURRENT_DATE
-                        GROUP BY l.id_producto, s.sed_nombre
-                        ORDER BY l.id_producto, s.sed_nombre
-                        """
-                    )
-                    sede_rows = cur.fetchall()
-                    sedes_map = {}
-                    for sr in sede_rows:
-                        sedes_map.setdefault(sr["id_producto"].strip(), []).append(
-                            {"sede": sr["sede"].strip(), "stock": int(sr["stock"])}
-                        )
 
             productos_out = []
             for r in rows:
@@ -203,10 +169,6 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                     "principiosActivos": meta.get("principiosActivos", ["Activos liposomados Dermclar"]),
                     "beneficios": meta.get("beneficios", ["Eficacia clínica comprobada"]),
                     "modoUso": meta.get("modoUso", "Aplicar según protocolo dermatológico."),
-                    "stock_total": int(r["stock_total"]),
-                    "lote_fefo": (r["lote_fefo"] or "LOT-2026-001").strip(),
-                    "fecha_vencimiento_fefo": (r["fecha_vencimiento_fefo"] or "2027-09-30").strip(),
-                    "sedes_stock": sedes_map.get(id_p, []),
                 }
                 productos_out.append(prod_obj)
 
