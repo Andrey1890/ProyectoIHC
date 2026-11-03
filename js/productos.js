@@ -1,5 +1,5 @@
-// Respaldo del catalogo de productos Dermakor (90 productos: 10 por categoria)
-var PRODUCTOS_RESPALDO = [
+// Catálogo sincronizado con PostgreSQL (Supabase) - Stock controlado por producto desde tabla Lotes
+var LISTA_PRODUCTOS = [
   {
     "id": "exoface-casa",
     "nombre": "ExoFace",
@@ -30,7 +30,8 @@ var PRODUCTOS_RESPALDO = [
       "Efecto tensor inmediato y piel más compacta.",
       "Reestructuración progresiva de la arquitectura cutánea."
     ],
-    "modoUso": "Aplicar de 4 a 6 gotas sobre el rostro limpio por la mañana y noche con suaves movimientos circulares."
+    "modoUso": "Aplicar de 4 a 6 gotas sobre el rostro limpio por la mañana y noche con suaves movimientos circulares.",
+    "stock": 25
   },
   {
     "id": "exolumine-casa",
@@ -61,7 +62,8 @@ var PRODUCTOS_RESPALDO = [
       "Reducción de citocinas inflamatorias en la piel tratada.",
       "Aumento de la tolerancia cutánea en pieles muy sensibles."
     ],
-    "modoUso": "Aplicar sobre el rostro limpio antes de la crema hidratante. Usar protector solar de día."
+    "modoUso": "Aplicar sobre el rostro limpio antes de la crema hidratante. Usar protector solar de día.",
+    "stock": 25
   },
   {
     "id": "exoblemish-casa",
@@ -91,7 +93,8 @@ var PRODUCTOS_RESPALDO = [
       "Disminución duradera de la seborrea y brillo facial.",
       "Alivio de la inflamación e irritación en brotes de acné."
     ],
-    "modoUso": "Aplicar sobre las zonas con tendencia grasa o brotes dos veces al día después de la limpieza."
+    "modoUso": "Aplicar sobre las zonas con tendencia grasa o brotes dos veces al día después de la limpieza.",
+    "stock": 25
   },
   {
     "id": "exohair-casa",
@@ -122,7 +125,8 @@ var PRODUCTOS_RESPALDO = [
       "Engrosa visiblemente el tallo piloso.",
       "Reequilibra el ecosistema del cuero cabelludo."
     ],
-    "modoUso": "Aplicar en el cuero cabelludo seco por la noche y masajear suavemente con la yema de los dedos."
+    "modoUso": "Aplicar en el cuero cabelludo seco por la noche y masajear suavemente con la yema de los dedos.",
+    "stock": 25
   },
   {
     "id": "exoneck-tensor-cuello-y-escote",
@@ -147,7 +151,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exoeyes-contorno-ocular-avanzado",
@@ -172,7 +177,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exorepair-crema-nocturna-celular",
@@ -197,7 +203,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exovial-cabina-regeneracion-total",
@@ -222,7 +229,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exobooster-post-laser-calmante",
@@ -247,7 +255,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exohands-rejuvenecimiento-manos",
@@ -272,7 +281,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "aqua-piel-3ah",
@@ -299,7 +309,8 @@ var PRODUCTOS_RESPALDO = [
       "Textura ultraligera de rápida absorción.",
       "Piel visiblemente más rellena, suave y elástica."
     ],
-    "modoUso": "Aplicar 1 o 2 pulsaciones en la piel limpia del rostro, cuello y escote mañana y noche."
+    "modoUso": "Aplicar 1 o 2 pulsaciones en la piel limpia del rostro, cuello y escote mañana y noche.",
+    "stock": 25
   },
   {
     "id": "hydragel-acido-hialuronico-puro-2",
@@ -324,7 +335,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "aquacream-barrera-ceramidas",
@@ -349,7 +361,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "hydralips-balsamo-hialuronico",
@@ -374,7 +387,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "serum-b5-hialuronico-ultra",
@@ -399,7 +413,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "emulsion-hidratante-piel-grasa",
@@ -424,7 +439,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "viales-hydramesotherapy-ha",
@@ -449,7 +465,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "bruma-termal-calmante-azuleno",
@@ -474,7 +491,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "crema-nutritiva-peptidos-y-colageno",
@@ -499,7 +517,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "dermclar-hidratacion-formula-10",
@@ -524,7 +543,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "agua-micelar-sensible",
@@ -551,7 +571,8 @@ var PRODUCTOS_RESPALDO = [
       "Protege la barrera cutánea frente a la deshidratación.",
       "Apta para contorno de ojos y pieles reactivas."
     ],
-    "modoUso": "Humedecer un disco de algodón y pasar suavemente por rostro, ojos y labios sin frotar."
+    "modoUso": "Humedecer un disco de algodón y pasar suavemente por rostro, ojos y labios sin frotar.",
+    "stock": 25
   },
   {
     "id": "luminescence-cleanser",
@@ -578,7 +599,8 @@ var PRODUCTOS_RESPALDO = [
       "Equilibra la producción de sebo y reduce bacterias.",
       "Prepara la piel para recibir peelings y sérums."
     ],
-    "modoUso": "Aplicar sobre el rostro húmedo, masajear en círculos y enjuagar con abundante agua tibia."
+    "modoUso": "Aplicar sobre el rostro húmedo, masajear en círculos y enjuagar con abundante agua tibia.",
+    "stock": 25
   },
   {
     "id": "gel-limpiador-purificante-aha-bha",
@@ -603,7 +625,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "leche-limpiadora-calmante-manzanilla",
@@ -628,7 +651,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "tonico-equilibrante-ph-niacinamida",
@@ -653,7 +677,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "aceite-desmaquillante-dermo-lipidico",
@@ -678,7 +703,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "exfoliante-enzimatico-papaya-y-avena",
@@ -703,7 +729,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "solucion-desengransante-pre-peeling",
@@ -728,7 +755,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "agua-micelar-bifasica-ojos-y-labios",
@@ -753,7 +781,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "espuma-limpiadora-acido-mandelico",
@@ -778,7 +807,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "dd-cream-color",
@@ -805,7 +835,8 @@ var PRODUCTOS_RESPALDO = [
       "Reduce manchas oscuras existentes.",
       "Fórmula no comedogénica libre de aceites pesados."
     ],
-    "modoUso": "Aplicar uniformemente como último paso de la rutina facial cada mañana antes de salir."
+    "modoUso": "Aplicar uniformemente como último paso de la rutina facial cada mañana antes de salir.",
+    "stock": 25
   },
   {
     "id": "sunblock-gel-invisible-spf-50",
@@ -830,7 +861,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "solar-fluid-mineral-pediatrico-spf-50",
@@ -855,7 +887,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "compacto-solar-dermclar-spf-50-tono-claro",
@@ -880,7 +913,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "compacto-solar-dermclar-spf-50-tono-medio",
@@ -905,7 +939,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "bruma-solar-reaplicacion-facial-spf-50",
@@ -930,7 +965,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "solar-corporal-familiar-spf-50-resistente",
@@ -955,7 +991,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "stick-solar-zonas-sensibles-spf-50",
@@ -980,7 +1017,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "emulsion-post-solar-reparadora-adn",
@@ -1005,7 +1043,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "fluido-solar-antimanchas-acido-tranexamico",
@@ -1030,7 +1069,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "derm-face-serum",
@@ -1057,7 +1097,8 @@ var PRODUCTOS_RESPALDO = [
       "Devuelve la firmeza y volumen natural de las facciones.",
       "Dermatológicamente comprobado y no comedogénico."
     ],
-    "modoUso": "Distribuir en rostro y cuello con masajes ascendentes hasta que se absorba por completo."
+    "modoUso": "Distribuir en rostro y cuello con masajes ascendentes hasta que se absorba por completo.",
+    "stock": 25
   },
   {
     "id": "contorno-ojos-frio",
@@ -1084,7 +1125,8 @@ var PRODUCTOS_RESPALDO = [
       "Relaja las líneas de expresión perioculares.",
       "Aplicador de aleación metálica que potencia el drenaje por efecto térmico."
     ],
-    "modoUso": "Presionar suavemente y deslizar la punta metálica sobre el contorno del ojo desde el interior hacia afuera."
+    "modoUso": "Presionar suavemente y deslizar la punta metálica sobre el contorno del ojo desde el interior hacia afuera.",
+    "stock": 25
   },
   {
     "id": "proteoglycans-serum",
@@ -1111,7 +1153,8 @@ var PRODUCTOS_RESPALDO = [
       "Neutraliza radicales libres generados por la polución.",
       "Aporta luminosidad radiante a pieles apagadas."
     ],
-    "modoUso": "Aplicar 3 gotas por la mañana antes de la crema de día."
+    "modoUso": "Aplicar 3 gotas por la mañana antes de la crema de día.",
+    "stock": 25
   },
   {
     "id": "dermclar-plasmavit-pro",
@@ -1137,7 +1180,8 @@ var PRODUCTOS_RESPALDO = [
       "Atenúa arrugas finas y líneas de expresión.",
       "Gran poder iluminador y despigmentante."
     ],
-    "modoUso": "Aplicación profesional facial mediante técnicas de microneedling o electroporación."
+    "modoUso": "Aplicación profesional facial mediante técnicas de microneedling o electroporación.",
+    "stock": 25
   },
   {
     "id": "dermclar-hair-pro",
@@ -1165,7 +1209,8 @@ var PRODUCTOS_RESPALDO = [
       "Aporta brillo y nutrición profunda a la fibra.",
       "Estimula el crecimiento del cabello nuevo."
     ],
-    "modoUso": "Protocolo clínico capilar aplicado en cabina."
+    "modoUso": "Protocolo clínico capilar aplicado en cabina.",
+    "stock": 25
   },
   {
     "id": "dermclar-face-pro",
@@ -1193,7 +1238,8 @@ var PRODUCTOS_RESPALDO = [
       "Genera efecto tensor y lifting evidente.",
       "Alisado y homogeneización de la tez."
     ],
-    "modoUso": "Aplicación profesional con técnicas de electroporación."
+    "modoUso": "Aplicación profesional con técnicas de electroporación.",
+    "stock": 25
   },
   {
     "id": "dermclar-face-v-pro",
@@ -1221,7 +1267,8 @@ var PRODUCTOS_RESPALDO = [
       "Disminuye grasa localizada en papada.",
       "Aumenta la firmeza y fibras colágenas."
     ],
-    "modoUso": "Tratamiento en cabina médica para perfilamiento facial."
+    "modoUso": "Tratamiento en cabina médica para perfilamiento facial.",
+    "stock": 25
   },
   {
     "id": "dermclar-face-ob-pro",
@@ -1249,7 +1296,8 @@ var PRODUCTOS_RESPALDO = [
       "Acción drenante para evacuar ácidos grasos.",
       "Mejora sustancialmente el ángulo de la barbilla."
     ],
-    "modoUso": "Uso profesional en reducción submentoniana."
+    "modoUso": "Uso profesional en reducción submentoniana.",
+    "stock": 25
   },
   {
     "id": "metodo-3r-pro",
@@ -1277,7 +1325,8 @@ var PRODUCTOS_RESPALDO = [
       "Reversión visible de signos de crono y fotoenvejecimiento.",
       "Máxima redensificación dérmica probada clínicamente."
     ],
-    "modoUso": "Protocolo exclusivo para médicos y profesionales de la estética médica."
+    "modoUso": "Protocolo exclusivo para médicos y profesionales de la estética médica.",
+    "stock": 25
   },
   {
     "id": "metodo-hair-pro",
@@ -1304,7 +1353,8 @@ var PRODUCTOS_RESPALDO = [
       "Revitalización del folículo debilitado.",
       "Aumenta la fuerza de anclaje de la raíz."
     ],
-    "modoUso": "Uso en cabina médica capilar."
+    "modoUso": "Uso en cabina médica capilar.",
+    "stock": 25
   },
   {
     "id": "dermclar-firm-pro",
@@ -1332,7 +1382,8 @@ var PRODUCTOS_RESPALDO = [
       "Estimulación masiva de colágeno y elastina.",
       "Disminuye profundidad y coloración de estrías."
     ],
-    "modoUso": "Uso exclusivo por profesionales capacitados mediante técnicas de mesoterapia o aparatología estética."
+    "modoUso": "Uso exclusivo por profesionales capacitados mediante técnicas de mesoterapia o aparatología estética.",
+    "stock": 25
   },
   {
     "id": "dermclar-obes-pro",
@@ -1359,7 +1410,8 @@ var PRODUCTOS_RESPALDO = [
       "Disuelve adiposidades en abdomen, flancos y muslos.",
       "Limita la retención hídrica en tejido adiposo."
     ],
-    "modoUso": "Protocolo clínico profesional con técnica de electroporación o mesoterapia."
+    "modoUso": "Protocolo clínico profesional con técnica de electroporación o mesoterapia.",
+    "stock": 25
   },
   {
     "id": "dermclar-celu-pro",
@@ -1387,7 +1439,8 @@ var PRODUCTOS_RESPALDO = [
       "Alisa la piel de naranja y reafirma el tejido.",
       "Activa la microcirculación de retorno venolinfático."
     ],
-    "modoUso": "Uso profesional en cabina estética con aparatología o técnica tópica avanzada."
+    "modoUso": "Uso profesional en cabina estética con aparatología o técnica tópica avanzada.",
+    "stock": 25
   },
   {
     "id": "dermclar-bump-up-pro",
@@ -1415,7 +1468,8 @@ var PRODUCTOS_RESPALDO = [
       "Estimula la síntesis de colágeno estructural.",
       "Efecto reafirmante y tensor duradero."
     ],
-    "modoUso": "Uso profesional en protocolos corporales de elevación y tonificación glútea."
+    "modoUso": "Uso profesional en protocolos corporales de elevación y tonificación glútea.",
+    "stock": 25
   },
   {
     "id": "dermclar-ice-up-pro",
@@ -1442,7 +1496,8 @@ var PRODUCTOS_RESPALDO = [
       "Reduce la apariencia de celulitis flácida.",
       "Estimula colágeno dérmico."
     ],
-    "modoUso": "Protocolo en cabina corporal."
+    "modoUso": "Protocolo en cabina corporal.",
+    "stock": 25
   },
   {
     "id": "dermclar-golden-up-pro",
@@ -1469,7 +1524,8 @@ var PRODUCTOS_RESPALDO = [
       "Devuelve la turgencia y textura suave.",
       "Reestructura el tejido dérmico glúteo."
     ],
-    "modoUso": "Protocolo profesional."
+    "modoUso": "Protocolo profesional.",
+    "stock": 25
   },
   {
     "id": "metodo-obooster-pro",
@@ -1498,7 +1554,8 @@ var PRODUCTOS_RESPALDO = [
       "Evita el descolgamiento cutáneo post-reducción.",
       "Remodela el contorno corporal integral."
     ],
-    "modoUso": "Protocolo clínico para reducción y firmeza corporal."
+    "modoUso": "Protocolo clínico para reducción y firmeza corporal.",
+    "stock": 25
   },
   {
     "id": "gel-criogenico-reafirmante-corporal",
@@ -1523,7 +1580,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "crema-anticelulitica-cafeina-y-centella",
@@ -1548,7 +1606,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "crema-prevencion-estrias-rosa-mosqueta",
@@ -1573,7 +1632,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "copa-sueca-mini",
@@ -1599,7 +1659,8 @@ var PRODUCTOS_RESPALDO = [
       "Relaja la tensión muscular nasogeniana y frontal.",
       "Máxima durabilidad y fácil esterilización."
     ],
-    "modoUso": "Aplicar aceite facial o sérum antes del uso. Deslizar suavemente siguiendo los canales de drenaje linfático."
+    "modoUso": "Aplicar aceite facial o sérum antes del uso. Deslizar suavemente siguiendo los canales de drenaje linfático.",
+    "stock": 25
   },
   {
     "id": "copa-sueca-metaloterapia-corporal",
@@ -1624,7 +1685,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "tabla-moldeadora-corporal-metal",
@@ -1649,7 +1711,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "rodillo-estriado-activador-circulatorio",
@@ -1674,7 +1737,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "hongo-reductor-metaloterapia-corporal",
@@ -1699,7 +1763,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "cinturon-masajeador-articulado-metal",
@@ -1724,7 +1789,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "copa-facial-lift-contorno-ocular",
@@ -1749,7 +1815,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "espatula-escultora-mandibular-metal",
@@ -1774,7 +1841,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "esferas-criogenicas-faciales-par",
@@ -1799,7 +1867,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "medical-skin-metaloterapia-formula-10",
@@ -1824,7 +1893,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-colageno",
@@ -1851,7 +1921,8 @@ var PRODUCTOS_RESPALDO = [
       "Efecto refrescante y descongestivo inmediato.",
       "Nutre y suaviza visiblemente la textura cutánea."
     ],
-    "modoUso": "Mezclar el polvo con agua hasta formar una pasta cremosa. Aplicar en rostro y retirar tras 20 minutos de una sola pieza."
+    "modoUso": "Mezclar el polvo con agua hasta formar una pasta cremosa. Aplicar en rostro y retirar tras 20 minutos de una sola pieza.",
+    "stock": 25
   },
   {
     "id": "mascarilla-hidroplastica-oro-24k",
@@ -1876,7 +1947,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-alginato-carbon-activado",
@@ -1901,7 +1973,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-calmante-azuleno-y-avena",
@@ -1926,7 +1999,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-vitamina-c-iluminadora",
@@ -1951,7 +2025,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "velo-de-colageno-nativo-hidrogel",
@@ -1976,7 +2051,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-arcilla-blanca-seborreguladora",
@@ -2001,7 +2077,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-nocturna-acido-hialuronico",
@@ -2026,7 +2103,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "mascarilla-enzimatica-renovadora",
@@ -2051,7 +2129,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "medical-skin-mascarillas-formula-10",
@@ -2076,7 +2155,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "guantes-nitrilo",
@@ -2102,7 +2182,8 @@ var PRODUCTOS_RESPALDO = [
       "Excelente agarre de jeringas e instrumental metálico.",
       "Barrera biológica segura y confortable."
     ],
-    "modoUso": "Descartar luego de cada paciente conforme a las normas de bioseguridad."
+    "modoUso": "Descartar luego de cada paciente conforme a las normas de bioseguridad.",
+    "stock": 25
   },
   {
     "id": "canulas-flexibles-dermatologicas-25g-x-50mm",
@@ -2127,7 +2208,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "jeringas-luer-lock-precision-3-ml",
@@ -2152,7 +2234,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "cartuchos-nanopore-dermapen-36-pines",
@@ -2177,7 +2260,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "cartuchos-nanopore-dermapen-12-pines",
@@ -2202,7 +2286,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "dispositivo-dermapen-inalambrico-pro",
@@ -2227,7 +2312,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "rodillo-dermaroller-titanio-0-5-mm",
@@ -2252,7 +2338,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "gasas-no-tejidas-esteriles-cabina",
@@ -2277,7 +2364,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "guantes-nitrilo-quirurgico-sin-polvo",
@@ -2302,7 +2390,8 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   },
   {
     "id": "banda-elastica-clinica-sujecion-facial",
@@ -2327,6 +2416,7 @@ var PRODUCTOS_RESPALDO = [
       "Alta tolerancia cutánea dermatológicamente testeada",
       "Resultados progresivos desde las primeras aplicaciones"
     ],
-    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista."
+    "modoUso": "Aplicar sobre la zona limpia y seca siguiendo el protocolo recomendado por el especialista.",
+    "stock": 25
   }
 ];

@@ -127,6 +127,10 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                             p.pro_precio,
                             c.cat_nombre AS categoria,
                             COALESCE(
+                                (SELECT SUM(l.lot_stock_actual) FROM "Lotes" l WHERE l.id_producto = p.id_producto AND TRIM(l.lot_estado) = 'DISPONIBLE'),
+                                0
+                            ) AS stock_actual,
+                            COALESCE(
                                 (SELECT img_url FROM "ProductoImagenes" pi WHERE pi.id_producto = p.id_producto AND pi.img_es_portada = 'S' LIMIT 1),
                                 ''
                             ) AS imagen_db
@@ -163,6 +167,7 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                     "presentacion": meta.get("presentacion", "Unidad"),
                     "precio": float(r["pro_precio"]),
                     "precioProfesional": float(meta.get("precioProfesional", r["pro_precio"])),
+                    "stock": int(r["stock_actual"]),
                     "imagen": meta.get("imagen") if meta.get("imagen") is not None else (r["imagen_db"] or "").strip(),
                     "destacadoHome": bool(meta.get("destacadoHome", False)),
                     "descripcion": clean_desc,

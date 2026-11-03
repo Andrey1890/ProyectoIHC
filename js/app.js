@@ -18,8 +18,18 @@ var paginaActualCatalogo = 1;
 var productosPorPagina = 8;
 var listaFiltradaActual = [];
 
-// Stock maximo permitido por producto (coherente con la base de datos de 25 unidades por producto)
-var STOCK_MAXIMO_POR_PRODUCTO = 25;
+// Consulta el stock real e individual de cada producto desde su registro sincronizado con la tabla Lotes
+function obtenerStockProducto(idProducto) {
+  var prod = buscarProductoPorId(idProducto);
+  var stockBase = prod && typeof prod.stock === "number" ? prod.stock : 25;
+  try {
+    var descontados = JSON.parse(localStorage.getItem("dermakor_stock_descontado") || "{}");
+    if (descontados[idProducto]) {
+      return Math.max(0, stockBase - descontados[idProducto]);
+    }
+  } catch (e) {}
+  return stockBase;
+}
 
 // Usuario actual (obligatorio para facturar)
 var usuarioActual = null;
@@ -96,8 +106,9 @@ function cargarEstadoPersistente() {
     try {
       carrito = JSON.parse(datosCarrito) || [];
       for (var c = 0; c < carrito.length; c++) {
-        if (carrito[c].cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
-          carrito[c].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+        var stockItem = obtenerStockProducto(carrito[c].id);
+        if (carrito[c].cantidad > stockItem) {
+          carrito[c].cantidad = Math.max(1, stockItem);
         }
       }
     } catch (e) {
@@ -949,11 +960,12 @@ function renderizarDatosEnFichaProducto(prod) {
 function cambiarCantidadFicha(delta) {
   var spanQty = document.getElementById("ficha-qty-val");
   if (!spanQty) return;
+  var stockProd = obtenerStockProducto(idProductoFichaActual);
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
-  if (valor > STOCK_MAXIMO_POR_PRODUCTO) {
-    valor = STOCK_MAXIMO_POR_PRODUCTO;
-    mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+  if (valor > stockProd) {
+    valor = Math.max(1, stockProd);
+    mostrarToastNotificacion("Stock disponible para este producto: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
@@ -1216,11 +1228,12 @@ function cerrarModalDetalle() {
 
 function cambiarCantidadModal(delta) {
   var spanQty = document.getElementById("modal-qty-val");
+  var stockProd = obtenerStockProducto(idProductoModalActual);
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
-  if (valor > STOCK_MAXIMO_POR_PRODUCTO) {
-    valor = STOCK_MAXIMO_POR_PRODUCTO;
-    mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+  if (valor > stockProd) {
+    valor = Math.max(1, stockProd);
+    mostrarToastNotificacion("Stock disponible para este producto: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
@@ -1277,16 +1290,22 @@ function agregarAlCarrito(idProducto, cantidad) {
   var prod = buscarProductoPorId(idProducto);
   if (!prod) return;
 
-  if (cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
-    cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+  var stockProd = obtenerStockProducto(idProducto);
+  if (stockProd <= 0) {
+    mostrarToastNotificacion("Lo sentimos, " + prod.nombre + " no tiene stock disponible en este momento.");
+    return;
+  }
+
+  if (cantidad > stockProd) {
+    cantidad = stockProd;
   }
 
   var existeEnCarrito = false;
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === idProducto) {
-      if (carrito[i].cantidad + cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
-        carrito[i].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
-        mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+      if (carrito[i].cantidad + cantidad > stockProd) {
+        carrito[i].cantidad = stockProd;
+        mostrarToastNotificacion("Stock disponible de " + prod.nombre + ": " + stockProd + " unidades");
       } else {
         carrito[i].cantidad += cantidad;
       }
@@ -1296,7 +1315,7 @@ function agregarAlCarrito(idProducto, cantidad) {
   }
 
   if (!existeEnCarrito) {
-    var cantFinal = Math.min(cantidad, STOCK_MAXIMO_POR_PRODUCTO);
+    var cantFinal = Math.min(cantidad, stockProd);
     carrito.push({
       id: prod.id,
       id_producto_db: prod.id_producto_db || "PRD0000001",
@@ -1305,6 +1324,7 @@ function agregarAlCarrito(idProducto, cantidad) {
       precio: prod.precio,
       imagen: prod.imagen,
       tipoUso: prod.tipoUso,
+      stock: stockProd,
       cantidad: cantFinal
     });
   }
@@ -1321,14 +1341,15 @@ function agregarAlCarrito(idProducto, cantidad) {
 }
 
 function cambiarCantidadCarrito(idProducto, delta) {
+  var stockProd = obtenerStockProducto(idProducto);
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === idProducto) {
       var nuevaCant = carrito[i].cantidad + delta;
       if (nuevaCant <= 0) {
         carrito.splice(i, 1);
-      } else if (nuevaCant > STOCK_MAXIMO_POR_PRODUCTO) {
-        carrito[i].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
-        mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+      } else if (nuevaCant > stockProd) {
+        carrito[i].cantidad = stockProd;
+        mostrarToastNotificacion("Stock disponible para este producto: " + stockProd + " unidades");
       } else {
         carrito[i].cantidad = nuevaCant;
       }
@@ -1998,6 +2019,14 @@ function procesarPagoFinal(evento) {
       window.location.href = "factura.html";
     })
     .catch(function () {
+      try {
+        var descontados = JSON.parse(localStorage.getItem("dermakor_stock_descontado") || "{}");
+        for (var idx = 0; idx < carrito.length; idx++) {
+          var idProd = carrito[idx].id;
+          descontados[idProd] = (descontados[idProd] || 0) + carrito[idx].cantidad;
+        }
+        localStorage.setItem("dermakor_stock_descontado", JSON.stringify(descontados));
+      } catch (e) {}
       var datosFactura = construirObjetoFactura(payloadCheckout, null);
       localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
       carrito = [];
