@@ -342,6 +342,16 @@ function cargarProductosDesdeJSON() {
     })
     .then(function (datosJson) {
       LISTA_PRODUCTOS = datosJson;
+      var textoBadge = document.getElementById("texto-estado-db");
+      if (textoBadge) {
+        textoBadge.textContent = "Modo Respaldo JSON";
+        var badgeInd = document.getElementById("badge-db-indicator");
+        if (badgeInd) {
+          badgeInd.style.backgroundColor = "#FEF3C7";
+          badgeInd.style.color = "#B45309";
+          badgeInd.style.borderColor = "#FDE68A";
+        }
+      }
       inicializarVistasConProductos();
     })
     .catch(function () {
