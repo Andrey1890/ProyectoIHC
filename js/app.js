@@ -18,6 +18,9 @@ var paginaActualCatalogo = 1;
 var productosPorPagina = 8;
 var listaFiltradaActual = [];
 
+// Stock maximo permitido por producto (coherente con la base de datos de 25 unidades por producto)
+var STOCK_MAXIMO_POR_PRODUCTO = 25;
+
 // Usuario actual (obligatorio para facturar)
 var usuarioActual = null;
 
@@ -92,6 +95,11 @@ function cargarEstadoPersistente() {
   if (datosCarrito) {
     try {
       carrito = JSON.parse(datosCarrito) || [];
+      for (var c = 0; c < carrito.length; c++) {
+        if (carrito[c].cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
+          carrito[c].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+        }
+      }
     } catch (e) {
       carrito = [];
     }
@@ -332,7 +340,7 @@ function cambiarTabAuth(tipoTab) {
 
 function procesarLogin(evento) {
   evento.preventDefault();
-  var correo = document.getElementById("login-correo").value.trim();
+  var correo = document.getElementById("login-correo").value.trim().toLowerCase();
   var clave = document.getElementById("login-clave").value.trim();
 
   if (!correo || !clave) {
@@ -352,23 +360,53 @@ function procesarLogin(evento) {
       if (res && res.ok && res.usuario) {
         usuarioActual = res.usuario;
       } else {
-        throw new Error("Usando perfil local");
+        throw new Error("Usando registro de clientes");
       }
       finalizarInicioSesion();
     })
     .catch(function () {
-      usuarioActual = {
-        id_cliente: "CLI0000001",
-        nombre: "María Fernández",
-        cedulaRuc: "1718293849",
-        correo: correo,
-        telefono: "0996096996",
-        direccion: "Av. República E1-136 y Atahualpa",
-        referencia: "Edificio La Casa, Piso 1, Of. 3",
-        ciudad: "Quito",
-        provincia: "Pichincha",
-        codigoPostal: "170102"
-      };
+      var cuentasGuardadas = [];
+      try {
+        cuentasGuardadas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
+      } catch (e) {}
+
+      var cuentaEncontrada = null;
+      for (var i = 0; i < cuentasGuardadas.length; i++) {
+        if (cuentasGuardadas[i].correo.toLowerCase() === correo) {
+          cuentaEncontrada = cuentasGuardadas[i];
+          break;
+        }
+      }
+
+      if (cuentaEncontrada) {
+        usuarioActual = cuentaEncontrada;
+      } else if (correo === "cliente@example.com") {
+        usuarioActual = {
+          id_cliente: "CLI0000001",
+          nombre: "María Fernández",
+          cedulaRuc: "1718293849",
+          correo: "cliente@example.com",
+          telefono: "0996096996",
+          direccion: "Av. República E1-136 y Atahualpa",
+          referencia: "Edificio La Casa, Piso 1, Of. 3",
+          ciudad: "Quito",
+          provincia: "Pichincha",
+          codigoPostal: "170102"
+        };
+      } else {
+        usuarioActual = {
+          id_cliente: "CLI" + Math.floor(1000000 + Math.random() * 8999999),
+          nombre: "Cliente Registrado",
+          cedulaRuc: "1718293849",
+          correo: correo,
+          telefono: "0996096996",
+          direccion: "Av. República E1-136 y Atahualpa",
+          referencia: "Edificio La Casa, Piso 1, Of. 3",
+          ciudad: "Quito",
+          provincia: "Pichincha",
+          codigoPostal: "170102"
+        };
+      }
       finalizarInicioSesion();
     });
 }
@@ -417,6 +455,23 @@ function procesarRegistro(evento) {
     codigoPostal: codigoPostal,
     clave: clave
   };
+
+  try {
+    var cuentas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
+    var existeIdx = -1;
+    for (var k = 0; k < cuentas.length; k++) {
+      if (cuentas[k].correo.toLowerCase() === nuevoUsuario.correo.toLowerCase()) {
+        existeIdx = k;
+        break;
+      }
+    }
+    if (existeIdx >= 0) {
+      cuentas[existeIdx] = nuevoUsuario;
+    } else {
+      cuentas.push(nuevoUsuario);
+    }
+    localStorage.setItem("dermakor_cuentas_clientes", JSON.stringify(cuentas));
+  } catch (e) {}
 
   fetch("/api/registro", {
     method: "POST",
@@ -896,6 +951,10 @@ function cambiarCantidadFicha(delta) {
   if (!spanQty) return;
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
+  if (valor > STOCK_MAXIMO_POR_PRODUCTO) {
+    valor = STOCK_MAXIMO_POR_PRODUCTO;
+    mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+  }
   spanQty.textContent = valor;
 }
 
@@ -1159,6 +1218,10 @@ function cambiarCantidadModal(delta) {
   var spanQty = document.getElementById("modal-qty-val");
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
+  if (valor > STOCK_MAXIMO_POR_PRODUCTO) {
+    valor = STOCK_MAXIMO_POR_PRODUCTO;
+    mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+  }
   spanQty.textContent = valor;
 }
 
@@ -1214,16 +1277,26 @@ function agregarAlCarrito(idProducto, cantidad) {
   var prod = buscarProductoPorId(idProducto);
   if (!prod) return;
 
+  if (cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
+    cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+  }
+
   var existeEnCarrito = false;
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === idProducto) {
-      carrito[i].cantidad += cantidad;
+      if (carrito[i].cantidad + cantidad > STOCK_MAXIMO_POR_PRODUCTO) {
+        carrito[i].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+        mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+      } else {
+        carrito[i].cantidad += cantidad;
+      }
       existeEnCarrito = true;
       break;
     }
   }
 
   if (!existeEnCarrito) {
+    var cantFinal = Math.min(cantidad, STOCK_MAXIMO_POR_PRODUCTO);
     carrito.push({
       id: prod.id,
       id_producto_db: prod.id_producto_db || "PRD0000001",
@@ -1232,7 +1305,7 @@ function agregarAlCarrito(idProducto, cantidad) {
       precio: prod.precio,
       imagen: prod.imagen,
       tipoUso: prod.tipoUso,
-      cantidad: cantidad
+      cantidad: cantFinal
     });
   }
 
@@ -1250,9 +1323,14 @@ function agregarAlCarrito(idProducto, cantidad) {
 function cambiarCantidadCarrito(idProducto, delta) {
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === idProducto) {
-      carrito[i].cantidad += delta;
-      if (carrito[i].cantidad <= 0) {
+      var nuevaCant = carrito[i].cantidad + delta;
+      if (nuevaCant <= 0) {
         carrito.splice(i, 1);
+      } else if (nuevaCant > STOCK_MAXIMO_POR_PRODUCTO) {
+        carrito[i].cantidad = STOCK_MAXIMO_POR_PRODUCTO;
+        mostrarToastNotificacion("Stock máximo disponible alcanzado (" + STOCK_MAXIMO_POR_PRODUCTO + " unidades)");
+      } else {
+        carrito[i].cantidad = nuevaCant;
       }
       break;
     }
@@ -1714,6 +1792,18 @@ function iniciarProcesoFacturacion() {
 
 function prellenarFormularioCheckout() {
   if (!usuarioActual) {
+    try {
+      var guardado = localStorage.getItem("dermakor_usuario_sesion");
+      if (guardado) usuarioActual = JSON.parse(guardado);
+    } catch (e) {}
+  }
+  if (!usuarioActual) {
+    try {
+      var cuentas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
+      if (cuentas.length > 0) usuarioActual = cuentas[cuentas.length - 1];
+    } catch (e) {}
+  }
+  if (!usuarioActual) {
     usuarioActual = {
       id_cliente: "CLI0000001",
       nombre: "María Fernández",
@@ -1800,6 +1890,30 @@ function validarPasoEnvio(evento) {
   usuarioActual.codigoPostal = document.getElementById("campo-codigopostal").value.trim();
 
   localStorage.setItem("dermakor_usuario_sesion", JSON.stringify(usuarioActual));
+
+  try {
+    var cuentas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
+    var encontrada = false;
+    for (var k = 0; k < cuentas.length; k++) {
+      if (cuentas[k].correo && cuentas[k].correo.toLowerCase() === usuarioActual.correo.toLowerCase()) {
+        cuentas[k].nombre = usuarioActual.nombre;
+        cuentas[k].cedulaRuc = usuarioActual.cedulaRuc;
+        cuentas[k].telefono = usuarioActual.telefono;
+        cuentas[k].direccion = usuarioActual.direccion;
+        cuentas[k].referencia = usuarioActual.referencia;
+        cuentas[k].ciudad = usuarioActual.ciudad;
+        cuentas[k].provincia = usuarioActual.provincia;
+        cuentas[k].codigoPostal = usuarioActual.codigoPostal;
+        encontrada = true;
+        break;
+      }
+    }
+    if (!encontrada) {
+      cuentas.push(usuarioActual);
+    }
+    localStorage.setItem("dermakor_cuentas_clientes", JSON.stringify(cuentas));
+  } catch (e) {}
+
   actualizarSedeMasCercanaPorCiudad(usuarioActual.ciudad);
   window.location.href = "pago.html";
 }
