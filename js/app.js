@@ -1733,7 +1733,73 @@ function actualizarPanelSeguridadIHC() {
 // --------------------------------------------------------------------------
 // 12. VALIDACION SEMANTICA EN TIEMPO REAL Y CHECKOUT MULTIPAGINA
 // --------------------------------------------------------------------------
+// Algoritmo publico de Luhn (Modulo 10 - Estándar ISO/IEC 7812-1) para comprobacion de tarjetas bancarias
+function validarAlgoritmoLuhn(numero) {
+  var limpio = (numero || "").replace(/\D/g, "");
+  if (limpio.length < 13 || limpio.length > 19) return false;
+  if (/^0+$/.test(limpio)) return false;
+
+  var suma = 0;
+  var duplicar = false;
+  for (var i = limpio.length - 1; i >= 0; i--) {
+    var digito = parseInt(limpio.charAt(i), 10);
+    if (duplicar) {
+      digito *= 2;
+      if (digito > 9) {
+        digito -= 9;
+      }
+    }
+    suma += digito;
+    duplicar = !duplicar;
+  }
+  return (suma % 10) === 0;
+}
+
+function detectarFranquiciaTarjeta(numero) {
+  var limpio = (numero || "").replace(/\D/g, "");
+  if (/^4/.test(limpio)) return "Visa";
+  if (/^(5[1-5]|222[1-9]|22[3-9]\d|2[3-6]\d{2}|27[01]\d|2720)/.test(limpio)) return "Mastercard";
+  if (/^(36|38|30[0-5])/.test(limpio)) return "Diners Club";
+  if (/^3[47]/.test(limpio)) return "American Express";
+  return "Tarjeta Bancaria";
+}
+
+function validarFechaVencimientoTarjeta(valor) {
+  var texto = (valor || "").trim();
+  if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(texto)) return false;
+  var partes = texto.split("/");
+  var mes = parseInt(partes[0], 10);
+  var anio = 2000 + parseInt(partes[1], 10);
+  var hoy = new Date();
+  var anioActual = hoy.getFullYear();
+  var mesActual = hoy.getMonth() + 1;
+  if (anio < anioActual) return false;
+  if (anio === anioActual && mes < mesActual) return false;
+  return true;
+}
+
 function configurarValidacionEnTiempoReal() {
+  var inputTarjeta = document.getElementById("campo-numero-tarjeta");
+  if (inputTarjeta) {
+    inputTarjeta.addEventListener("input", function () {
+      var soloDigitos = this.value.replace(/\D/g, "").slice(0, 16);
+      var grupos = soloDigitos.match(/.{1,4}/g);
+      this.value = grupos ? grupos.join(" ") : "";
+    });
+  }
+
+  var inputFecha = document.getElementById("campo-fecha-caducidad");
+  if (inputFecha) {
+    inputFecha.addEventListener("input", function () {
+      var limpio = this.value.replace(/\D/g, "").slice(0, 4);
+      if (limpio.length >= 3) {
+        this.value = limpio.slice(0, 2) + "/" + limpio.slice(2, 4);
+      } else {
+        this.value = limpio;
+      }
+    });
+  }
+
   var campos = document.querySelectorAll(".campo-validable");
   for (var i = 0; i < campos.length; i++) {
     campos[i].addEventListener("input", function () {
@@ -1768,14 +1834,39 @@ function validarCampoIndividual(campo) {
   }
 
   if (campo.id === "campo-numero-tarjeta") {
-    var limpioTarjeta = campo.value.replace(/\s+/g, "");
-    if (!/^\d{16}$/.test(limpioTarjeta)) {
+    var limpioTarjeta = campo.value.replace(/\D/g, "");
+    var franquicia = detectarFranquiciaTarjeta(limpioTarjeta);
+    var badgeFranq = document.getElementById("badge-franquicia-tarjeta");
+    var estadoLuhn = document.getElementById("estado-luhn-tarjeta");
+    var cumpleLongitud = limpioTarjeta.length >= 13 && limpioTarjeta.length <= 19;
+    var cumpleLuhn = cumpleLongitud && validarAlgoritmoLuhn(limpioTarjeta);
+
+    if (badgeFranq) {
+      badgeFranq.textContent = limpioTarjeta.length > 0 ? franquicia + " • Luhn Mód. 10" : "Algoritmo Luhn (Mód. 10)";
+      badgeFranq.style.background = cumpleLuhn ? "#DCFCE7" : "#F1F5F9";
+      badgeFranq.style.color = cumpleLuhn ? "#15803D" : "#475569";
+    }
+
+    if (estadoLuhn) {
+      if (limpioTarjeta.length === 0) {
+        estadoLuhn.style.color = "#64748B";
+        estadoLuhn.textContent = "Ingresa los dígitos de tu tarjeta para verificar su dígito de control mediante el Algoritmo público de Luhn (ISO/IEC 7812).";
+      } else if (cumpleLuhn) {
+        estadoLuhn.style.color = "#15803D";
+        estadoLuhn.textContent = "✓ Comprobación Algoritmo de Luhn (Módulo 10) válida — " + franquicia + " verificada.";
+      } else {
+        estadoLuhn.style.color = "#B91C1C";
+        estadoLuhn.textContent = "✗ Número inválido según el Algoritmo de Luhn (la suma de control Módulo 10 no es múltiplo de 10).";
+      }
+    }
+
+    if (!cumpleLuhn) {
       esValido = false;
     }
   }
 
   if (campo.id === "campo-fecha-caducidad") {
-    if (!/^(0[1-9]|1[0-2])\/\d{2}$/.test(campo.value.trim())) {
+    if (!validarFechaVencimientoTarjeta(campo.value)) {
       esValido = false;
     }
   }
@@ -1818,45 +1909,28 @@ function prellenarFormularioCheckout() {
       if (guardado) usuarioActual = JSON.parse(guardado);
     } catch (e) {}
   }
-  if (!usuarioActual) {
-    try {
-      var cuentas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
-      if (cuentas.length > 0) usuarioActual = cuentas[cuentas.length - 1];
-    } catch (e) {}
-  }
-  if (!usuarioActual) {
-    usuarioActual = {
-      id_cliente: "CLI0000001",
-      nombre: "María Fernández",
-      cedulaRuc: "1718293849",
-      correo: "cliente@example.com",
-      telefono: "0996096996",
-      direccion: "Av. República E1-136 y Atahualpa",
-      referencia: "Edificio La Casa, Piso 1, Of. 3",
-      ciudad: "Quito",
-      provincia: "Pichincha",
-      codigoPostal: "170102"
+
+  if (usuarioActual) {
+    var map = {
+      "campo-correo": usuarioActual.correo || "",
+      "campo-nombre": usuarioActual.nombre || "",
+      "campo-cedula-ruc": usuarioActual.cedulaRuc || "",
+      "campo-telefono": usuarioActual.telefono || "",
+      "campo-direccion": usuarioActual.direccion || "",
+      "campo-referencia": usuarioActual.referencia || "",
+      "campo-ciudad": usuarioActual.ciudad || "",
+      "campo-provincia": usuarioActual.provincia || "",
+      "campo-codigopostal": usuarioActual.codigoPostal || ""
     };
+
+    for (var id in map) {
+      var el = document.getElementById(id);
+      if (el && map[id]) el.value = map[id];
+    }
+
+    actualizarSedeMasCercanaPorCiudad(usuarioActual.ciudad);
   }
 
-  var map = {
-    "campo-correo": usuarioActual.correo,
-    "campo-nombre": usuarioActual.nombre,
-    "campo-cedula-ruc": usuarioActual.cedulaRuc,
-    "campo-telefono": usuarioActual.telefono,
-    "campo-direccion": usuarioActual.direccion,
-    "campo-referencia": usuarioActual.referencia || "",
-    "campo-ciudad": usuarioActual.ciudad,
-    "campo-provincia": usuarioActual.provincia,
-    "campo-codigopostal": usuarioActual.codigoPostal || "170102"
-  };
-
-  for (var id in map) {
-    var el = document.getElementById(id);
-    if (el) el.value = map[id];
-  }
-
-  actualizarSedeMasCercanaPorCiudad(usuarioActual.ciudad);
   var subtotal = calcularSubtotalCarrito();
   actualizarCalculosFormales(subtotal);
   actualizarPanelSeguridadIHC();
