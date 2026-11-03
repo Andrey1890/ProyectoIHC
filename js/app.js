@@ -629,7 +629,7 @@ function renderizarCatalogo(lista) {
   contenedor.innerHTML = "";
 
   if (contadorTexto) {
-    contadorTexto.textContent = lista.length + " productos encontrados en PostgreSQL";
+    contadorTexto.textContent = lista.length + " productos encontrados";
   }
 
   if (lista.length === 0) {
@@ -697,26 +697,13 @@ function crearElementoTarjetaProducto(prod) {
     '  </div>' +
     '  <h3 class="tarjeta-producto-titulo">' + prod.nombre + '</h3>' +
     '  <div class="tarjeta-producto-presentacion">' + prod.presentacion + '</div>' +
-    '  <div class="meta-stock-fefo">' +
-    '    <span class="stock-ok">✓ Stock: ' + stockTotal + '</span>' +
-    '    <span>FEFO: ' + cadFefo + '</span>' +
-    '  </div>' +
-    '  <div class="tarjeta-producto-precio" style="margin-top: 8px;">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
+    '  <div class="tarjeta-producto-precio">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
     '  <button type="button" class="boton-comprar-tarjeta">Añadir al carrito</button>' +
-    '  <div style="display: flex; gap: 6px; margin-top: 6px;">' +
-    '    <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" style="flex: 1; text-decoration: none; text-align: center;">Ficha clínica</a>' +
-    '    <button type="button" class="boton-ver-tarjeta btn-vista-rapida" style="flex: 1;">Vista rápida</button>' +
-    '  </div>' +
+    '  <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" style="display: block; text-decoration: none; text-align: center;">Ver detalle</a>' +
     '</div>';
 
-  var btnRapida = tarjeta.querySelector(".btn-vista-rapida");
   var imgBox = tarjeta.querySelector(".tarjeta-producto-imagen");
   var titulo = tarjeta.querySelector(".tarjeta-producto-titulo");
-
-  btnRapida.addEventListener("click", function (e) {
-    e.stopPropagation();
-    abrirModalDetalle(prod.id);
-  });
 
   imgBox.addEventListener("click", function () {
     window.location.href = "producto.html?id=" + encodeURIComponent(prod.id);
@@ -1406,7 +1393,7 @@ function aplicarCuponDescuento() {
         localStorage.setItem("dermakor_cupon", JSON.stringify(cuponActual));
         if (msg) {
           msg.style.color = "#15803D";
-          msg.innerHTML = "✓ Cupón PostgreSQL aplicado: <strong>" + cuponActual.codigo + "</strong>";
+          msg.innerHTML = "✓ Cupón aplicado: <strong>" + cuponActual.codigo + "</strong>";
         }
         actualizarCalculosFormales(calcularSubtotalCarrito());
       } else {
@@ -1494,7 +1481,7 @@ function renderizarCarrito() {
       imgTag +
       '<div class="item-carrito-detalles">' +
       '  <h4><a href="producto.html?id=' + encodeURIComponent(item.id) + '" style="color:inherit;text-decoration:none;">' + item.nombre + '</a></h4>' +
-      '  <p>' + item.presentacion + ' • ' + tipoTextoItem + ' • <small style="color:#15803D;">Lote FEFO: ' + (item.lote_fefo || "LOT-2026-001") + '</small></p>' +
+      '  <p>' + item.presentacion + ' • ' + tipoTextoItem + '</p>' +
       '  <span class="boton-eliminar-item" data-id="' + item.id + '">Eliminar</span>' +
       '</div>' +
       '<div class="control-cantidad">' +
@@ -1923,7 +1910,7 @@ function procesarPagoFinal(evento) {
   var btnConfirmar = document.getElementById("btn-confirmar-pago-final");
   if (btnConfirmar) {
     btnConfirmar.disabled = true;
-    btnConfirmar.textContent = "Procesando transacción en PostgreSQL...";
+    btnConfirmar.textContent = "Procesando pago...";
   }
 
   var subtotal = calcularSubtotalCarrito();
@@ -2105,7 +2092,7 @@ function renderizarFacturaGuardada() {
       tr.innerHTML =
         '<td style="text-align: center;">' + item.cantidad + '</td>' +
         '<td><strong>' + item.nombre + '</strong></td>' +
-        '<td>' + item.presentacion + ' <small style="color:#15803D;">(' + (item.lote_fefo || "LOT-2026-001") + ')</small></td>' +
+        '<td>' + item.presentacion + '</td>' +
         '<td style="text-align: right;">$' + item.precio.toFixed(2) + '</td>' +
         '<td style="text-align: right;"><strong>$' + precioFila.toFixed(2) + '</strong></td>';
       tablaCuerpo.appendChild(tr);
@@ -2187,9 +2174,9 @@ function cargarSedesDesdeDB() {
       var card = document.createElement("div");
       card.className = "tarjeta-mapa-sitio";
       card.innerHTML =
-        '<h4>🏢 ' + s.id_sede + ' • ' + s.nombre + '</h4>' +
-        '<p style="font-size:13px;color:#475569;margin-bottom:4px;">' + s.direccion + ' (' + s.ciudad + ')</p>' +
-        '<div style="font-size:12px;color:#15803D;font-weight:700;">✓ Inventario FEFO activo • Coord: ' + s.latitud + ', ' + s.longitud + '</div>';
+        '<h4>🏢 ' + s.nombre + '</h4>' +
+        '<p style="font-size:13px;color:#475569;margin-bottom:4px;">' + s.direccion + '</p>' +
+        '<div style="font-size:12px;color:#0056B3;font-weight:700;">📍 ' + s.ciudad + ' - Ecuador</div>';
       grid.appendChild(card);
     }
   }

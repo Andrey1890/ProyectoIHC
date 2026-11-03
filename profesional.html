@@ -3,48 +3,39 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DERMAKOR - Selección Exclusiva Uso Profesional | Viales y Cabina Médica</title>
-  <meta name="description" content="Tienda oficial y catálogo de dermocosmética médica Dermclar y Medical Skin 2026 conectado a PostgreSQL dermakor_db. Facturación electrónica SRI, control de lotes FEFO y envíos por sede." />
+  <title>DERMAKOR - Uso Profesional | Viales y Cabina Médica</title>
+  <meta name="description" content="Tienda oficial y catálogo de dermocosmética médica Dermclar y Medical Skin 2026. Facturación electrónica formal, envíos cotizados y catálogo profesional." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body data-pagina="profesional">
-  <!-- Enlace de accesibilidad WCAG 2.2 AA (Skip to main content) -->
   <a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>
 
   <!-- =====================================================================
-       1. ENCABEZADO Y BARRA DE NAVEGACION MULTIPAGINA + POSTGRESQL
+       1. ENCABEZADO Y BARRA DE NAVEGACION
        ===================================================================== -->
   <header class="encabezado-sitio">
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-        <div style="display: flex; align-items: center; gap: 10px;">
-          <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
-          <span id="badge-estado-db" class="badge-db-conectada" title="Conectado a Supabase PostgreSQL (jdsqipqdcuyegjrpvgny.supabase.co)">
-            <span class="punto"></span>
-            <span id="texto-estado-db">Supabase PostgreSQL • En línea</span>
-          </span>
-        </div>
+        <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
 
-        <!-- Enlaces de Navegacion Multipagina (8+ paginas HTML independientes) -->
+        <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
           <a href="index.html" class="enlace-nav" data-nav-id="inicio">Inicio</a>
           <a href="catalogo.html" class="enlace-nav" data-nav-id="catalogo">Catálogo</a>
           <a href="uso-en-casa.html" class="enlace-nav" data-nav-id="casa">Uso en casa</a>
           <a href="profesional.html" class="enlace-nav activo" data-nav-id="profesional">Profesional</a>
-          <a href="ayuda.html" class="enlace-nav" data-nav-id="ayuda">Ayuda y Pedidos</a>
+          <a href="ayuda.html" class="enlace-nav" data-nav-id="ayuda">Ayuda</a>
         </nav>
 
         <!-- Acciones del Encabezado: Usuario y Carrito -->
         <div class="acciones-encabezado">
-          <!-- Widget de Sesion de Usuario Obligatorio para Compras -->
           <div id="widget-usuario-header">
             <button type="button" class="boton-iniciar-sesion" onclick="abrirModalAuth()">
               <span>👤</span> Iniciar Sesión / Registrarse
             </button>
           </div>
 
-          <!-- Boton de Carrito -->
           <a href="carrito.html" class="boton-carrito" aria-label="Abrir carrito de compras" style="text-decoration: none;">
             <span class="icono-bolsa">🛍️</span>
             <span>Carrito</span>
@@ -62,8 +53,8 @@
             type="text"
             id="input-busqueda-global"
             class="campo-busqueda"
-            placeholder="Nombre, línea, principio activo o categoría (ej: ExoFace, Ácido Hialurónico, Celulitis...)"
-            aria-label="Buscar productos en PostgreSQL"
+            placeholder="Nombre, línea o tipo de producto (ej: ExoFace, Ácido Hialurónico, Celulitis...)"
+            aria-label="Buscar productos"
           />
           <button type="button" id="btn-buscar" class="boton-buscar">Buscar</button>
         </div>
@@ -75,9 +66,9 @@
   <main id="contenido-principal" class="vista-pagina">
     <div class="contenedor">
       <div style="padding-top: 24px;">
-        <span style="font-size: 13px; color: #64748B;"><a href="index.html" style="color:#64748B;">Inicio</a> &gt; Selección Uso Profesional</span>
-        <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Selección Exclusiva para Uso Profesional</h1>
-        <p style="color: #64748B; font-size: 15px; margin-top: 4px;">Soluciones transdérmicas, viales estériles Dermclar, kits clínicos, metaloterapia e insumos para especialistas.</p>
+        <span style="font-size: 13px; color: #64748B;"><a href="index.html" style="color:#64748B;">Inicio</a> &gt; Uso Profesional</span>
+        <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Selección Exclusiva Uso Profesional</h1>
+        <p style="color: #64748B; font-size: 15px; margin-top: 4px;">Soluciones transdérmicas, viales Dermclar, kits clínicos, metaloterapia e insumos para especialistas.</p>
       </div>
 
       <div class="layout-catalogo">
@@ -93,11 +84,11 @@
             <div class="titulo-grupo-filtro">Tipo de uso</div>
             <label class="opcion-filtro">
               <input type="checkbox" id="filtro-uso-casa" class="filtro-checkbox" value="casa"  />
-              <span>Uso en casa (PVP)</span>
+              <span>Uso en casa</span>
             </label>
             <label class="opcion-filtro">
               <input type="checkbox" id="filtro-uso-pro" class="filtro-checkbox" value="profesional" checked />
-              <span>Profesional (Cabina)</span>
+              <span>Profesional</span>
             </label>
           </div>
 
@@ -114,7 +105,7 @@
             </label>
           </div>
 
-          <!-- Filtro: Categorias (Sincronizadas con tabla Categorias en PostgreSQL) -->
+          <!-- Filtro: Categorias -->
           <div class="grupo-filtro">
             <div class="titulo-grupo-filtro">Categoría</div>
             <label class="opcion-filtro">
@@ -169,7 +160,7 @@
         <!-- Columna de Resultados -->
         <section class="seccion-resultados-catalogo">
           <div class="cabecera-resultados">
-            <span id="contador-catalogo" style="font-weight: 700; color: #0F172A;">Cargando productos desde PostgreSQL...</span>
+            <span id="contador-catalogo" style="font-weight: 700; color: #0F172A;">Cargando productos...</span>
             <div>
               <label for="selector-orden-catalogo" style="font-size: 13px; color: #64748B; margin-right: 6px;">Ordenar por:</label>
               <select id="selector-orden-catalogo" class="selector-orden">
@@ -185,9 +176,7 @@
           <div id="contenedor-etiquetas-activas" class="etiquetas-activas"></div>
 
           <!-- Grilla de productos -->
-          <div class="productos-grid" id="grid-productos-catalogo">
-            <!-- Se inyectan con JavaScript -->
-          </div>
+          <div class="productos-grid" id="grid-productos-catalogo"></div>
 
           <!-- Paginacion -->
           <div id="paginacion-catalogo" class="paginacion-contenedor"></div>
@@ -198,7 +187,7 @@
 
 
   <!-- =====================================================================
-       MODAL DE AUTENTICACION / REGISTRO OBLIGATORIO DE CLIENTE (PostgreSQL)
+       MODAL DE AUTENTICACION / REGISTRO DE CLIENTE
        ===================================================================== -->
   <div id="modal-autenticacion" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-auth-titulo">
     <div class="modal-contenedor" style="max-width: 580px; padding: 32px;">
@@ -206,7 +195,7 @@
       
       <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
       <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
-        Conectado con tablas <code>Usuarios</code> y <code>Clientes</code> en PostgreSQL (<code>dermakor_db</code>). Para emitir tu factura electrónica SRI, inicia sesión o crea tu cuenta.
+        Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
       </p>
 
       <!-- Tabs Login vs Registro -->
@@ -285,7 +274,7 @@
         </div>
 
         <button type="submit" class="boton-primario" style="width: 100%; margin-top: 10px;">
-          Guardar cuenta en PostgreSQL y facturar →
+          Guardar cuenta y facturar →
         </button>
       </form>
 
@@ -293,7 +282,7 @@
   </div>
 
   <!-- =====================================================================
-       MODAL DETALLE DE PRODUCTO (FICHA CLINICA RAPIDA)
+       MODAL DETALLE DE PRODUCTO
        ===================================================================== -->
   <div id="modal-detalle-producto" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
     <div class="modal-contenedor">
@@ -304,18 +293,13 @@
           <img id="modal-img" src="" alt="Producto" />
         </div>
         <div class="modal-info-col">
-          <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
             <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
             <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
-            <span class="badge-db-conectada" id="modal-db-codigo">PRD0000001</span>
           </div>
           <h2 id="modal-titulo">Nombre del Producto</h2>
           <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 8px;" id="modal-presentacion">Presentación</div>
-          <div id="modal-stock-fefo-box" class="meta-stock-fefo" style="margin-bottom: 12px;">
-            <span class="stock-ok" id="modal-stock-texto">✓ En stock</span>
-            <span id="modal-lote-texto">Lote FEFO activo</span>
-          </div>
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
           <div class="modal-precio" id="modal-precio">$0.00</div>
           <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
 
@@ -331,7 +315,7 @@
           </div>
           <div style="margin-top: 12px;">
             <a id="modal-enlace-pagina-ficha" href="producto.html" class="enlace-ver-mas" style="font-size: 13px;">
-              Abrir página individual completa del producto (Ficha Clínica + Stock por Sede) →
+              Ver ficha completa del producto →
             </a>
           </div>
         </div>
@@ -364,7 +348,7 @@
   </div>
 
   <!-- =====================================================================
-       BANNER TOAST FLOTANTE (ACCION REVERSIBLE - WCAG 2.2)
+       BANNER TOAST FLOTANTE
        ===================================================================== -->
   <div id="toast-notificacion" class="toast-notificacion" role="status" aria-live="polite">
     <span id="toast-mensaje-texto">Producto añadido al carrito</span>
@@ -373,7 +357,7 @@
   </div>
 
   <!-- =====================================================================
-       PIE DE PAGINA (FOOTER) CON MAPA DE SITIO MULTIPAGINA
+       PIE DE PAGINA (FOOTER)
        ===================================================================== -->
   <footer class="pie-de-pagina">
     <div class="contenedor">
@@ -381,7 +365,7 @@
         <div class="footer-marca">
           <h4>DERMAKOR</h4>
           <p>
-            Tu tienda y catálogo de dermocosmética médica avanzada conectada en tiempo real a PostgreSQL (<code>dermakor_db</code>). Productos y fórmulas exclusivas de 
+            Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
             <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
           </p>
           <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
@@ -390,31 +374,28 @@
         </div>
 
         <div class="footer-columna">
-          <h5>Páginas del Catálogo</h5>
+          <h5>Explorar</h5>
           <ul class="footer-enlaces">
-            <li><a href="index.html">1. Inicio (Home Dermakor)</a></li>
-            <li><a href="catalogo.html">2. Catálogo Completo y Filtros</a></li>
-            <li><a href="uso-en-casa.html">3. Línea Uso en Casa (PVP)</a></li>
-            <li><a href="profesional.html">4. Selección Uso Profesional</a></li>
-            <li><a href="producto.html?id=exoface-casa">5. Ficha Clínica de Producto</a></li>
+            <li><a href="uso-en-casa.html">Uso en casa - Línea Dermclar</a></li>
+            <li><a href="catalogo.html?cat=Exosomas">Línea Exosomas con Nanotecnología</a></li>
+            <li><a href="profesional.html">Selección Profesional y Viales</a></li>
+            <li><a href="catalogo.html">Catálogo General 2026</a></li>
           </ul>
         </div>
 
         <div class="footer-columna">
-          <h5>Transacción y Soporte</h5>
+          <h5>Atención al Cliente</h5>
           <ul class="footer-enlaces">
-            <li><a href="carrito.html">6. Carrito y Cupones Descuento</a></li>
-            <li><a href="checkout.html">7. Facturación y Envío por Sede</a></li>
-            <li><a href="pago.html">8. Pasarela de Pago Seguro</a></li>
-            <li><a href="factura.html">9. Factura Electrónica SRI</a></li>
-            <li><a href="ayuda.html">10. Ayuda, Pedidos DB y Mapa</a></li>
+            <li><a href="ayuda.html">Preguntas frecuentes y ayuda</a></li>
+            <li><a href="carrito.html">Ver mi carrito de compras</a></li>
+            <li><a href="https://wa.me/593996096996" target="_blank" rel="noopener">Contacto WhatsApp Oficial</a></li>
           </ul>
         </div>
       </div>
 
       <div class="footer-inferior">
-        <div>Información y precios según catálogo Dermclar &amp; Medical Skin 2026 • Conectado a PostgreSQL <code>dermakor_db</code>.</div>
-        <div>Cumple con estándares WCAG 2.2 AA y heurísticas de usabilidad de Jakob Nielsen (IHC).</div>
+        <div>Información y precios según catálogo Dermclar &amp; Medical Skin 2026. Todos los derechos reservados.</div>
+        <div>DERMAKOR Ecuador • Distribuidor Oficial Autorizado.</div>
       </div>
     </div>
   </footer>
