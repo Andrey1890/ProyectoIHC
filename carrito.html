@@ -17,7 +17,7 @@
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-        <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
+        <a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
 
         <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
@@ -49,6 +49,7 @@
     <div class="barra-busqueda-wrap">
       <div class="contenedor">
         <div class="formulario-busqueda" role="search">
+          <label for="input-busqueda-global" class="sr-only">Buscar productos por nombre, línea o principio activo</label>
           <input
             type="text"
             id="input-busqueda-global"
@@ -65,13 +66,13 @@
 
   <main id="contenido-principal" class="vista-pagina">
     <div class="contenedor" style="padding-top: 24px; padding-bottom: 56px;">
-      <span style="font-size: 13px; color: #64748B;"><a href="index.html" style="color:#64748B;">Inicio</a> &gt; Tu carrito de compras</span>
+      <span style="font-size: 13px; color: #475569;"><a href="index.html" style="color:#475569;">Inicio</a> &gt; Tu carrito de compras</span>
       <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Tu carrito</h1>
-      <p style="color: #64748B; font-size: 15px; margin-top: 4px;" id="carrito-total-items-badge">0 artículos seleccionados</p>
+      <p style="color: #475569; font-size: 15px; margin-top: 4px;" id="carrito-total-items-badge">0 artículos seleccionados</p>
 
       <div id="carrito-vacio-aviso" class="carrito-vacio-bloque" style="display: none; margin-top: 24px;">
         <div style="font-size: 48px; margin-bottom: 12px;">🛍️</div>
-        <h3>Tu carrito está vacío</h3>
+        <h2>Tu carrito está vacío</h2>
         <p>Explora la selección para casa o profesional y añade los productos que necesitas.</p>
         <a href="catalogo.html" class="boton-primario" style="text-decoration: none;">Explorar catálogo</a>
       </div>
@@ -82,7 +83,7 @@
         </div>
 
         <div class="tarjeta-resumen" id="contenedor-resumen-carrito">
-          <h3 class="resumen-titulo">Resumen con IVA y Flete</h3>
+          <h2 class="resumen-titulo">Resumen con IVA y Flete</h2>
 
           <!-- Caja de Cupones Promocionales -->
           <div class="caja-cupon-descuento">
@@ -93,7 +94,7 @@
               <input type="text" id="input-codigo-cupon" class="campo-control" placeholder="Ingresa tu cupón" style="padding: 8px 10px; font-size: 13px;" />
               <button type="button" class="boton-secundario" style="padding: 8px 14px; min-height: 38px; font-size: 13px;" onclick="aplicarCuponDescuento()">Aplicar</button>
             </div>
-            <div id="mensaje-cupon-estado" style="font-size: 12px; margin-top: 6px; color: #64748B;"></div>
+            <div id="mensaje-cupon-estado" style="font-size: 12px; margin-top: 6px; color: #475569;"></div>
           </div>
 
           <div class="linea-resumen">
@@ -125,7 +126,7 @@
             <a href="catalogo.html" class="enlace-ver-mas">← Seguir comprando</a>
           </div>
 
-          <div style="margin-top: 20px; font-size: 12px; color: #64748B; line-height: 1.4;">
+          <div style="margin-top: 20px; font-size: 12px; color: #475569; line-height: 1.4;">
             🔒 Se requiere inicio de sesión para emisión formal de factura electrónica con RUC o Cédula.
           </div>
         </div>
@@ -142,7 +143,7 @@
       <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
       
       <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+      <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
         Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
       </p>
 
@@ -243,11 +244,11 @@
         <div class="modal-info-col">
           <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
             <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
-            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+            <span style="font-size: 12px; color: #475569;" id="modal-marca">Dermclar</span>
           </div>
           <h2 id="modal-titulo">Nombre del Producto</h2>
           <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
+          <div style="font-size: 13px; color: #475569; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
           <div class="modal-precio" id="modal-precio">$0.00</div>
           <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
 
@@ -271,24 +272,24 @@
 
       <div class="modal-detalles-tecnicos">
         <div class="bloque-detalle-seccion">
-          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <h3>🧪 Lo que contiene la fórmula (Principios Activos)</h3>
           <ul class="lista-con-vinetas" id="modal-lista-activos"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>✨ Beneficios Comprobados</h4>
+          <h3>✨ Beneficios Comprobados</h3>
           <ul class="lista-con-vinetas" id="modal-lista-beneficios"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <h3>📋 Antes de usarlo / Modo de aplicación</h3>
           <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
             <span id="modal-modo-uso">Instrucciones del fabricante...</span>
           </div>
         </div>
 
         <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
-          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <h3 style="margin-bottom: 16px;">También puedes explorar</h3>
           <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);"></div>
         </div>
       </div>
@@ -309,20 +310,21 @@
        ===================================================================== -->
   <footer class="pie-de-pagina">
     <div class="contenedor">
+      <h2 class="sr-only">Información institucional y navegación de pie de página</h2>
       <div class="footer-grid">
         <div class="footer-marca">
-          <h4>DERMAKOR</h4>
+          <h3>DERMAKOR</h3>
           <p>
             Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
             <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
           </p>
-          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+          <div style="margin-top: 14px; font-size: 13px; color: #475569;">
             Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
           </div>
         </div>
 
         <div class="footer-columna">
-          <h5>Explorar</h5>
+          <h3>Explorar</h3>
           <ul class="footer-enlaces">
             <li><a href="uso-en-casa.html">Uso en casa - Línea Dermclar</a></li>
             <li><a href="catalogo.html?cat=Exosomas">Línea Exosomas con Nanotecnología</a></li>
@@ -332,7 +334,7 @@
         </div>
 
         <div class="footer-columna">
-          <h5>Atención al Cliente</h5>
+          <h3>Atención al Cliente</h3>
           <ul class="footer-enlaces">
             <li><a href="ayuda.html">Preguntas frecuentes y ayuda</a></li>
             <li><a href="carrito.html">Ver mi carrito de compras</a></li>

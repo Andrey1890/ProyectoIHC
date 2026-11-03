@@ -17,7 +17,7 @@
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-        <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
+        <a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
 
         <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
@@ -49,6 +49,7 @@
     <div class="barra-busqueda-wrap">
       <div class="contenedor">
         <div class="formulario-busqueda" role="search">
+          <label for="input-busqueda-global" class="sr-only">Buscar productos por nombre, línea o principio activo</label>
           <input
             type="text"
             id="input-busqueda-global"
@@ -66,9 +67,9 @@
   <main id="contenido-principal" class="vista-pagina">
     <div class="contenedor" style="padding-top: 24px; padding-bottom: 56px;">
       <div style="margin-bottom: 18px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
-        <span style="font-size: 13px; color: #64748B;">
-          <a href="index.html" style="color:#64748B;">Inicio</a> &gt;
-          <a href="catalogo.html" style="color:#64748B;">Catálogo</a> &gt;
+        <span style="font-size: 13px; color: #475569;">
+          <a href="index.html" style="color:#475569;">Inicio</a> &gt;
+          <a href="catalogo.html" style="color:#475569;">Catálogo</a> &gt;
           <strong id="ficha-breadcrumb-nombre" style="color:#0F172A;">Detalle del Producto</strong>
         </span>
         <a href="catalogo.html" class="enlace-ver-mas">← Volver al catálogo</a>
@@ -83,13 +84,13 @@
           <div class="modal-info-col">
             <div style="display: flex; gap: 8px; margin-bottom: 10px; align-items: center; flex-wrap: wrap;">
               <span class="insignia-tipo" id="ficha-tipo-tag">Uso en casa</span>
-              <span style="font-size: 12px; color: #64748B; font-weight: 600;" id="ficha-marca">Dermclar</span>
+              <span style="font-size: 12px; color: #475569; font-weight: 600;" id="ficha-marca">Dermclar</span>
               <span style="font-size: 12px; color: #0056B3; background: #EFF6FF; padding: 2px 8px; border-radius: 99px; font-weight: 600;" id="ficha-categoria">Exosomas</span>
             </div>
 
             <h1 id="ficha-titulo" style="font-size: 28px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">ExoFace</h1>
             <p class="modal-subtitulo" id="ficha-subtitulo">Rejuvenecimiento avanzado con exosomas</p>
-            <div style="font-size: 13px; color: #64748B; margin-bottom: 14px;" id="ficha-presentacion">Gotero 30 ml</div>
+            <div style="font-size: 13px; color: #475569; margin-bottom: 14px;" id="ficha-presentacion">Gotero 30 ml</div>
 
             <div class="modal-precio" id="ficha-precio">$74.00</div>
             <p style="font-size: 14px; color: #334155; margin-bottom: 24px; line-height: 1.6;" id="ficha-descripcion"></p>
@@ -111,25 +112,25 @@
         <div class="modal-detalles-tecnicos">
           <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-bottom: 24px;">
             <div class="bloque-detalle-seccion" style="margin-bottom: 0;">
-              <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+              <h2>🧪 Lo que contiene la fórmula (Principios Activos)</h2>
               <ul class="lista-con-vinetas" id="ficha-lista-activos"></ul>
             </div>
 
             <div class="bloque-detalle-seccion" style="margin-bottom: 0;">
-              <h4>✨ Beneficios Comprobados</h4>
+              <h2>✨ Beneficios Comprobados</h2>
               <ul class="lista-con-vinetas" id="ficha-lista-beneficios"></ul>
             </div>
           </div>
 
           <div class="bloque-detalle-seccion">
-            <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+            <h2>📋 Antes de usarlo / Modo de aplicación</h2>
             <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
               <span id="ficha-modo-uso"></span>
             </div>
           </div>
 
           <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
-            <h3 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">También puedes explorar</h3>
+            <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 16px;">También puedes explorar</h2>
             <div class="productos-grid" id="ficha-grid-relacionados"></div>
           </div>
         </div>
@@ -146,7 +147,7 @@
       <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
       
       <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+      <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
         Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
       </p>
 
@@ -247,11 +248,11 @@
         <div class="modal-info-col">
           <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
             <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
-            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+            <span style="font-size: 12px; color: #475569;" id="modal-marca">Dermclar</span>
           </div>
           <h2 id="modal-titulo">Nombre del Producto</h2>
           <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
+          <div style="font-size: 13px; color: #475569; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
           <div class="modal-precio" id="modal-precio">$0.00</div>
           <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
 
@@ -275,24 +276,24 @@
 
       <div class="modal-detalles-tecnicos">
         <div class="bloque-detalle-seccion">
-          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <h3>🧪 Lo que contiene la fórmula (Principios Activos)</h3>
           <ul class="lista-con-vinetas" id="modal-lista-activos"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>✨ Beneficios Comprobados</h4>
+          <h3>✨ Beneficios Comprobados</h3>
           <ul class="lista-con-vinetas" id="modal-lista-beneficios"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <h3>📋 Antes de usarlo / Modo de aplicación</h3>
           <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
             <span id="modal-modo-uso">Instrucciones del fabricante...</span>
           </div>
         </div>
 
         <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
-          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <h3 style="margin-bottom: 16px;">También puedes explorar</h3>
           <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);"></div>
         </div>
       </div>
@@ -313,20 +314,21 @@
        ===================================================================== -->
   <footer class="pie-de-pagina">
     <div class="contenedor">
+      <h2 class="sr-only">Información institucional y navegación de pie de página</h2>
       <div class="footer-grid">
         <div class="footer-marca">
-          <h4>DERMAKOR</h4>
+          <h3>DERMAKOR</h3>
           <p>
             Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
             <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
           </p>
-          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+          <div style="margin-top: 14px; font-size: 13px; color: #475569;">
             Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
           </div>
         </div>
 
         <div class="footer-columna">
-          <h5>Explorar</h5>
+          <h3>Explorar</h3>
           <ul class="footer-enlaces">
             <li><a href="uso-en-casa.html">Uso en casa - Línea Dermclar</a></li>
             <li><a href="catalogo.html?cat=Exosomas">Línea Exosomas con Nanotecnología</a></li>
@@ -336,7 +338,7 @@
         </div>
 
         <div class="footer-columna">
-          <h5>Atención al Cliente</h5>
+          <h3>Atención al Cliente</h3>
           <ul class="footer-enlaces">
             <li><a href="ayuda.html">Preguntas frecuentes y ayuda</a></li>
             <li><a href="carrito.html">Ver mi carrito de compras</a></li>

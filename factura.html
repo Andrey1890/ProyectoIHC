@@ -17,7 +17,7 @@
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-        <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
+        <a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
 
         <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
@@ -49,6 +49,7 @@
     <div class="barra-busqueda-wrap">
       <div class="contenedor">
         <div class="formulario-busqueda" role="search">
+          <label for="input-busqueda-global" class="sr-only">Buscar productos por nombre, línea o principio activo</label>
           <input
             type="text"
             id="input-busqueda-global"
@@ -69,7 +70,7 @@
       <div class="alerta-mensaje alerta-exito" style="padding: 20px; border-radius: 12px; margin-bottom: 24px;">
         <div style="font-size: 32px;">✅</div>
         <div>
-          <h2 style="font-size: 20px; font-weight: 800; color: #15803D; margin-bottom: 2px;">Pago Aprobado y Transacción Exitosa</h2>
+          <h1 style="font-size: 20px; font-weight: 800; color: #15803D; margin-bottom: 2px;">Pago Aprobado y Transacción Exitosa</h1>
           <p style="font-size: 14px; color: #166534;">
             Tu comprobante electrónico ha sido generado válidamente. Se ha enviado una copia en formato PDF y XML a tu correo.
           </p>
@@ -102,14 +103,14 @@
         <!-- Datos del Cliente / Comprador -->
         <div class="factura-datos-grid">
           <div class="factura-datos-col">
-            <h4>Datos de Facturación del Cliente</h4>
+            <h3>Datos de Facturación del Cliente</h3>
             <p><strong>Razón Social / Nombre: </strong><span id="fac-cliente-nombre">María Fernández</span></p>
             <p><strong>R.U.C. / C.I.: </strong><span id="fac-cliente-ruc">1718293849</span></p>
             <p><strong>Correo electrónico: </strong><span id="fac-cliente-correo">cliente@example.com</span></p>
             <p><strong>Teléfono: </strong><span id="fac-cliente-telefono">0996096996</span></p>
           </div>
           <div class="factura-datos-col">
-            <h4>Información de Logística y Entrega</h4>
+            <h3>Información de Logística y Entrega</h3>
             <p><strong>Dirección de Entrega: </strong><span id="fac-cliente-direccion">Av. República E1-136, Quito - Pichincha</span></p>
             <p><strong>Método de Transporte: </strong><span id="fac-cliente-envio">Servientrega Urbano</span></p>
             <p><strong>Forma de Pago: </strong>Tarjeta de Crédito / Débito (Aprobado)</p>
@@ -184,7 +185,7 @@
       <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
       
       <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+      <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
         Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
       </p>
 
@@ -285,11 +286,11 @@
         <div class="modal-info-col">
           <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
             <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
-            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+            <span style="font-size: 12px; color: #475569;" id="modal-marca">Dermclar</span>
           </div>
           <h2 id="modal-titulo">Nombre del Producto</h2>
           <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
+          <div style="font-size: 13px; color: #475569; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
           <div class="modal-precio" id="modal-precio">$0.00</div>
           <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
 
@@ -313,24 +314,24 @@
 
       <div class="modal-detalles-tecnicos">
         <div class="bloque-detalle-seccion">
-          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <h3>🧪 Lo que contiene la fórmula (Principios Activos)</h3>
           <ul class="lista-con-vinetas" id="modal-lista-activos"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>✨ Beneficios Comprobados</h4>
+          <h3>✨ Beneficios Comprobados</h3>
           <ul class="lista-con-vinetas" id="modal-lista-beneficios"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <h3>📋 Antes de usarlo / Modo de aplicación</h3>
           <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
             <span id="modal-modo-uso">Instrucciones del fabricante...</span>
           </div>
         </div>
 
         <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
-          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <h3 style="margin-bottom: 16px;">También puedes explorar</h3>
           <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);"></div>
         </div>
       </div>
@@ -351,20 +352,21 @@
        ===================================================================== -->
   <footer class="pie-de-pagina">
     <div class="contenedor">
+      <h2 class="sr-only">Información institucional y navegación de pie de página</h2>
       <div class="footer-grid">
         <div class="footer-marca">
-          <h4>DERMAKOR</h4>
+          <h3>DERMAKOR</h3>
           <p>
             Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
             <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
           </p>
-          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+          <div style="margin-top: 14px; font-size: 13px; color: #475569;">
             Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
           </div>
         </div>
 
         <div class="footer-columna">
-          <h5>Explorar</h5>
+          <h3>Explorar</h3>
           <ul class="footer-enlaces">
             <li><a href="uso-en-casa.html">Uso en casa - Línea Dermclar</a></li>
             <li><a href="catalogo.html?cat=Exosomas">Línea Exosomas con Nanotecnología</a></li>
@@ -374,7 +376,7 @@
         </div>
 
         <div class="footer-columna">
-          <h5>Atención al Cliente</h5>
+          <h3>Atención al Cliente</h3>
           <ul class="footer-enlaces">
             <li><a href="ayuda.html">Preguntas frecuentes y ayuda</a></li>
             <li><a href="carrito.html">Ver mi carrito de compras</a></li>

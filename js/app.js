@@ -641,15 +641,24 @@ function renderizarExosomasHome() {
     if (producto) {
       var itemDiv = document.createElement("div");
       itemDiv.className = "tarjeta-exosoma-mini";
+      itemDiv.setAttribute("tabindex", "0");
+      itemDiv.setAttribute("role", "link");
+      itemDiv.setAttribute("aria-label", "Ver ficha de " + producto.nombre + " - " + producto.presentacion);
       itemDiv.innerHTML =
-        '<img src="' + producto.imagen + '" alt="' + producto.nombre + '" />' +
-        '<h4>' + producto.nombre + '</h4>' +
+        '<img src="' + producto.imagen + '" alt="Envase clínico de ' + producto.nombre + ' (' + producto.presentacion + ')" />' +
+        '<h3 style="font-size: 14px; font-weight: 700; color: #0F172A; margin-bottom: 2px;">' + producto.nombre + '</h3>' +
         '<p>' + producto.presentacion + '</p>' +
         '<div class="precio-mini">PVP $' + producto.precio.toFixed(2) + '</div>';
 
       (function (p) {
         itemDiv.addEventListener("click", function () {
           window.location.href = "producto.html?id=" + encodeURIComponent(p.id);
+        });
+        itemDiv.addEventListener("keydown", function (ev) {
+          if (ev.key === "Enter" || ev.key === " ") {
+            ev.preventDefault();
+            window.location.href = "producto.html?id=" + encodeURIComponent(p.id);
+          }
         });
       })(producto);
 
@@ -713,13 +722,13 @@ function crearElementoTarjetaProducto(prod) {
   if (prod.imagen && prod.imagen !== "") {
     bloqueImagenHtml =
       '<div class="tarjeta-producto-imagen">' +
-      '  <img src="' + prod.imagen + '" alt="' + prod.nombre + '" loading="lazy" />' +
+      '  <img src="' + prod.imagen + '" alt="Envase clínico de ' + prod.nombre + ' (' + prod.presentacion + ')" loading="lazy" />' +
       '</div>';
   } else {
     bloqueImagenHtml =
       '<div class="tarjeta-producto-imagen vacia">' +
       '  <div class="placeholder-vacio">' +
-      '    <span>📷</span>' +
+      '    <span aria-hidden="true">📷</span>' +
       '    <small>Fotografía oficial en actualización</small>' +
       '  </div>' +
       '</div>';
@@ -730,13 +739,13 @@ function crearElementoTarjetaProducto(prod) {
     '<div class="tarjeta-producto-cuerpo">' +
     '  <div class="tarjeta-meta">' +
     '    <span class="' + claseInsignia + '">' + etiquetaUso + '</span>' +
-    '    <span style="font-size: 11px; color: #64748B;">' + prod.marca + '</span>' +
+    '    <span style="font-size: 11px; color: #475569;">' + prod.marca + '</span>' +
     '  </div>' +
     '  <h3 class="tarjeta-producto-titulo">' + prod.nombre + '</h3>' +
     '  <div class="tarjeta-producto-presentacion">' + prod.presentacion + '</div>' +
     '  <div class="tarjeta-producto-precio">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
-    '  <button type="button" class="boton-comprar-tarjeta">Añadir al carrito</button>' +
-    '  <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" style="display: block; text-decoration: none; text-align: center;">Ver detalle</a>' +
+    '  <button type="button" class="boton-comprar-tarjeta" aria-label="Añadir ' + prod.nombre + ' al carrito">Añadir al carrito</button>' +
+    '  <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" aria-label="Ver ficha técnica de ' + prod.nombre + '" style="display: block; text-decoration: none; text-align: center;">Ver detalle</a>' +
     '</div>';
 
   var imgBox = tarjeta.querySelector(".tarjeta-producto-imagen");
@@ -1262,14 +1271,14 @@ function renderizarExplorarModal(categoriaActual, idActual) {
       col.style.padding = "10px";
 
       var fotoHtml = p.imagen
-        ? '<img src="' + p.imagen + '" style="height: 100px; margin: 0 auto 8px auto; object-fit: contain;" />'
-        : '<div style="height: 100px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; border-radius: 6px; margin-bottom: 8px; color: #94A3B8;">📷</div>';
+        ? '<img src="' + p.imagen + '" alt="Envase clínico de ' + p.nombre + ' (' + p.presentacion + ')" style="height: 100px; margin: 0 auto 8px auto; object-fit: contain;" />'
+        : '<div style="height: 100px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; border-radius: 6px; margin-bottom: 8px; color: #475569;" aria-hidden="true">📷</div>';
 
       col.innerHTML =
         fotoHtml +
-        '<h4 style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">' + p.nombre + '</h4>' +
+        '<h3 style="font-size: 13px; font-weight: 700; margin-bottom: 4px;">' + p.nombre + '</h3>' +
         '<div style="font-size: 13px; font-weight: 700; color: #0056B3; margin-bottom: 8px;">$' + p.precio.toFixed(2) + '</div>' +
-        '<button type="button" class="boton-primario" style="width: 100%; min-height: 34px; font-size: 12px; padding: 6px;">Ver más</button>';
+        '<button type="button" class="boton-primario" aria-label="Ver detalles de ' + p.nombre + '" style="width: 100%; min-height: 34px; font-size: 12px; padding: 6px;">Ver más</button>';
 
       (function (productoExplorar) {
         col.querySelector("button").addEventListener("click", function () {
@@ -1506,22 +1515,22 @@ function renderizarCarrito() {
 
     var tipoTextoItem = item.tipoUso === "profesional" ? "Profesional" : "Uso en casa";
     var imgTag = item.imagen
-      ? '<img src="' + item.imagen + '" class="item-carrito-img" alt="' + item.nombre + '" />'
-      : '<div class="item-carrito-img" style="display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#94A3B8;">📷</div>';
+      ? '<img src="' + item.imagen + '" class="item-carrito-img" alt="Envase clínico de ' + item.nombre + ' (' + item.presentacion + ')" />'
+      : '<div class="item-carrito-img" style="display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#475569;" aria-hidden="true">📷</div>';
 
     var fila = document.createElement("div");
     fila.className = "item-carrito";
     fila.innerHTML =
       imgTag +
       '<div class="item-carrito-detalles">' +
-      '  <h4><a href="producto.html?id=' + encodeURIComponent(item.id) + '" style="color:inherit;text-decoration:none;">' + item.nombre + '</a></h4>' +
+      '  <h3 style="font-size:15px;font-weight:700;margin-bottom:4px;"><a href="producto.html?id=' + encodeURIComponent(item.id) + '" style="color:inherit;text-decoration:none;">' + item.nombre + '</a></h3>' +
       '  <p>' + item.presentacion + ' • ' + tipoTextoItem + '</p>' +
-      '  <span class="boton-eliminar-item" data-id="' + item.id + '">Eliminar</span>' +
+      '  <button type="button" class="boton-eliminar-item" data-id="' + item.id + '" aria-label="Eliminar ' + item.nombre + ' del carrito">Eliminar</button>' +
       '</div>' +
       '<div class="control-cantidad">' +
-      '  <button type="button" class="btn-qty btn-restar" data-id="' + item.id + '">-</button>' +
-      '  <div class="valor-qty">' + item.cantidad + '</div>' +
-      '  <button type="button" class="btn-qty btn-sumar" data-id="' + item.id + '">+</button>' +
+      '  <button type="button" class="btn-qty btn-restar" data-id="' + item.id + '" aria-label="Disminuir cantidad de ' + item.nombre + '">-</button>' +
+      '  <div class="valor-qty" aria-live="polite">' + item.cantidad + '</div>' +
+      '  <button type="button" class="btn-qty btn-sumar" data-id="' + item.id + '" aria-label="Aumentar cantidad de ' + item.nombre + '">+</button>' +
       '</div>' +
       '<div class="item-carrito-precio">$' + precioLinea.toFixed(2) + '</div>';
 

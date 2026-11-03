@@ -15,9 +15,9 @@
   --color-acento: #0284C7;
   
   --color-texto-principal: #0F172A;
-  --color-texto-cuerpo: #334155;
-  --color-texto-secundario: #64748B;
-  --color-texto-claro: #94A3B8;
+  --color-texto-cuerpo: #1E293B;
+  --color-texto-secundario: #334155;
+  --color-texto-claro: #475569;
 
   --color-fondo-pagina: #F8FAFC;
   --color-fondo-tarjeta: #FFFFFF;
@@ -1989,4 +1989,105 @@ select:focus-visible {
   transform: translateY(-2px);
   box-shadow: var(--sombra-suave);
   border-color: var(--color-primario);
+}
+
+/* --------------------------------------------------------------------------
+   18. CORRECCIONES DE ACCESIBILIDAD TALLER (TAWDIS, WAVE, EXAMINATOR)
+   -------------------------------------------------------------------------- */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 1. Foco de teclado de alta visibilidad en enlaces, logo, tarjetas y botones */
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:focus-visible {
+  outline: 3px solid var(--color-primario) !important;
+  outline-offset: 3px !important;
+  box-shadow: 0 0 0 4px rgba(0, 86, 179, 0.2);
+}
+
+.tarjeta-categoria-rapida:focus-visible,
+.logo-marca:focus-visible {
+  outline: 3px solid var(--color-primario) !important;
+  outline-offset: 4px !important;
+  border-color: var(--color-primario);
+}
+
+/* 2. Soporte de estilos para jerarquia estricta h1 > h2 > h3 */
+.caja-seguridad-ihc h3 {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+  margin-bottom: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.factura-datos-col h3 {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--color-primario);
+  margin-bottom: 8px;
+  letter-spacing: 0.5px;
+}
+
+.bloque-detalle-seccion h3,
+.bloque-detalle-seccion h2 {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+  margin-bottom: 10px;
+}
+
+.footer-marca h3 {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-texto-principal);
+  margin-bottom: 8px;
+}
+
+.footer-columna h3 {
+  font-size: 14px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-texto-principal);
+  margin-bottom: 14px;
+}
+
+/* 7. Adaptabilidad responsiva para checkout, pago, titulos e imagenes */
+.layout-checkout-grid {
+  display: grid;
+  grid-template-columns: 1fr 380px;
+  gap: 32px;
+  align-items: flex-start;
+}
+
+.titulo-hero {
+  font-size: clamp(1.75rem, 3.5vw, 2.5rem);
+  line-height: 1.2;
+}
+
+.titulo-seccion {
+  font-size: clamp(1.35rem, 2.5vw, 1.75rem);
+}
+
+@media (max-width: 992px) {
+  .layout-checkout-grid {
+    grid-template-columns: 1fr;
+  }
 }

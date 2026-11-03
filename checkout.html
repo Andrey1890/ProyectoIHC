@@ -17,7 +17,7 @@
     <div class="contenedor">
       <div class="barra-superior">
         <!-- Logotipo Principal -->
-        <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
+        <a href="index.html" class="logo-marca" aria-label="DERMAKOR - Ir a la página de inicio" style="text-decoration: none;">DERMAKOR</a>
 
         <!-- Enlaces de Navegacion -->
         <nav class="navegacion-principal" aria-label="Navegación principal">
@@ -49,6 +49,7 @@
     <div class="barra-busqueda-wrap">
       <div class="contenedor">
         <div class="formulario-busqueda" role="search">
+          <label for="input-busqueda-global" class="sr-only">Buscar productos por nombre, línea o principio activo</label>
           <input
             type="text"
             id="input-busqueda-global"
@@ -76,7 +77,7 @@
       </div>
 
       <h1 style="font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">Datos del Cliente para Facturación</h1>
-      <p style="color: #64748B; font-size: 14px; margin-bottom: 24px;">Los campos con * son obligatorios para la factura legal y entrega.</p>
+      <p style="color: #475569; font-size: 14px; margin-bottom: 24px;">Los campos con * son obligatorios para la factura legal y entrega.</p>
 
       <div id="alerta-error-envio" class="alerta-mensaje alerta-error" style="display: none;">
         <span>⚠️</span>
@@ -86,22 +87,22 @@
         </div>
       </div>
 
-      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: flex-start;">
+      <div class="layout-checkout-grid">
         <!-- Formulario Envio -->
         <form onsubmit="validarPasoEnvio(event)" novalidate>
           <div class="caja-formulario">
-            <h3 class="subtitulo-formulario">1. Identificación del Cliente (Facturación)</h3>
+            <h2 class="subtitulo-formulario">1. Identificación del Cliente (Facturación)</h2>
             
             <div class="fila-formulario">
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-nombre">Nombres y Apellidos / Razón Social *</label>
                 <input type="text" id="campo-nombre" class="campo-control campo-validable" placeholder="María Fernández" required minlength="3" />
-                <span class="mensaje-error-campo">Ingresa al menos 3 caracteres.</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Ingresa al menos 3 caracteres.</span>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-cedula-ruc">C.I. / R.U.C. *</label>
                 <input type="text" id="campo-cedula-ruc" class="campo-control campo-validable" placeholder="1718293849 o 1792464939001" required maxlength="13" />
-                <span class="mensaje-error-campo">Debe tener 10 dígitos (Cédula) o 13 dígitos (RUC).</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Debe tener 10 dígitos (Cédula) o 13 dígitos (RUC).</span>
               </div>
             </div>
 
@@ -109,18 +110,18 @@
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-correo">Correo electrónico para Factura *</label>
                 <input type="email" id="campo-correo" class="campo-control campo-validable" placeholder="ejemplo@correo.com" required />
-                <span class="mensaje-error-campo">Ingresa un correo electrónico válido.</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Ingresa un correo electrónico válido.</span>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-telefono">Teléfono celular / WhatsApp *</label>
                 <input type="tel" id="campo-telefono" class="campo-control campo-validable" placeholder="0996096996" required maxlength="10" />
-                <span class="mensaje-error-campo">Ingresa un teléfono celular válido de 10 dígitos.</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Ingresa un teléfono celular válido de 10 dígitos.</span>
               </div>
             </div>
           </div>
 
           <div class="caja-formulario">
-            <h3 class="subtitulo-formulario">2. Dirección de Entrega en Ecuador</h3>
+            <h2 class="subtitulo-formulario">2. Dirección de Entrega en Ecuador</h2>
             <div class="campo-grupo">
               <label class="campo-etiqueta" for="campo-pais">País</label>
               <input type="text" id="campo-pais" class="campo-control" value="Ecuador" readonly style="background-color: #F8FAFC;" />
@@ -129,7 +130,7 @@
             <div class="campo-grupo">
               <label class="campo-etiqueta" for="campo-direccion">Calle principal y número *</label>
               <input type="text" id="campo-direccion" class="campo-control campo-validable" placeholder="Av. República E1-136 y Atahualpa" required minlength="5" />
-              <span class="mensaje-error-campo">Por favor escribe tu calle principal y número de inmueble.</span>
+              <span class="mensaje-error-campo" role="alert" aria-live="polite">Por favor escribe tu calle principal y número de inmueble.</span>
             </div>
 
             <div class="campo-grupo">
@@ -141,12 +142,12 @@
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-ciudad">Ciudad *</label>
                 <input type="text" id="campo-ciudad" class="campo-control campo-validable" placeholder="Quito" required oninput="actualizarSedeMasCercanaPorCiudad(this.value)" />
-                <span class="mensaje-error-campo">Ingresa la ciudad.</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Ingresa la ciudad.</span>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-provincia">Provincia *</label>
                 <input type="text" id="campo-provincia" class="campo-control campo-validable" placeholder="Pichincha" required />
-                <span class="mensaje-error-campo">Ingresa la provincia.</span>
+                <span class="mensaje-error-campo" role="alert" aria-live="polite">Ingresa la provincia.</span>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="campo-codigopostal">Código postal</label>
@@ -157,7 +158,7 @@
 
           <!-- Opciones de Envio Realistas -->
           <div class="caja-formulario">
-            <h3 class="subtitulo-formulario">3. Método de Envío Cotizado</h3>
+            <h2 class="subtitulo-formulario">3. Método de Envío Cotizado</h2>
             <div class="lista-opciones-envio">
               
               <label class="tarjeta-opcion-envio seleccionada">
@@ -165,7 +166,7 @@
                   <input type="radio" name="metodo-envio" value="servientrega_urbano" data-precio="3.75" data-nombre="Servientrega Urbano (Pichincha / Guayas)" checked />
                   <div>
                     <strong>Servientrega Urbano (Pichincha y Guayas)</strong>
-                    <div style="font-size: 13px; color: #64748B;">Entrega en 24 a 48 horas hábiles con número de guía oficial.</div>
+                    <div style="font-size: 13px; color: #475569;">Entrega en 24 a 48 horas hábiles con número de guía oficial.</div>
                   </div>
                 </div>
                 <div class="precio-envio-tag">$3.75</div>
@@ -176,7 +177,7 @@
                   <input type="radio" name="metodo-envio" value="servientrega_nacional" data-precio="6.50" data-nombre="Servientrega Nacional (Otras Provincias)" />
                   <div>
                     <strong>Servientrega Nacional (Otras Provincias del Ecuador)</strong>
-                    <div style="font-size: 13px; color: #64748B;">Entrega asegurada en 48 a 72 horas hábiles a cualquier cantón.</div>
+                    <div style="font-size: 13px; color: #475569;">Entrega asegurada en 48 a 72 horas hábiles a cualquier cantón.</div>
                   </div>
                 </div>
                 <div class="precio-envio-tag">$6.50</div>
@@ -187,7 +188,7 @@
                   <input type="radio" name="metodo-envio" value="express_motorizado" data-precio="5.25" data-nombre="Envío Express Motorizado (Mismo Día)" />
                   <div>
                     <strong>Envío Express Motorizado (Mismo Día - Urbano)</strong>
-                    <div style="font-size: 13px; color: #64748B;">Entrega el mismo día para órdenes confirmadas antes de las 14:00.</div>
+                    <div style="font-size: 13px; color: #475569;">Entrega el mismo día para órdenes confirmadas antes de las 14:00.</div>
                   </div>
                 </div>
                 <div class="precio-envio-tag">$5.25</div>
@@ -215,17 +216,17 @@
 
         <!-- Panel Lateral de Resumen -->
         <aside class="tarjeta-resumen">
-          <h3 class="resumen-titulo">Resumen Seguro de Compra</h3>
+          <h2 class="resumen-titulo">Resumen Seguro de Compra</h2>
 
           <div class="caja-seguridad-ihc">
-            <h4><span>📍</span> Dirección de Entrega:</h4>
+            <h3><span>📍</span> Dirección de Entrega:</h3>
             <div id="ihc-destinatario-texto" style="font-weight: 600; color: #0F172A; margin-bottom: 2px;">Cliente</div>
             <div id="ihc-direccion-texto" style="color: #475569; margin-bottom: 4px;">Ingresa tu dirección para confirmar</div>
             <div id="ihc-metodo-envio-texto" style="font-weight: 600; color: #0056B3; font-size: 12px;">Servientrega Urbano - $3.75</div>
           </div>
 
           <div class="caja-seguridad-ihc">
-            <h4><span>🛍️</span> Productos en tu Orden:</h4>
+            <h3><span>🛍️</span> Productos en tu Orden:</h3>
             <div id="ihc-lista-mini-productos"></div>
           </div>
 
@@ -250,7 +251,7 @@
             <strong class="checkout-total-val" style="color: #0056B3;">$0.00</strong>
           </div>
 
-          <div style="font-size: 12px; color: #64748B; line-height: 1.4;">
+          <div style="font-size: 12px; color: #475569; line-height: 1.4;">
             🛡️ Tus datos permanecen visibles para que verifiques a dónde irá tu pedido antes de efectuar el cobro.
           </div>
         </aside>
@@ -268,7 +269,7 @@
       <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
       
       <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
-      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+      <p style="font-size: 13px; color: #475569; margin-bottom: 20px;">
         Para emitir tu factura electrónica y registrar tu envío formal, por favor inicia sesión o crea tu cuenta.
       </p>
 
@@ -369,11 +370,11 @@
         <div class="modal-info-col">
           <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
             <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
-            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+            <span style="font-size: 12px; color: #475569;" id="modal-marca">Dermclar</span>
           </div>
           <h2 id="modal-titulo">Nombre del Producto</h2>
           <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
-          <div style="font-size: 13px; color: #64748B; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
+          <div style="font-size: 13px; color: #475569; margin-bottom: 12px;" id="modal-presentacion">Presentación</div>
           <div class="modal-precio" id="modal-precio">$0.00</div>
           <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
 
@@ -397,24 +398,24 @@
 
       <div class="modal-detalles-tecnicos">
         <div class="bloque-detalle-seccion">
-          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <h3>🧪 Lo que contiene la fórmula (Principios Activos)</h3>
           <ul class="lista-con-vinetas" id="modal-lista-activos"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>✨ Beneficios Comprobados</h4>
+          <h3>✨ Beneficios Comprobados</h3>
           <ul class="lista-con-vinetas" id="modal-lista-beneficios"></ul>
         </div>
 
         <div class="bloque-detalle-seccion">
-          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <h3>📋 Antes de usarlo / Modo de aplicación</h3>
           <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
             <span id="modal-modo-uso">Instrucciones del fabricante...</span>
           </div>
         </div>
 
         <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
-          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <h3 style="margin-bottom: 16px;">También puedes explorar</h3>
           <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);"></div>
         </div>
       </div>
@@ -435,20 +436,21 @@
        ===================================================================== -->
   <footer class="pie-de-pagina">
     <div class="contenedor">
+      <h2 class="sr-only">Información institucional y navegación de pie de página</h2>
       <div class="footer-grid">
         <div class="footer-marca">
-          <h4>DERMAKOR</h4>
+          <h3>DERMAKOR</h3>
           <p>
             Tu tienda y catálogo de dermocosmética médica avanzada. Productos y fórmulas exclusivas de 
             <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
           </p>
-          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+          <div style="margin-top: 14px; font-size: 13px; color: #475569;">
             Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
           </div>
         </div>
 
         <div class="footer-columna">
-          <h5>Explorar</h5>
+          <h3>Explorar</h3>
           <ul class="footer-enlaces">
             <li><a href="uso-en-casa.html">Uso en casa - Línea Dermclar</a></li>
             <li><a href="catalogo.html?cat=Exosomas">Línea Exosomas con Nanotecnología</a></li>
@@ -458,7 +460,7 @@
         </div>
 
         <div class="footer-columna">
-          <h5>Atención al Cliente</h5>
+          <h3>Atención al Cliente</h3>
           <ul class="footer-enlaces">
             <li><a href="ayuda.html">Preguntas frecuentes y ayuda</a></li>
             <li><a href="carrito.html">Ver mi carrito de compras</a></li>
