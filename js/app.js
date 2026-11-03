@@ -7,7 +7,7 @@ var SUPABASE_CONFIG = {
   poolerPort: 5432,
   database: "postgres",
   dbUser: "postgres.jdsqipqdcuyegjrpvgny",
-  anonKey: localStorage.getItem("dermakor_supabase_key") || ""
+  anonKey: "sb_publishable_T2q-SOGB3En3hu7KuvJelg_xldr0z5g"
 };
 
 var LISTA_PRODUCTOS = [];
@@ -21,11 +21,13 @@ var listaFiltradaActual = [];
 // Consulta el stock real e individual de cada producto desde su registro sincronizado con la tabla Lotes
 function obtenerStockProducto(idProducto) {
   var prod = buscarProductoPorId(idProducto);
-  var stockBase = prod && typeof prod.stock === "number" ? prod.stock : 25;
+  var stockBase = prod && typeof prod.stock === "number" ? prod.stock : 0;
   try {
     var descontados = JSON.parse(localStorage.getItem("dermakor_stock_descontado") || "{}");
-    if (descontados[idProducto]) {
-      return Math.max(0, stockBase - descontados[idProducto]);
+    var idDb = prod && prod.id_producto_db ? prod.id_producto_db : idProducto;
+    var cantDesc = (descontados[idProducto] || 0) + (descontados[idDb] || 0);
+    if (cantDesc > 0 && !SUPABASE_CONFIG.anonKey) {
+      return Math.max(0, stockBase - cantDesc);
     }
   } catch (e) {}
   return stockBase;
@@ -160,21 +162,22 @@ function guardarEnvioPersistente() {
 function verificarEstadoConexionDB() {
   var textoBadge = document.getElementById("texto-estado-db");
   if (SUPABASE_CONFIG.anonKey) {
-    fetch(SUPABASE_CONFIG.restUrl + '/Productos?select=id_producto&limit=1', {
+    fetch(SUPABASE_CONFIG.restUrl + "/Productos?select=id_producto&limit=1", {
       headers: {
         "apikey": SUPABASE_CONFIG.anonKey,
-        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Accept": "application/json"
       }
     })
       .then(function (r) {
         if (!r.ok) throw new Error("REST");
         if (textoBadge) {
-          textoBadge.textContent = "Supabase REST API (jdsqipqdcuyegjrpvgny) • En línea";
+          textoBadge.textContent = "Supabase PostgreSQL (En vivo) • Conectado";
         }
       })
       .catch(function () {
         if (textoBadge) {
-          textoBadge.textContent = "Supabase PostgreSQL • En línea";
+          textoBadge.textContent = "Supabase PostgreSQL • Respaldo";
         }
       });
     return;
@@ -198,6 +201,13 @@ function verificarEstadoConexionDB() {
 }
 
 function cargarProductosDesdeServidor() {
+  // 1. Si tenemos Supabase REST activo (GitHub Pages o navegador directo)
+  if (SUPABASE_CONFIG.anonKey) {
+    cargarProductosDesdeSupabaseREST();
+    return;
+  }
+
+  // 2. Si se corre backend local server.py
   fetch("/api/productos")
     .then(function (respuesta) {
       if (!respuesta.ok) {
@@ -214,6 +224,110 @@ function cargarProductosDesdeServidor() {
       }
     })
     .catch(function () {
+      cargarProductosDesdeJSON();
+    });
+}
+
+function cargarProductosDesdeSupabaseREST() {
+  var url = SUPABASE_CONFIG.restUrl + "/Productos?select=id_producto,pro_nombre,pro_descripcion,pro_precio,pro_estado,Categorias(cat_nombre),ProductoImagenes(img_url,img_es_portada),Lotes(lot_stock_actual,lot_estado)&order=id_producto.asc";
+
+  fetch(url, {
+    headers: {
+      "apikey": SUPABASE_CONFIG.anonKey,
+      "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+      "Accept": "application/json"
+    }
+  })
+    .then(function (res) {
+      if (!res.ok) throw new Error("HTTP error " + res.status);
+      return res.json();
+    })
+    .then(function (filas) {
+      if (!Array.isArray(filas) || filas.length === 0) {
+        throw new Error("Sin filas en Supabase");
+      }
+
+      var productosMapeados = [];
+      for (var i = 0; i < filas.length; i++) {
+        var r = filas[i];
+        if (r.pro_estado && r.pro_estado.trim().toUpperCase() === "INACTIVO") {
+          continue;
+        }
+
+        var id_p = (r.id_producto || "").trim();
+        var raw_desc = r.pro_descripcion || "";
+        var meta = {};
+        var clean_desc = raw_desc;
+
+        if (raw_desc.indexOf("||META||") !== -1) {
+          var partes = raw_desc.split("||META||");
+          clean_desc = partes[0].trim();
+          try {
+            meta = JSON.parse(partes[1]);
+          } catch (e) {
+            meta = {};
+          }
+        }
+
+        // Calcular stock sumando los lotes reales disponibles en Supabase
+        var stockTotal = 0;
+        if (Array.isArray(r.Lotes)) {
+          for (var l = 0; l < r.Lotes.length; l++) {
+            var estLote = (r.Lotes[l].lot_estado || "").trim().toUpperCase();
+            if (estLote !== "BAJA" && estLote !== "EXPIRADO") {
+              stockTotal += parseInt(r.Lotes[l].lot_stock_actual, 10) || 0;
+            }
+          }
+        }
+
+        // Obtener portada
+        var imagenDb = "";
+        if (Array.isArray(r.ProductoImagenes) && r.ProductoImagenes.length > 0) {
+          for (var imgIdx = 0; imgIdx < r.ProductoImagenes.length; imgIdx++) {
+            if (r.ProductoImagenes[imgIdx].img_es_portada === "S") {
+              imagenDb = (r.ProductoImagenes[imgIdx].img_url || "").trim();
+              break;
+            }
+          }
+          if (!imagenDb && r.ProductoImagenes[0].img_url) {
+            imagenDb = r.ProductoImagenes[0].img_url.trim();
+          }
+        }
+
+        var catNombre = r.Categorias && r.Categorias.cat_nombre ? r.Categorias.cat_nombre.trim() : "Cuidado facial";
+
+        var prodObj = {
+          id: meta.slug || id_p.toLowerCase(),
+          id_producto_db: id_p,
+          nombre: (r.pro_nombre || "").trim(),
+          marca: meta.marca || "Dermclar",
+          categoria: catNombre,
+          tipoUso: meta.tipoUso || "casa",
+          subtitulo: meta.subtitulo || "Fórmula dermatológica avanzada",
+          presentacion: meta.presentacion || "Unidad",
+          precio: parseFloat(r.pro_precio) || 0,
+          precioProfesional: typeof meta.precioProfesional === "number" ? meta.precioProfesional : (parseFloat(r.pro_precio) || 0),
+          stock: stockTotal,
+          imagen: meta.imagen !== undefined ? meta.imagen : (imagenDb || "assets/img/" + id_p.toLowerCase() + ".jpg"),
+          destacadoHome: !!meta.destacadoHome,
+          descripcion: clean_desc,
+          principiosActivos: meta.principiosActivos || ["Activos liposomados Dermclar"],
+          beneficios: meta.beneficios || ["Eficacia clínica comprobada"],
+          modoUso: meta.modoUso || "Aplicar según protocolo dermatológico."
+        };
+
+        productosMapeados.push(prodObj);
+      }
+
+      LISTA_PRODUCTOS = productosMapeados;
+      var textoBadge = document.getElementById("texto-estado-db");
+      if (textoBadge) {
+        textoBadge.textContent = "Supabase PostgreSQL (En vivo) • " + LISTA_PRODUCTOS.length + " productos";
+      }
+      inicializarVistasConProductos();
+    })
+    .catch(function (err) {
+      console.warn("Lectura directa Supabase falló, cargando respaldo:", err);
       cargarProductosDesdeJSON();
     });
 }
@@ -359,6 +473,54 @@ function procesarLogin(evento) {
     return;
   }
 
+  // 1. Supabase REST directo en vivo
+  if (SUPABASE_CONFIG.anonKey) {
+    var urlAuth = SUPABASE_CONFIG.restUrl + "/Usuarios?select=id_usuario,usu_nombre,usu_email,Clientes(id_cliente,cli_ci_ruc,cli_nombres,cli_apellidos,cli_telefono,cli_direccion)&usu_email=ilike." + encodeURIComponent(correo);
+
+    fetch(urlAuth, {
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Accept": "application/json"
+      }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP error " + r.status);
+        return r.json();
+      })
+      .then(function (usuarios) {
+        if (Array.isArray(usuarios) && usuarios.length > 0) {
+          var u = usuarios[0];
+          var c = u.Clientes || {};
+          var nomCompleto = (u.usu_nombre || "").trim();
+          if (!nomCompleto && c.cli_nombres) {
+            nomCompleto = (c.cli_nombres.trim() + " " + (c.cli_apellidos || "").trim()).trim();
+          }
+
+          usuarioActual = {
+            id_cliente: (c.id_cliente || "CLI0000001").trim(),
+            id_usuario: (u.id_usuario || "USU0000001").trim(),
+            nombre: nomCompleto || "Cliente Registrado",
+            cedulaRuc: (c.cli_ci_ruc || "1718293849").trim(),
+            correo: (u.usu_email || correo).trim(),
+            telefono: (c.cli_telefono || "0996096996").trim(),
+            direccion: (c.cli_direccion || "Av. República E1-136 y Atahualpa").trim(),
+            ciudad: "Quito",
+            provincia: "Pichincha",
+            codigoPostal: "170102"
+          };
+          finalizarInicioSesion();
+        } else {
+          loginFallbackLocal(correo);
+        }
+      })
+      .catch(function () {
+        loginFallbackLocal(correo);
+      });
+    return;
+  }
+
+  // 2. Fallback backend local server.py
   fetch("/api/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -376,50 +538,54 @@ function procesarLogin(evento) {
       finalizarInicioSesion();
     })
     .catch(function () {
-      var cuentasGuardadas = [];
-      try {
-        cuentasGuardadas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
-      } catch (e) {}
-
-      var cuentaEncontrada = null;
-      for (var i = 0; i < cuentasGuardadas.length; i++) {
-        if (cuentasGuardadas[i].correo.toLowerCase() === correo) {
-          cuentaEncontrada = cuentasGuardadas[i];
-          break;
-        }
-      }
-
-      if (cuentaEncontrada) {
-        usuarioActual = cuentaEncontrada;
-      } else if (correo === "cliente@example.com") {
-        usuarioActual = {
-          id_cliente: "CLI0000001",
-          nombre: "María Fernández",
-          cedulaRuc: "1718293849",
-          correo: "cliente@example.com",
-          telefono: "0996096996",
-          direccion: "Av. República E1-136 y Atahualpa",
-          referencia: "Edificio La Casa, Piso 1, Of. 3",
-          ciudad: "Quito",
-          provincia: "Pichincha",
-          codigoPostal: "170102"
-        };
-      } else {
-        usuarioActual = {
-          id_cliente: "CLI" + Math.floor(1000000 + Math.random() * 8999999),
-          nombre: "Cliente Registrado",
-          cedulaRuc: "1718293849",
-          correo: correo,
-          telefono: "0996096996",
-          direccion: "Av. República E1-136 y Atahualpa",
-          referencia: "Edificio La Casa, Piso 1, Of. 3",
-          ciudad: "Quito",
-          provincia: "Pichincha",
-          codigoPostal: "170102"
-        };
-      }
-      finalizarInicioSesion();
+      loginFallbackLocal(correo);
     });
+}
+
+function loginFallbackLocal(correo) {
+  var cuentasGuardadas = [];
+  try {
+    cuentasGuardadas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
+  } catch (e) {}
+
+  var cuentaEncontrada = null;
+  for (var i = 0; i < cuentasGuardadas.length; i++) {
+    if (cuentasGuardadas[i].correo.toLowerCase() === correo) {
+      cuentaEncontrada = cuentasGuardadas[i];
+      break;
+    }
+  }
+
+  if (cuentaEncontrada) {
+    usuarioActual = cuentaEncontrada;
+  } else if (correo === "cliente@example.com") {
+    usuarioActual = {
+      id_cliente: "CLI0000001",
+      nombre: "María Fernández",
+      cedulaRuc: "1718293849",
+      correo: "cliente@example.com",
+      telefono: "0996096996",
+      direccion: "Av. República E1-136 y Atahualpa",
+      referencia: "Edificio La Casa, Piso 1, Of. 3",
+      ciudad: "Quito",
+      provincia: "Pichincha",
+      codigoPostal: "170102"
+    };
+  } else {
+    usuarioActual = {
+      id_cliente: "CLI" + Math.floor(1000000 + Math.random() * 8999999),
+      nombre: "Cliente Registrado",
+      cedulaRuc: "1718293849",
+      correo: correo,
+      telefono: "0996096996",
+      direccion: "Av. República E1-136 y Atahualpa",
+      referencia: "Edificio La Casa, Piso 1, Of. 3",
+      ciudad: "Quito",
+      provincia: "Pichincha",
+      codigoPostal: "170102"
+    };
+  }
+  finalizarInicioSesion();
 }
 
 function finalizarInicioSesion() {
@@ -454,7 +620,13 @@ function procesarRegistro(evento) {
     return;
   }
 
+  var idRand = Math.floor(1000000 + Math.random() * 8999999);
+  var nuevoIdUsuario = "USU" + idRand;
+  var nuevoIdCliente = "CLI" + idRand;
+
   var nuevoUsuario = {
+    id_cliente: nuevoIdCliente,
+    id_usuario: nuevoIdUsuario,
     nombre: nombre,
     cedulaRuc: cedula,
     correo: correo,
@@ -483,6 +655,61 @@ function procesarRegistro(evento) {
     }
     localStorage.setItem("dermakor_cuentas_clientes", JSON.stringify(cuentas));
   } catch (e) {}
+
+  // Si Supabase REST está disponible, insertar directamente en PostgreSQL
+  if (SUPABASE_CONFIG.anonKey) {
+    fetch(SUPABASE_CONFIG.restUrl + "/Usuarios", {
+      method: "POST",
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Content-Type": "application/json",
+        "Prefer": "return=representation"
+      },
+      body: JSON.stringify({
+        id_usuario: nuevoIdUsuario,
+        id_rol: "ROL0000003",
+        usu_nombre: nombre,
+        usu_email: correo,
+        usu_clave_hash: "hash_pbkdf2_2026",
+        usu_estado: "ACTIVO"
+      })
+    })
+      .then(function () {
+        var partes = nombre.split(" ");
+        var nomSolo = partes[0];
+        var apeSolo = partes.slice(1).join(" ") || "Dermakor";
+
+        return fetch(SUPABASE_CONFIG.restUrl + "/Clientes", {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_CONFIG.anonKey,
+            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify({
+            id_cliente: nuevoIdCliente,
+            id_usuario: nuevoIdUsuario,
+            id_ciudad: "CIU0000001",
+            cli_ci_ruc: cedula,
+            cli_nombres: nomSolo,
+            cli_apellidos: apeSolo,
+            cli_telefono: telefono,
+            cli_direccion: direccion + (referencia ? " (" + referencia + ")" : "")
+          })
+        });
+      })
+      .then(function () {
+        usuarioActual = nuevoUsuario;
+        finalizarInicioSesion();
+      })
+      .catch(function () {
+        usuarioActual = nuevoUsuario;
+        finalizarInicioSesion();
+      });
+    return;
+  }
 
   fetch("/api/registro", {
     method: "POST",
@@ -715,8 +942,19 @@ function crearElementoTarjetaProducto(prod) {
     claseInsignia = "insignia-tipo pro";
   }
 
+  var stockProd = obtenerStockProducto(prod.id);
+  var estaAgotado = stockProd <= 0;
+
   var precioTexto = "$" + prod.precio.toFixed(2);
   var precioEtiqueta = prod.tipoUso === "profesional" ? "PRO" : "PVP";
+
+  var badgeStockHtml = estaAgotado
+    ? '<div style="font-size: 11px; font-weight: 700; color: #DC2626; margin-bottom: 6px;">⚠️ Agotado (0 disp.)</div>'
+    : '<div style="font-size: 11px; font-weight: 600; color: #15803D; margin-bottom: 6px;">✓ Stock: ' + stockProd + ' disp.</div>';
+
+  var btnComprarHtml = estaAgotado
+    ? '  <button type="button" class="boton-comprar-tarjeta" disabled style="opacity: 0.6; cursor: not-allowed; background: #94A3B8;" aria-label="' + prod.nombre + ' agotado">Agotado</button>'
+    : '  <button type="button" class="boton-comprar-tarjeta" aria-label="Añadir ' + prod.nombre + ' al carrito">Añadir al carrito</button>';
 
   var bloqueImagenHtml = "";
   if (prod.imagen && prod.imagen !== "") {
@@ -744,7 +982,8 @@ function crearElementoTarjetaProducto(prod) {
     '  <h3 class="tarjeta-producto-titulo">' + prod.nombre + '</h3>' +
     '  <div class="tarjeta-producto-presentacion">' + prod.presentacion + '</div>' +
     '  <div class="tarjeta-producto-precio">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
-    '  <button type="button" class="boton-comprar-tarjeta" aria-label="Añadir ' + prod.nombre + ' al carrito">Añadir al carrito</button>' +
+    badgeStockHtml +
+    btnComprarHtml +
     '  <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" aria-label="Ver ficha técnica de ' + prod.nombre + '" style="display: block; text-decoration: none; text-align: center;">Ver detalle</a>' +
     '</div>';
 
@@ -760,10 +999,12 @@ function crearElementoTarjetaProducto(prod) {
   });
 
   var btnComprar = tarjeta.querySelector(".boton-comprar-tarjeta");
-  btnComprar.addEventListener("click", function (evento) {
-    evento.stopPropagation();
-    agregarAlCarrito(prod.id, 1);
-  });
+  if (btnComprar && !estaAgotado) {
+    btnComprar.addEventListener("click", function (evento) {
+      evento.stopPropagation();
+      agregarAlCarrito(prod.id, 1);
+    });
+  }
 
   return tarjeta;
 }
@@ -921,11 +1162,44 @@ function renderizarDatosEnFichaProducto(prod) {
     elPrecio.textContent = "$" + prod.precio.toFixed(2) + (prod.tipoUso === "profesional" ? " (Precio Profesional)" : " (PVP)");
   }
 
+  var stockProd = obtenerStockProducto(prod.id);
+  var elStock = document.getElementById("ficha-stock-badge");
+  if (!elStock && elPrecio && elPrecio.parentNode) {
+    elStock = document.createElement("div");
+    elStock.id = "ficha-stock-badge";
+    elStock.style.fontSize = "13px";
+    elStock.style.fontWeight = "700";
+    elStock.style.marginBottom = "14px";
+    elPrecio.parentNode.insertBefore(elStock, elPrecio.nextSibling);
+  }
+  if (elStock) {
+    if (stockProd <= 0) {
+      elStock.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado en bodega (0 unidades disponibles)</span>';
+    } else {
+      elStock.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ Stock disponible en tiempo real: ' + stockProd + ' unidades</span>';
+    }
+  }
+
+  var btnAddFicha = document.querySelector(".modal-acciones-compra .boton-primario");
+  if (btnAddFicha) {
+    if (stockProd <= 0) {
+      btnAddFicha.disabled = true;
+      btnAddFicha.textContent = "Producto Agotado";
+      btnAddFicha.style.opacity = "0.6";
+      btnAddFicha.style.cursor = "not-allowed";
+    } else {
+      btnAddFicha.disabled = false;
+      btnAddFicha.textContent = "Añadir al carrito";
+      btnAddFicha.style.opacity = "1";
+      btnAddFicha.style.cursor = "pointer";
+    }
+  }
+
   var elDesc = document.getElementById("ficha-descripcion");
   if (elDesc) elDesc.textContent = prod.descripcion;
 
   var elQty = document.getElementById("ficha-qty-val");
-  if (elQty) elQty.textContent = "1";
+  if (elQty) elQty.textContent = stockProd > 0 ? "1" : "0";
 
   var listaActivos = document.getElementById("ficha-lista-activos");
   if (listaActivos) {
@@ -970,16 +1244,26 @@ function cambiarCantidadFicha(delta) {
   var spanQty = document.getElementById("ficha-qty-val");
   if (!spanQty) return;
   var stockProd = obtenerStockProducto(idProductoFichaActual);
+  if (stockProd <= 0) {
+    spanQty.textContent = "0";
+    mostrarToastNotificacion("Este producto no tiene stock disponible.");
+    return;
+  }
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
   if (valor > stockProd) {
-    valor = Math.max(1, stockProd);
-    mostrarToastNotificacion("Stock disponible para este producto: " + stockProd + " unidades");
+    valor = stockProd;
+    mostrarToastNotificacion("Stock máximo disponible en tiempo real: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
 
 function agregarDesdeFicha() {
+  var stockProd = obtenerStockProducto(idProductoFichaActual);
+  if (stockProd <= 0) {
+    mostrarToastNotificacion("Lo sentimos, este producto se encuentra agotado.");
+    return;
+  }
   var spanQty = document.getElementById("ficha-qty-val");
   var cantidad = spanQty ? parseInt(spanQty.textContent, 10) : 1;
   if (idProductoFichaActual) {
@@ -1196,9 +1480,44 @@ function abrirModalDetalle(idProducto) {
   document.getElementById("modal-titulo").textContent = prod.nombre;
   document.getElementById("modal-subtitulo").textContent = prod.subtitulo;
   document.getElementById("modal-presentacion").textContent = prod.presentacion;
-  document.getElementById("modal-precio").textContent = "$" + prod.precio.toFixed(2);
+  var precioModal = document.getElementById("modal-precio");
+  precioModal.textContent = "$" + prod.precio.toFixed(2);
+
+  var stockProdModal = obtenerStockProducto(prod.id);
+  var elStockModal = document.getElementById("modal-stock-badge");
+  if (!elStockModal && precioModal && precioModal.parentNode) {
+    elStockModal = document.createElement("div");
+    elStockModal.id = "modal-stock-badge";
+    elStockModal.style.fontSize = "13px";
+    elStockModal.style.fontWeight = "700";
+    elStockModal.style.marginBottom = "14px";
+    precioModal.parentNode.insertBefore(elStockModal, precioModal.nextSibling);
+  }
+  if (elStockModal) {
+    if (stockProdModal <= 0) {
+      elStockModal.innerHTML = '<span style="color:#DC2626;background:#FEE2E2;padding:3px 10px;border-radius:99px;">⚠️ Agotado en bodega (0 unidades disponibles)</span>';
+    } else {
+      elStockModal.innerHTML = '<span style="color:#15803D;background:#DCFCE7;padding:3px 10px;border-radius:99px;">✓ Stock disponible en tiempo real: ' + stockProdModal + ' unidades</span>';
+    }
+  }
+
+  var btnAddModal = document.querySelector("#modal-detalle-producto .modal-acciones-compra .boton-primario");
+  if (btnAddModal) {
+    if (stockProdModal <= 0) {
+      btnAddModal.disabled = true;
+      btnAddModal.textContent = "Producto Agotado";
+      btnAddModal.style.opacity = "0.6";
+      btnAddModal.style.cursor = "not-allowed";
+    } else {
+      btnAddModal.disabled = false;
+      btnAddModal.textContent = "Añadir al carrito";
+      btnAddModal.style.opacity = "1";
+      btnAddModal.style.cursor = "pointer";
+    }
+  }
+
   document.getElementById("modal-descripcion").textContent = prod.descripcion;
-  document.getElementById("modal-qty-val").textContent = "1";
+  document.getElementById("modal-qty-val").textContent = stockProdModal > 0 ? "1" : "0";
 
   var enlaceFicha = document.getElementById("modal-enlace-pagina-ficha");
   if (enlaceFicha) enlaceFicha.href = "producto.html?id=" + encodeURIComponent(prod.id);
@@ -1238,16 +1557,26 @@ function cerrarModalDetalle() {
 function cambiarCantidadModal(delta) {
   var spanQty = document.getElementById("modal-qty-val");
   var stockProd = obtenerStockProducto(idProductoModalActual);
+  if (stockProd <= 0) {
+    if (spanQty) spanQty.textContent = "0";
+    mostrarToastNotificacion("Este producto no tiene stock disponible.");
+    return;
+  }
   var valor = parseInt(spanQty.textContent, 10) + delta;
   if (valor < 1) valor = 1;
   if (valor > stockProd) {
-    valor = Math.max(1, stockProd);
-    mostrarToastNotificacion("Stock disponible para este producto: " + stockProd + " unidades");
+    valor = stockProd;
+    mostrarToastNotificacion("Stock máximo disponible en tiempo real: " + stockProd + " unidades");
   }
   spanQty.textContent = valor;
 }
 
 function agregarDesdeModal() {
+  var stockProd = obtenerStockProducto(idProductoModalActual);
+  if (stockProd <= 0) {
+    mostrarToastNotificacion("Lo sentimos, este producto se encuentra agotado.");
+    return;
+  }
   var spanQty = document.getElementById("modal-qty-val");
   var cantidad = parseInt(spanQty.textContent, 10);
   if (idProductoModalActual) {
@@ -1423,6 +1752,45 @@ function aplicarCuponDescuento() {
     localStorage.removeItem("dermakor_cupon");
     if (msg) msg.innerHTML = "Cupón removido.";
     actualizarCalculosFormales(calcularSubtotalCarrito());
+    return;
+  }
+
+  // 1. Consulta directa a Supabase REST API (jdsqipqdcuyegjrpvgny)
+  if (SUPABASE_CONFIG.anonKey) {
+    var urlCupon = SUPABASE_CONFIG.restUrl + "/Descuentos?des_codigo=like." + encodeURIComponent(codigo) + "*&des_estado=like.ACTIVO*";
+    fetch(urlCupon, {
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Accept": "application/json"
+      }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (Array.isArray(data) && data.length > 0) {
+          var row = data[0];
+          cuponActual = {
+            id_descuento: (row.id_descuento || "").trim(),
+            codigo: (row.des_codigo || "").trim(),
+            tipo: (row.des_tipo || "PORCENTAJE").trim().toUpperCase(),
+            valor: parseFloat(row.des_valor) || 0
+          };
+          localStorage.setItem("dermakor_cupon", JSON.stringify(cuponActual));
+          if (msg) {
+            msg.style.color = "#15803D";
+            msg.innerHTML = "✓ Cupón aplicado desde BD: <strong>" + cuponActual.codigo + "</strong> (" + (cuponActual.tipo === "PORCENTAJE" ? cuponActual.valor + "%" : "$" + cuponActual.valor) + ")";
+          }
+          actualizarCalculosFormales(calcularSubtotalCarrito());
+        } else {
+          validarCuponLocal(codigo, msg);
+        }
+      })
+      .catch(function () {
+        validarCuponLocal(codigo, msg);
+      });
     return;
   }
 
@@ -2084,6 +2452,151 @@ function procesarPagoFinal(evento) {
     }
   };
 
+  // 1. Si Supabase REST está disponible (GitHub Pages / Online)
+  if (SUPABASE_CONFIG.anonKey) {
+    var idRand = Math.floor(1000000 + Math.random() * 8999999);
+    var idPedidoSupabase = "PED" + idRand;
+    var idFacturaSupabase = "FAC" + idRand;
+    var pedNumero = ("ORD-" + idRand).slice(0, 15);
+    var secFactura = "001-002-00000" + Math.floor(1000 + Math.random() * 8999);
+    var hoySri = ("0" + new Date().getDate()).slice(-2) + ("0" + (new Date().getMonth() + 1)).slice(-2) + new Date().getFullYear();
+    var claveSri = (hoySri + "0117924649390012001002" + ("000000000" + idRand).slice(-9) + "1234567819999999").slice(0, 49);
+    var guiaEnvio = "GUI-2026-" + Math.floor(100000 + Math.random() * 899999);
+
+    var clienteDb = usuarioActual || {
+      id_cliente: "CLI0000001",
+      nombre: "María Fernández",
+      cedulaRuc: "1718293849",
+      correo: "cliente@example.com",
+      telefono: "0996096996",
+      direccion: "Av. República E1-136 y Atahualpa",
+      ciudad: "Quito",
+      provincia: "Pichincha"
+    };
+
+    var idClienteFinal = clienteDb.id_cliente || "CLI0000001";
+    var idDescuentoFinal = cuponActual && cuponActual.id_descuento ? cuponActual.id_descuento : null;
+
+    // A. Decrementar stock en tabla Lotes de Supabase para cada producto
+    var promesasStock = carrito.map(function (item) {
+      var idProdDb = item.id_producto_db || "PRD0000001";
+      return fetch(SUPABASE_CONFIG.restUrl + "/Lotes?id_producto=eq." + idProdDb + "&order=lot_fecha_caducidad.asc&limit=1", {
+        headers: {
+          "apikey": SUPABASE_CONFIG.anonKey,
+          "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+          "Accept": "application/json"
+        }
+      })
+        .then(function (r) { return r.json(); })
+        .then(function (lotes) {
+          if (Array.isArray(lotes) && lotes.length > 0) {
+            var lote = lotes[0];
+            var nuevoStock = Math.max(0, (lote.lot_stock_actual || 0) - item.cantidad);
+            return fetch(SUPABASE_CONFIG.restUrl + "/Lotes?id_lote=eq." + lote.id_lote.trim(), {
+              method: "PATCH",
+              headers: {
+                "apikey": SUPABASE_CONFIG.anonKey,
+                "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({ lot_stock_actual: nuevoStock })
+            });
+          }
+        })
+        .catch(function (err) {
+          console.warn("Aviso actualizando lote en Supabase:", err);
+        });
+    });
+
+    // B. Insertar Pedido, PedidoDetalle y Factura en PostgreSQL Supabase
+    Promise.all(promesasStock)
+      .then(function () {
+        var pedBody = {
+          id_pedido: idPedidoSupabase,
+          id_cliente: idClienteFinal,
+          id_sede: "SED0000001",
+          id_ciudad: "CIU0000001",
+          id_descuento: idDescuentoFinal,
+          ped_numero: pedNumero,
+          ped_direccion_entrega: ((clienteDb.direccion || "Av. Republica") + ", " + (clienteDb.ciudad || "Quito")).slice(0, 150),
+          ped_latitud: -0.1865,
+          ped_longitud: -78.4841,
+          ped_subtotal: subtotal,
+          ped_descuento: descuento,
+          ped_iva: iva,
+          ped_total: total,
+          ped_estado: "PAGADO"
+        };
+
+        return fetch(SUPABASE_CONFIG.restUrl + "/Pedidos", {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_CONFIG.anonKey,
+            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+            "Content-Type": "application/json",
+            "Prefer": "return=representation"
+          },
+          body: JSON.stringify(pedBody)
+        });
+      })
+      .then(function (resPed) {
+        var promesasDetalle = carrito.map(function (item) {
+          var detBody = {
+            id_pedido: idPedidoSupabase,
+            id_producto: item.id_producto_db || "PRD0000001",
+            pde_cantidad: item.cantidad,
+            pde_precio_unit: item.precio,
+            pde_subtotal: Math.round(item.precio * item.cantidad * 100) / 100
+          };
+          return fetch(SUPABASE_CONFIG.restUrl + "/PedidoDetalle", {
+            method: "POST",
+            headers: {
+              "apikey": SUPABASE_CONFIG.anonKey,
+              "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify(detBody)
+          }).catch(function (e) { console.warn("Aviso detalle:", e); });
+        });
+
+        var facBody = {
+          id_factura: idFacturaSupabase,
+          id_pedido: idPedidoSupabase,
+          fac_numero: secFactura,
+          fac_autorizacion_sri: claveSri,
+          fac_total: total,
+          fac_estado: "EMITIDA"
+        };
+        var promFac = fetch(SUPABASE_CONFIG.restUrl + "/Facturas", {
+          method: "POST",
+          headers: {
+            "apikey": SUPABASE_CONFIG.anonKey,
+            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify(facBody)
+        }).catch(function (e) { console.warn("Aviso factura:", e); });
+
+        return Promise.all(promesasDetalle.concat([promFac]));
+      })
+      .then(function () {
+        concluirCompraExito(payloadCheckout, {
+          ok: true,
+          id_pedido: idPedidoSupabase,
+          fac_numero: secFactura,
+          fac_autorizacion_sri: claveSri,
+          guia_tracking: guiaEnvio
+        });
+      })
+      .catch(function (err) {
+        console.warn("Fallo general checkout Supabase, procediendo con respaldo:", err);
+        concluirCompraExito(payloadCheckout, null);
+      });
+
+    return;
+  }
+
+  // 2. Si se corre backend local Python server.py
   fetch("/api/checkout", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -2093,31 +2606,30 @@ function procesarPagoFinal(evento) {
       return r.json();
     })
     .then(function (res) {
-      var datosFactura = construirObjetoFactura(payloadCheckout, res && res.ok ? res : null);
-      localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
-      carrito = [];
-      cuponActual = null;
-      guardarCarritoPersistente();
-      localStorage.removeItem("dermakor_cupon");
-      window.location.href = "factura.html";
+      concluirCompraExito(payloadCheckout, res && res.ok ? res : null);
     })
     .catch(function () {
-      try {
-        var descontados = JSON.parse(localStorage.getItem("dermakor_stock_descontado") || "{}");
-        for (var idx = 0; idx < carrito.length; idx++) {
-          var idProd = carrito[idx].id;
-          descontados[idProd] = (descontados[idProd] || 0) + carrito[idx].cantidad;
-        }
-        localStorage.setItem("dermakor_stock_descontado", JSON.stringify(descontados));
-      } catch (e) {}
-      var datosFactura = construirObjetoFactura(payloadCheckout, null);
-      localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
-      carrito = [];
-      cuponActual = null;
-      guardarCarritoPersistente();
-      localStorage.removeItem("dermakor_cupon");
-      window.location.href = "factura.html";
+      concluirCompraExito(payloadCheckout, null);
     });
+}
+
+function concluirCompraExito(payloadCheckout, resDb) {
+  try {
+    var descontados = JSON.parse(localStorage.getItem("dermakor_stock_descontado") || "{}");
+    for (var idx = 0; idx < carrito.length; idx++) {
+      var idProd = carrito[idx].id;
+      descontados[idProd] = (descontados[idProd] || 0) + carrito[idx].cantidad;
+    }
+    localStorage.setItem("dermakor_stock_descontado", JSON.stringify(descontados));
+  } catch (e) {}
+
+  var datosFactura = construirObjetoFactura(payloadCheckout, resDb);
+  localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
+  carrito = [];
+  cuponActual = null;
+  guardarCarritoPersistente();
+  localStorage.removeItem("dermakor_cupon");
+  window.location.href = "factura.html";
 }
 
 function construirObjetoFactura(payload, respuestaDb) {
@@ -2284,6 +2796,62 @@ function cargarPedidosDesdeDB() {
     }
   }
 
+  function fallbackPedidosLocal() {
+    var histLocal = [];
+    try {
+      histLocal = JSON.parse(localStorage.getItem("dermakor_historial_pedidos") || "[]");
+    } catch (e) {}
+    var baseSeed = [
+      { id_pedido: "PED0002001", cliente: "María Fernández", identificacion: "1718293849", fecha: "2026-11-01", fac_numero: "001-002-000002001", estado: "ENTREGADO", total: 79.70 },
+      { id_pedido: "PED0002002", cliente: "Dr. Carlos Andrade", identificacion: "0918273645001", fecha: "2026-11-02", fac_numero: "001-002-000002002", estado: "ENVIADO", total: 203.55 },
+      { id_pedido: "PED0002003", cliente: "Dra. Valeria Salazar", identificacion: "0102938475001", fecha: "2026-11-02", fac_numero: "001-002-000002003", estado: "PAGADO", total: 109.25 }
+    ];
+    renderFilasPedidos(histLocal.concat(baseSeed));
+  }
+
+  // 1. Supabase REST directo (GitHub Pages / Online)
+  if (SUPABASE_CONFIG.anonKey) {
+    var urlPedidos = SUPABASE_CONFIG.restUrl + "/Pedidos?select=id_pedido,ped_fecha,ped_estado,ped_total,Clientes(cli_nombres,cli_apellidos,cli_ci_ruc),Facturas(fac_numero)&order=ped_fecha.desc&limit=10";
+    fetch(urlPedidos, {
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Accept": "application/json"
+      }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("HTTP " + r.status);
+        return r.json();
+      })
+      .then(function (data) {
+        if (Array.isArray(data) && data.length > 0) {
+          var mapped = data.map(function (p) {
+            var cli = p.Clientes || {};
+            var fac = Array.isArray(p.Facturas) && p.Facturas.length > 0 ? p.Facturas[0] : (p.Facturas || {});
+            var nomCli = ((cli.cli_nombres || "Cliente").trim() + " " + (cli.cli_apellidos || "").trim()).trim();
+            var fechaTxt = (p.ped_fecha || "").split("T")[0];
+            return {
+              id_pedido: (p.id_pedido || "").trim(),
+              cliente: nomCli,
+              identificacion: (cli.cli_ci_ruc || "9999999999").trim(),
+              fecha: fechaTxt,
+              fac_numero: (fac.fac_numero || "001-002-000002001").trim(),
+              estado: (p.ped_estado || "PAGADO").trim(),
+              total: parseFloat(p.ped_total) || 0
+            };
+          });
+          renderFilasPedidos(mapped);
+        } else {
+          fallbackPedidosLocal();
+        }
+      })
+      .catch(function () {
+        fallbackPedidosLocal();
+      });
+    return;
+  }
+
+  // 2. Python server.py local
   fetch("/api/pedidos")
     .then(function (r) {
       if (!r.ok) throw new Error("Usando respaldo Supabase");
@@ -2297,16 +2865,7 @@ function cargarPedidosDesdeDB() {
       }
     })
     .catch(function () {
-      var histLocal = [];
-      try {
-        histLocal = JSON.parse(localStorage.getItem("dermakor_historial_pedidos") || "[]");
-      } catch (e) {}
-      var baseSeed = [
-        { id_pedido: "PED0002001", cliente: "María Fernández", identificacion: "1718293849", fecha: "2026-11-01", fac_numero: "001-002-000002001", estado: "ENTREGADO", total: 79.70 },
-        { id_pedido: "PED0002002", cliente: "Dr. Carlos Andrade", identificacion: "0918273645001", fecha: "2026-11-02", fac_numero: "001-002-000002002", estado: "ENVIADO", total: 203.55 },
-        { id_pedido: "PED0002003", cliente: "Dra. Valeria Salazar", identificacion: "0102938475001", fecha: "2026-11-02", fac_numero: "001-002-000002003", estado: "PAGADO", total: 109.25 }
-      ];
-      renderFilasPedidos(histLocal.concat(baseSeed));
+      fallbackPedidosLocal();
     });
 }
 
@@ -2328,6 +2887,48 @@ function cargarSedesDesdeDB() {
     }
   }
 
+  function fallbackSedesLocal() {
+    renderTarjetasSedes([
+      { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", direccion: "Av. República E1-136 y Atahualpa, Of. 3", ciudad: "Quito" }
+    ]);
+  }
+
+  // 1. Supabase REST directo (GitHub Pages / Online)
+  if (SUPABASE_CONFIG.anonKey) {
+    var urlSedes = SUPABASE_CONFIG.restUrl + "/Sedes?select=id_sede,sed_nombre,sed_direccion,Ciudades(ciu_nombre)&order=id_sede.asc";
+    fetch(urlSedes, {
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
+        "Accept": "application/json"
+      }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("REST sedes error");
+        return r.json();
+      })
+      .then(function (data) {
+        if (Array.isArray(data) && data.length > 0) {
+          var mapped = data.map(function (s) {
+            return {
+              id_sede: (s.id_sede || "").trim(),
+              nombre: (s.sed_nombre || "").trim(),
+              direccion: (s.sed_direccion || "").trim(),
+              ciudad: s.Ciudades && s.Ciudades.ciu_nombre ? s.Ciudades.ciu_nombre.trim() : "Quito"
+            };
+          });
+          renderTarjetasSedes(mapped);
+        } else {
+          fallbackSedesLocal();
+        }
+      })
+      .catch(function () {
+        fallbackSedesLocal();
+      });
+    return;
+  }
+
+  // 2. Python server.py local
   fetch("/api/sedes")
     .then(function (r) {
       if (!r.ok) throw new Error("Usando respaldo sedes");
@@ -2341,9 +2942,7 @@ function cargarSedesDesdeDB() {
       }
     })
     .catch(function () {
-      renderTarjetasSedes([
-        { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", direccion: "Av. República E1-136 y Atahualpa, Of. 3", ciudad: "Quito" }
-      ]);
+      fallbackSedesLocal();
     });
 }
 
