@@ -1870,3 +1870,123 @@ img {
     width: 100%;
   }
 }
+
+
+/* --------------------------------------------------------------------------
+   17. MEJORAS MENORES WCAG 2.2 Y CONEXION BASE DE DATOS POSTGRESQL
+   -------------------------------------------------------------------------- */
+.skip-link {
+  position: absolute;
+  top: -50px;
+  left: 16px;
+  background-color: var(--color-primario);
+  color: #FFFFFF;
+  padding: 10px 16px;
+  border-radius: var(--radio-borde);
+  font-weight: 700;
+  font-size: 13px;
+  z-index: 2000;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 12px;
+  outline: 3px solid #38BDF8;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 2px solid var(--color-primario);
+  outline-offset: 2px;
+}
+
+.badge-db-conectada {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background-color: #F0FDF4;
+  color: #15803D;
+  border: 1px solid #BBF7D0;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.punto-pulso {
+  width: 7px;
+  height: 7px;
+  background-color: #16A34A;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.meta-stock-fefo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 6px;
+  padding: 5px 8px;
+  margin-bottom: 10px;
+  font-size: 11px;
+  color: #475569;
+}
+
+.meta-stock-fefo strong {
+  color: #15803D;
+}
+
+.caja-cupon-descuento {
+  background-color: #F8FAFC;
+  border: 1px dashed #CBD5E1;
+  border-radius: var(--radio-borde);
+  padding: 12px;
+  margin-bottom: 16px;
+}
+
+.caja-cupon-descuento label {
+  display: block;
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--color-texto-principal);
+  margin-bottom: 6px;
+}
+
+.fila-cupon-input {
+  display: flex;
+  gap: 8px;
+}
+
+.fila-cupon-input input {
+  flex: 1;
+  padding: 7px 10px;
+  font-size: 13px;
+  border: 1px solid var(--color-borde);
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.mapa-sitio-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 16px;
+  margin-top: 16px;
+}
+
+.tarjeta-mapa-nodo {
+  background-color: #FFFFFF;
+  border: 1px solid var(--color-borde);
+  border-radius: var(--radio-borde);
+  padding: 16px;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.tarjeta-mapa-nodo:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--sombra-suave);
+  border-color: var(--color-primario);
+}

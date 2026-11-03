@@ -9,7 +9,7 @@
 // La fuente principal de datos es el archivo: data/productos.json
 var PRODUCTOS_RESPALDO = [
   // -------------------------------------------------------------------------
-  // LINEA EXOSOMAS (Uso en Casa) - FOTOS REALES DEL CATALOGO
+  // LINEA EXOSOMAS (Uso en Casa)
   // -------------------------------------------------------------------------
   {
     id: "exoface-casa",

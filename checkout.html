@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>DERMAKOR - Checkout Paso 1: Datos de Facturación, Sede y Envío</title>
+  <meta name="description" content="Tienda oficial y catálogo de dermocosmética médica Dermclar y Medical Skin 2026 conectado a PostgreSQL dermakor_db. Facturación electrónica SRI, control de lotes FEFO y envíos por sede." />
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body data-pagina="checkout-envio">
+  <!-- Enlace de accesibilidad WCAG 2.2 AA (Skip to main content) -->
+  <a href="#contenido-principal" class="skip-link">Saltar al contenido principal</a>
+
+  <!-- =====================================================================
+       1. ENCABEZADO Y BARRA DE NAVEGACION MULTIPAGINA + POSTGRESQL
+       ===================================================================== -->
+  <header class="encabezado-sitio">
+    <div class="contenedor">
+      <div class="barra-superior">
+        <!-- Logotipo Principal -->
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <a href="index.html" class="logo-marca" style="text-decoration: none;">DERMAKOR</a>
+          <span id="badge-estado-db" class="badge-db-conectada" title="Conectado a Supabase PostgreSQL (jdsqipqdcuyegjrpvgny.supabase.co)">
+            <span class="punto"></span>
+            <span id="texto-estado-db">Supabase PostgreSQL • En línea</span>
+          </span>
+        </div>
+
+        <!-- Enlaces de Navegacion Multipagina (8+ paginas HTML independientes) -->
+        <nav class="navegacion-principal" aria-label="Navegación principal">
+          <a href="index.html" class="enlace-nav" data-nav-id="inicio">Inicio</a>
+          <a href="catalogo.html" class="enlace-nav" data-nav-id="catalogo">Catálogo</a>
+          <a href="uso-en-casa.html" class="enlace-nav" data-nav-id="casa">Uso en casa</a>
+          <a href="profesional.html" class="enlace-nav" data-nav-id="profesional">Profesional</a>
+          <a href="ayuda.html" class="enlace-nav" data-nav-id="ayuda">Ayuda y Pedidos</a>
+        </nav>
+
+        <!-- Acciones del Encabezado: Usuario y Carrito -->
+        <div class="acciones-encabezado">
+          <!-- Widget de Sesion de Usuario Obligatorio para Compras -->
+          <div id="widget-usuario-header">
+            <button type="button" class="boton-iniciar-sesion" onclick="abrirModalAuth()">
+              <span>👤</span> Iniciar Sesión / Registrarse
+            </button>
+          </div>
+
+          <!-- Boton de Carrito -->
+          <a href="carrito.html" class="boton-carrito" aria-label="Abrir carrito de compras" style="text-decoration: none;">
+            <span class="icono-bolsa">🛍️</span>
+            <span>Carrito</span>
+            <span class="contador-carrito" id="contador-items-nav">0</span>
+          </a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Barra de Busqueda Rapida -->
+    <div class="barra-busqueda-wrap">
+      <div class="contenedor">
+        <div class="formulario-busqueda" role="search">
+          <input
+            type="text"
+            id="input-busqueda-global"
+            class="campo-busqueda"
+            placeholder="Nombre, línea, principio activo o categoría (ej: ExoFace, Ácido Hialurónico, Celulitis...)"
+            aria-label="Buscar productos en PostgreSQL"
+          />
+          <button type="button" id="btn-buscar" class="boton-buscar">Buscar</button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+
+  <main id="contenido-principal" class="vista-pagina">
+    <div class="contenedor" style="padding-top: 24px; padding-bottom: 56px; max-width: 1100px;">
+      
+      <!-- Indicador de Pasos -->
+      <div class="indicador-pasos">
+        <div class="paso-item activo"><strong>1. Datos de Facturación, Sede y Envío (Actual)</strong></div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item"><a href="pago.html" style="color:inherit;text-decoration:none;">2. Pago Seguro</a></div>
+        <div style="color: #CBD5E1;">—</div>
+        <div class="paso-item">3. Factura Electrónica Emitida</div>
+      </div>
+
+      <h1 style="font-size: 26px; font-weight: 800; color: #0F172A; margin-bottom: 8px;">Datos del Cliente para Facturación y Asignación de Sede</h1>
+      <p style="color: #64748B; font-size: 14px; margin-bottom: 24px;">Validación semántica en tiempo real. El sistema asigna automáticamente la <strong>Sede Logística más cercana</strong> (Quito, Guayaquil, Cuenca o Ambato) y reserva tus lotes FEFO.</p>
+
+      <div id="alerta-error-envio" class="alerta-mensaje alerta-error" style="display: none;">
+        <span>⚠️</span>
+        <div>
+          <strong>Corrige los campos marcados en rojo:</strong>
+          <div>Verifica correo, nombre, cédula/RUC válida (10 o 13 dígitos), teléfono y dirección.</div>
+        </div>
+      </div>
+
+      <div style="display: grid; grid-template-columns: 1fr 380px; gap: 32px; align-items: flex-start;">
+        <!-- Formulario Envio -->
+        <form onsubmit="validarPasoEnvio(event)" novalidate>
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">1. Identificación del Cliente (Tabla <code>Clientes</code>)</h3>
+            
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-nombre">Nombres y Apellidos / Razón Social *</label>
+                <input type="text" id="campo-nombre" class="campo-control campo-validable" placeholder="María Fernández" required minlength="3" />
+                <span class="mensaje-error-campo">Ingresa al menos 3 caracteres.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-cedula-ruc">C.I. / R.U.C. *</label>
+                <input type="text" id="campo-cedula-ruc" class="campo-control campo-validable" placeholder="1718293849 o 1792464939001" required maxlength="13" />
+                <span class="mensaje-error-campo">Debe tener 10 dígitos (Cédula) o 13 dígitos (RUC).</span>
+              </div>
+            </div>
+
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-correo">Correo electrónico para Factura *</label>
+                <input type="email" id="campo-correo" class="campo-control campo-validable" placeholder="ejemplo@correo.com" required />
+                <span class="mensaje-error-campo">Ingresa un correo electrónico válido.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-telefono">Teléfono celular / WhatsApp *</label>
+                <input type="tel" id="campo-telefono" class="campo-control campo-validable" placeholder="0996096996" required maxlength="10" />
+                <span class="mensaje-error-campo">Ingresa un teléfono celular válido de 10 dígitos.</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">2. Dirección de Entrega y Georreferenciación de Sede</h3>
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-pais">País</label>
+              <input type="text" id="campo-pais" class="campo-control" value="Ecuador" readonly style="background-color: #F8FAFC;" />
+            </div>
+
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-direccion">Calle principal y número *</label>
+              <input type="text" id="campo-direccion" class="campo-control campo-validable" placeholder="Av. República E1-136 y Atahualpa" required minlength="5" />
+              <span class="mensaje-error-campo">Por favor escribe tu calle principal y número de inmueble.</span>
+            </div>
+
+            <div class="campo-grupo">
+              <label class="campo-etiqueta" for="campo-referencia">Apartamento, piso u oficina (opcional)</label>
+              <input type="text" id="campo-referencia" class="campo-control" placeholder="Edificio La Casa, Piso 1, Of. 3" />
+            </div>
+
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-ciudad">Ciudad *</label>
+                <input type="text" id="campo-ciudad" class="campo-control campo-validable" placeholder="Quito" required oninput="actualizarSedeMasCercanaPorCiudad(this.value)" />
+                <span class="mensaje-error-campo">Ingresa la ciudad.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-provincia">Provincia *</label>
+                <input type="text" id="campo-provincia" class="campo-control campo-validable" placeholder="Pichincha" required />
+                <span class="mensaje-error-campo">Ingresa la provincia.</span>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="campo-codigopostal">Código postal</label>
+                <input type="text" id="campo-codigopostal" class="campo-control" placeholder="170102" />
+              </div>
+            </div>
+
+            <!-- Sede Despachadora Asignada en PostgreSQL -->
+            <div class="alerta-mensaje alerta-exito" style="margin-top: 12px; margin-bottom: 0;">
+              <span>🏢</span>
+              <div>
+                <strong>Sede Despachadora Asignada (Tabla <code>Sedes</code> + Cálculo Haversine):</strong>
+                <div id="texto-sede-asignada-checkout">SED0000001 - Matriz Quito - Edificio La Casa (Despacho FEFO inmediato)</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Opciones de Envio Realistas -->
+          <div class="caja-formulario">
+            <h3 class="subtitulo-formulario">3. Método de Envío Cotizado (Tabla <code>Envios</code>)</h3>
+            <div class="lista-opciones-envio">
+              
+              <label class="tarjeta-opcion-envio seleccionada">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="servientrega_urbano" data-precio="3.75" data-nombre="Servientrega Urbano (Pichincha / Guayas)" checked />
+                  <div>
+                    <strong>Servientrega Urbano (Pichincha y Guayas)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega en 24 a 48 horas hábiles con número de guía oficial.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$3.75</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="servientrega_nacional" data-precio="6.50" data-nombre="Servientrega Nacional (Otras Provincias)" />
+                  <div>
+                    <strong>Servientrega Nacional (Otras Provincias del Ecuador)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega asegurada en 48 a 72 horas hábiles a cualquier cantón.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$6.50</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="express_motorizado" data-precio="5.25" data-nombre="Envío Express Motorizado (Mismo Día)" />
+                  <div>
+                    <strong>Envío Express Motorizado (Mismo Día - Urbano)</strong>
+                    <div style="font-size: 13px; color: #64748B;">Entrega el mismo día para órdenes confirmadas antes de las 14:00.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag">$5.25</div>
+              </label>
+
+              <label class="tarjeta-opcion-envio">
+                <div class="tarjeta-opcion-envio-izq">
+                  <input type="radio" name="metodo-envio" value="retiro_oficina" data-precio="0.00" data-nombre="Retiro en Distribuidora Quito" />
+                  <div>
+                    <strong>Retiro en Distribuidor Autorizado (Quito - Edificio La Casa)</strong>
+                    <div style="font-size: 13px; color: #15803D;">Retiro inmediato en oficina sin costo de flete.</div>
+                  </div>
+                </div>
+                <div class="precio-envio-tag" style="color: #15803D;">$0.00</div>
+              </label>
+
+            </div>
+          </div>
+
+          <div style="display: flex; gap: 14px; align-items: center;">
+            <button type="submit" class="boton-primario" style="padding: 12px 28px;">Continuar al pago seguro →</button>
+            <a href="carrito.html" class="boton-secundario" style="text-decoration: none;">Volver al carrito</a>
+          </div>
+        </form>
+
+        <!-- IHC & NIELSEN: Panel Lateral Persistente con Direccion y Productos -->
+        <aside class="tarjeta-resumen">
+          <h3 class="resumen-titulo">Resumen Seguro de Compra</h3>
+
+          <!-- Bloque Dirección en Tiempo Real (IHC) -->
+          <div class="caja-seguridad-ihc">
+            <h4><span>📍</span> Dirección de Entrega (En vivo):</h4>
+            <div id="ihc-destinatario-texto" style="font-weight: 600; color: #0F172A; margin-bottom: 2px;">Cliente</div>
+            <div id="ihc-direccion-texto" style="color: #475569; margin-bottom: 4px;">Ingresa tu dirección para confirmar</div>
+            <div id="ihc-metodo-envio-texto" style="font-weight: 600; color: #0056B3; font-size: 12px;">Servientrega Urbano - $3.75</div>
+          </div>
+
+          <!-- Bloque Productos en Tiempo Real (IHC) -->
+          <div class="caja-seguridad-ihc">
+            <h4><span>🛍️</span> Productos en tu Orden:</h4>
+            <div id="ihc-lista-mini-productos"></div>
+          </div>
+
+          <!-- Desglose con IVA Formal -->
+          <div class="linea-resumen">
+            <span>Subtotal (Base 15%):</span>
+            <strong class="checkout-subtotal-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen" id="fila-descuento-checkout" style="display: none; color: #15803D;">
+            <span>Descuento cupón:</span>
+            <strong class="checkout-descuento-val">-$0.00</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>Flete / Envío cotizado:</span>
+            <strong class="checkout-envio-val" style="color: #0056B3;">$3.75</strong>
+          </div>
+          <div class="linea-resumen">
+            <span>IVA (15%):</span>
+            <strong class="checkout-iva-val">$0.00</strong>
+          </div>
+          <div class="linea-resumen total">
+            <span>Total Factura:</span>
+            <strong class="checkout-total-val" style="color: #0056B3;">$0.00</strong>
+          </div>
+
+          <div style="font-size: 12px; color: #64748B; line-height: 1.4;">
+            🛡️ Tus datos permanecen visibles para que verifiques a dónde irá tu pedido antes de efectuar el cobro.
+          </div>
+        </aside>
+      </div>
+
+    </div>
+  </main>
+
+
+  <!-- =====================================================================
+       MODAL DE AUTENTICACION / REGISTRO OBLIGATORIO DE CLIENTE (PostgreSQL)
+       ===================================================================== -->
+  <div id="modal-autenticacion" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-auth-titulo">
+    <div class="modal-contenedor" style="max-width: 580px; padding: 32px;">
+      <button type="button" class="modal-cerrar-btn" onclick="cerrarModalAuth()" aria-label="Cerrar modal de acceso">×</button>
+      
+      <h2 id="modal-auth-titulo" style="font-size: 22px; font-weight: 800; color: #0F172A; margin-bottom: 6px;">Acceso de Clientes y Facturación</h2>
+      <p style="font-size: 13px; color: #64748B; margin-bottom: 20px;">
+        Conectado con tablas <code>Usuarios</code> y <code>Clientes</code> en PostgreSQL (<code>dermakor_db</code>). Para emitir tu factura electrónica SRI, inicia sesión o crea tu cuenta.
+      </p>
+
+      <!-- Tabs Login vs Registro -->
+      <div class="modal-auth-tabs">
+        <div id="tab-auth-login" class="tab-auth-btn activo" onclick="cambiarTabAuth('login')">Iniciar Sesión</div>
+        <div id="tab-auth-registro" class="tab-auth-btn" onclick="cambiarTabAuth('registro')">Crear Cuenta (Facturación)</div>
+      </div>
+
+      <!-- Formulario Login -->
+      <form id="form-auth-login" onsubmit="procesarLogin(event)">
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="login-correo">Correo electrónico *</label>
+          <input type="email" id="login-correo" class="campo-control" placeholder="tu@correo.com" required value="cliente@example.com" />
+        </div>
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="login-clave">Contraseña *</label>
+          <input type="password" id="login-clave" class="campo-control" placeholder="••••••••" required value="123456" />
+        </div>
+        <button type="submit" class="boton-primario" style="width: 100%; margin-top: 10px;">
+          Entrar a mi cuenta y facturar →
+        </button>
+      </form>
+
+      <!-- Formulario Registro Completo -->
+      <form id="form-auth-registro" style="display: none;" onsubmit="procesarRegistro(event)">
+        <div class="fila-formulario">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-nombre">Nombre y Apellido *</label>
+            <input type="text" id="reg-nombre" class="campo-control" placeholder="María Fernández" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-cedula">C.I. o R.U.C. *</label>
+            <input type="text" id="reg-cedula" class="campo-control" placeholder="1718293849" required maxlength="13" />
+          </div>
+        </div>
+
+        <div class="fila-formulario">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-correo">Correo electrónico *</label>
+            <input type="email" id="reg-correo" class="campo-control" placeholder="maria@correo.com" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-telefono">Teléfono celular *</label>
+            <input type="tel" id="reg-telefono" class="campo-control" placeholder="0996096996" required maxlength="10" />
+          </div>
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-direccion">Dirección completa de entrega *</label>
+          <input type="text" id="reg-direccion" class="campo-control" placeholder="Av. República E1-136 y Atahualpa" required />
+        </div>
+
+        <div class="fila-formulario tres">
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-ciudad">Ciudad *</label>
+            <input type="text" id="reg-ciudad" class="campo-control" placeholder="Quito" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-provincia">Provincia *</label>
+            <input type="text" id="reg-provincia" class="campo-control" placeholder="Pichincha" required />
+          </div>
+          <div class="campo-grupo">
+            <label class="campo-etiqueta" for="reg-codigopostal">Cód. Postal</label>
+            <input type="text" id="reg-codigopostal" class="campo-control" placeholder="170102" />
+          </div>
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-referencia">Referencia del inmueble (opcional)</label>
+          <input type="text" id="reg-referencia" class="campo-control" placeholder="Edificio La Casa, Piso 1, Of. 3" />
+        </div>
+
+        <div class="campo-grupo">
+          <label class="campo-etiqueta" for="reg-clave">Contraseña de la cuenta *</label>
+          <input type="password" id="reg-clave" class="campo-control" placeholder="Mínimo 6 caracteres" minlength="6" required value="123456" />
+        </div>
+
+        <button type="submit" class="boton-primario" style="width: 100%; margin-top: 10px;">
+          Guardar cuenta en PostgreSQL y facturar →
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       MODAL DETALLE DE PRODUCTO (FICHA CLINICA RAPIDA)
+       ===================================================================== -->
+  <div id="modal-detalle-producto" class="modal-overlay" role="dialog" aria-modal="true" aria-labelledby="modal-titulo">
+    <div class="modal-contenedor">
+      <button type="button" class="modal-cerrar-btn" onclick="cerrarModalDetalle()" aria-label="Cerrar ficha de producto">×</button>
+
+      <div class="modal-grid-principal">
+        <div class="modal-imagen-col" id="modal-img-box">
+          <img id="modal-img" src="" alt="Producto" />
+        </div>
+        <div class="modal-info-col">
+          <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center; flex-wrap: wrap;">
+            <span class="insignia-tipo" id="modal-tipo-tag">Uso en casa</span>
+            <span style="font-size: 12px; color: #64748B;" id="modal-marca">Dermclar</span>
+            <span class="badge-db-conectada" id="modal-db-codigo">PRD0000001</span>
+          </div>
+          <h2 id="modal-titulo">Nombre del Producto</h2>
+          <p class="modal-subtitulo" id="modal-subtitulo">Claim del producto</p>
+          <div style="font-size: 13px; color: #64748B; margin-bottom: 8px;" id="modal-presentacion">Presentación</div>
+          <div id="modal-stock-fefo-box" class="meta-stock-fefo" style="margin-bottom: 12px;">
+            <span class="stock-ok" id="modal-stock-texto">✓ En stock</span>
+            <span id="modal-lote-texto">Lote FEFO activo</span>
+          </div>
+          <div class="modal-precio" id="modal-precio">$0.00</div>
+          <p style="font-size: 14px; color: #334155; margin-bottom: 20px;" id="modal-descripcion">Descripción detallada</p>
+
+          <div class="modal-acciones-compra">
+            <div class="control-cantidad">
+              <button type="button" class="btn-qty" onclick="cambiarCantidadModal(-1)" aria-label="Disminuir cantidad">-</button>
+              <div class="valor-qty" id="modal-qty-val">1</div>
+              <button type="button" class="btn-qty" onclick="cambiarCantidadModal(1)" aria-label="Aumentar cantidad">+</button>
+            </div>
+            <button type="button" class="boton-primario" style="flex: 1;" onclick="agregarDesdeModal()">
+              Añadir al carrito
+            </button>
+          </div>
+          <div style="margin-top: 12px;">
+            <a id="modal-enlace-pagina-ficha" href="producto.html" class="enlace-ver-mas" style="font-size: 13px;">
+              Abrir página individual completa del producto (Ficha Clínica + Stock por Sede) →
+            </a>
+          </div>
+        </div>
+      </div>
+
+      <div class="modal-detalles-tecnicos">
+        <div class="bloque-detalle-seccion">
+          <h4>🧪 Lo que contiene la fórmula (Principios Activos)</h4>
+          <ul class="lista-con-vinetas" id="modal-lista-activos"></ul>
+        </div>
+
+        <div class="bloque-detalle-seccion">
+          <h4>✨ Beneficios Comprobados</h4>
+          <ul class="lista-con-vinetas" id="modal-lista-beneficios"></ul>
+        </div>
+
+        <div class="bloque-detalle-seccion">
+          <h4>📋 Antes de usarlo / Modo de aplicación</h4>
+          <div class="alerta-mensaje alerta-aviso" style="margin-bottom: 0;">
+            <span id="modal-modo-uso">Instrucciones del fabricante...</span>
+          </div>
+        </div>
+
+        <div style="margin-top: 32px; border-top: 1px solid #E2E8F0; padding-top: 24px;">
+          <h4 style="margin-bottom: 16px;">También puedes explorar</h4>
+          <div class="productos-grid" id="modal-grid-explorar" style="grid-template-columns: repeat(3, 1fr);"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- =====================================================================
+       BANNER TOAST FLOTANTE (ACCION REVERSIBLE - WCAG 2.2)
+       ===================================================================== -->
+  <div id="toast-notificacion" class="toast-notificacion" role="status" aria-live="polite">
+    <span id="toast-mensaje-texto">Producto añadido al carrito</span>
+    <span class="toast-btn-deshacer" onclick="deshacerUltimaAdicion()">Deshacer</span>
+    <button type="button" style="color: #FFFFFF; font-weight: 700; font-size: 16px;" onclick="ocultarToastNotificacion()" aria-label="Cerrar aviso">×</button>
+  </div>
+
+  <!-- =====================================================================
+       PIE DE PAGINA (FOOTER) CON MAPA DE SITIO MULTIPAGINA
+       ===================================================================== -->
+  <footer class="pie-de-pagina">
+    <div class="contenedor">
+      <div class="footer-grid">
+        <div class="footer-marca">
+          <h4>DERMAKOR</h4>
+          <p>
+            Tu tienda y catálogo de dermocosmética médica avanzada conectada en tiempo real a PostgreSQL (<code>dermakor_db</code>). Productos y fórmulas exclusivas de 
+            <strong>Dermclar</strong> y <strong>Medical Skin</strong>.
+          </p>
+          <div style="margin-top: 14px; font-size: 13px; color: #64748B;">
+            Distribuidor Autorizado Ecuador: Edificio La Casa, Av. República y Atahualpa. Tel: 099-609-6996
+          </div>
+        </div>
+
+        <div class="footer-columna">
+          <h5>Páginas del Catálogo</h5>
+          <ul class="footer-enlaces">
+            <li><a href="index.html">1. Inicio (Home Dermakor)</a></li>
+            <li><a href="catalogo.html">2. Catálogo Completo y Filtros</a></li>
+            <li><a href="uso-en-casa.html">3. Línea Uso en Casa (PVP)</a></li>
+            <li><a href="profesional.html">4. Selección Uso Profesional</a></li>
+            <li><a href="producto.html?id=exoface-casa">5. Ficha Clínica de Producto</a></li>
+          </ul>
+        </div>
+
+        <div class="footer-columna">
+          <h5>Transacción y Soporte</h5>
+          <ul class="footer-enlaces">
+            <li><a href="carrito.html">6. Carrito y Cupones Descuento</a></li>
+            <li><a href="checkout.html">7. Facturación y Envío por Sede</a></li>
+            <li><a href="pago.html">8. Pasarela de Pago Seguro</a></li>
+            <li><a href="factura.html">9. Factura Electrónica SRI</a></li>
+            <li><a href="ayuda.html">10. Ayuda, Pedidos DB y Mapa</a></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="footer-inferior">
+        <div>Información y precios según catálogo Dermclar &amp; Medical Skin 2026 • Conectado a PostgreSQL <code>dermakor_db</code>.</div>
+        <div>Cumple con estándares WCAG 2.2 AA y heurísticas de usabilidad de Jakob Nielsen (IHC).</div>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Scripts -->
+  <script src="js/productos.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

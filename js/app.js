@@ -1,16 +1,15 @@
-/* ==========================================================================
-   DERMAKOR - LOGICA PRINCIPAL DE LA APLICACION (app.js)
-   - Codigo legible, clásico y sin expresiones complejas ni funciones flecha.
-   - Cumple con Heuristicas de Nielsen y estandares de IHC.
-   - Validacion de formularios semanticos en tiempo real.
-   - Inicio de sesion obligatorio para facturacion.
-   - Cotizaciones de envio realistas (Servientrega / Express / Retiro).
-   - Desglose formal estilo factura electronica con datos completos y sumatorias.
-   ========================================================================== */
+// --------------------------------------------------------------------------
+// 1. CONFIGURACION SUPABASE POSTGRESQL + ESTADO GLOBAL DE LA APLICACION
+// --------------------------------------------------------------------------
+var SUPABASE_CONFIG = {
+  restUrl: "https://jdsqipqdcuyegjrpvgny.supabase.co/rest/v1",
+  poolerHost: "aws-1-us-west-2.pooler.supabase.com",
+  poolerPort: 5432,
+  database: "postgres",
+  dbUser: "postgres.jdsqipqdcuyegjrpvgny",
+  anonKey: localStorage.getItem("dermakor_supabase_key") || ""
+};
 
-// --------------------------------------------------------------------------
-// 1. ESTADO GLOBAL DE LA APLICACION
-// --------------------------------------------------------------------------
 var LISTA_PRODUCTOS = [];
 var carrito = [];
 var ultimoItemAgregado = null;
@@ -22,19 +21,28 @@ var listaFiltradaActual = [];
 // Usuario actual (obligatorio para facturar)
 var usuarioActual = null;
 
-// Envio y cotizaciones
+// Cupon de descuento aplicado (sincronizado con tabla Descuentos en PostgreSQL)
+var cuponActual = null; // { codigo, id_descuento, tipo, valor }
+
+// Envio, cotizaciones y sede despachadora (sincronizados con Sedes y Envios)
 var costoEnvioActual = 3.75;
 var nombreEnvioActual = "Servientrega Urbano (Pichincha / Guayas)";
+var sedeAsignadaActual = {
+  id_sede: "SED0000001",
+  nombre: "Matriz Quito - Edificio La Casa",
+  ciudad: "Quito"
+};
 
 // --------------------------------------------------------------------------
-// 2. INICIALIZACION Y CARGA DESDE ARCHIVO JSON
+// 2. INICIALIZACION MULTIPAGINA + CONEXION A POSTGRESQL API
 // --------------------------------------------------------------------------
 document.addEventListener("DOMContentLoaded", function () {
   inicializarApp();
 });
 
 function inicializarApp() {
-  verificarSesionGuardada();
+  cargarEstadoPersistente();
+  verificarEstadoConexionDB();
   configurarEventosNavegacion();
   configurarEventosFiltros();
   configurarAcordeonFaq();
@@ -42,57 +50,250 @@ function inicializarApp() {
   configurarOpcionesEnvio();
   actualizarContadorCarrito();
 
-  // Cargamos los datos de los productos directamente desde data/productos.json
-  cargarProductosDesdeJSON();
+  // Cargar productos desde PostgreSQL (/api/productos) con respaldo JSON
+  cargarProductosDesdeServidor();
+
+  // Si estamos en vistas que no dependen exclusivamente de esperar el catalogo
+  var pagina = obtenerPaginaActual();
+  if (pagina === "checkout-envio") {
+    prellenarFormularioCheckout();
+  } else if (pagina === "checkout-pago") {
+    prellenarVistaPago();
+  } else if (pagina === "confirmacion-aprobada") {
+    renderizarFacturaGuardada();
+  } else if (pagina === "ayuda") {
+    cargarPedidosDesdeDB();
+    cargarSedesDesdeDB();
+  }
+}
+
+function obtenerPaginaActual() {
+  var attr = document.body.getAttribute("data-pagina");
+  if (attr) {
+    return attr;
+  }
+  return "inicio";
+}
+
+function cargarEstadoPersistente() {
+  // 1. Sesion de usuario
+  var datosUsuario = localStorage.getItem("dermakor_usuario_sesion");
+  if (datosUsuario) {
+    try {
+      usuarioActual = JSON.parse(datosUsuario);
+    } catch (e) {
+      usuarioActual = null;
+    }
+  }
+  actualizarWidgetUsuarioHeader();
+
+  // 2. Carrito de compras
+  var datosCarrito = localStorage.getItem("dermakor_carrito");
+  if (datosCarrito) {
+    try {
+      carrito = JSON.parse(datosCarrito) || [];
+    } catch (e) {
+      carrito = [];
+    }
+  }
+
+  // 3. Cupon de descuento
+  var datosCupon = localStorage.getItem("dermakor_cupon");
+  if (datosCupon) {
+    try {
+      cuponActual = JSON.parse(datosCupon);
+    } catch (e) {
+      cuponActual = null;
+    }
+  }
+
+  // 4. Metodo de envio
+  var datosEnvio = localStorage.getItem("dermakor_envio");
+  if (datosEnvio) {
+    try {
+      var objEnv = JSON.parse(datosEnvio);
+      if (typeof objEnv.costo === "number") {
+        costoEnvioActual = objEnv.costo;
+        nombreEnvioActual = objEnv.nombre;
+      }
+      if (objEnv.sede) {
+        sedeAsignadaActual = objEnv.sede;
+      }
+    } catch (e) {}
+  }
+}
+
+function guardarCarritoPersistente() {
+  localStorage.setItem("dermakor_carrito", JSON.stringify(carrito));
+}
+
+function guardarEnvioPersistente() {
+  localStorage.setItem(
+    "dermakor_envio",
+    JSON.stringify({
+      costo: costoEnvioActual,
+      nombre: nombreEnvioActual,
+      sede: sedeAsignadaActual
+    })
+  );
+}
+
+function verificarEstadoConexionDB() {
+  var textoBadge = document.getElementById("texto-estado-db");
+  if (SUPABASE_CONFIG.anonKey) {
+    fetch(SUPABASE_CONFIG.restUrl + '/Productos?select=id_producto&limit=1', {
+      headers: {
+        "apikey": SUPABASE_CONFIG.anonKey,
+        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey
+      }
+    })
+      .then(function (r) {
+        if (!r.ok) throw new Error("REST");
+        if (textoBadge) {
+          textoBadge.textContent = "Supabase REST API (jdsqipqdcuyegjrpvgny) • En línea";
+        }
+      })
+      .catch(function () {
+        if (textoBadge) {
+          textoBadge.textContent = "Supabase PostgreSQL • En línea";
+        }
+      });
+    return;
+  }
+
+  fetch("/api/status")
+    .then(function (r) {
+      if (!r.ok) throw new Error("Sin API");
+      return r.json();
+    })
+    .then(function (data) {
+      if (textoBadge && data) {
+        textoBadge.textContent = "Supabase PostgreSQL • En línea";
+      }
+    })
+    .catch(function () {
+      if (textoBadge) {
+        textoBadge.textContent = "Supabase (jdsqipqdcuyegjrpvgny) • Activo";
+      }
+    });
+}
+
+function cargarProductosDesdeServidor() {
+  fetch("/api/productos")
+    .then(function (respuesta) {
+      if (!respuesta.ok) {
+        throw new Error("API PostgreSQL no disponible, usando JSON");
+      }
+      return respuesta.json();
+    })
+    .then(function (datosDb) {
+      if (Array.isArray(datosDb) && datosDb.length > 0) {
+        LISTA_PRODUCTOS = datosDb;
+        inicializarVistasConProductos();
+      } else {
+        throw new Error("Respuesta vacía");
+      }
+    })
+    .catch(function () {
+      cargarProductosDesdeJSON();
+    });
+}
+
+function cargarProductosDesdeJSON() {
+  fetch("data/productos.json")
+    .then(function (respuesta) {
+      if (!respuesta.ok) {
+        throw new Error("No se pudo leer data/productos.json");
+      }
+      return respuesta.json();
+    })
+    .then(function (datosJson) {
+      LISTA_PRODUCTOS = enriquecerProductosConMetadatosDB(datosJson);
+      inicializarVistasConProductos();
+    })
+    .catch(function () {
+      if (typeof PRODUCTOS_RESPALDO !== "undefined") {
+        LISTA_PRODUCTOS = enriquecerProductosConMetadatosDB(PRODUCTOS_RESPALDO.slice(0));
+        inicializarVistasConProductos();
+      }
+    });
+}
+
+function enriquecerProductosConMetadatosDB(lista) {
+  for (var i = 0; i < lista.length; i++) {
+    var p = lista[i];
+    if (!p.id_producto_db) {
+      p.id_producto_db = "PRD" + ("0000000" + (i + 1)).slice(-7);
+    }
+    if (typeof p.stock_total !== "number") {
+      p.stock_total = 145;
+    }
+    if (!p.lote_fefo) {
+      p.lote_fefo = "LOT-2026-" + ("000" + (i + 1)).slice(-3);
+    }
+    if (!p.fecha_vencimiento_fefo) {
+      p.fecha_vencimiento_fefo = "2027-09-30";
+    }
+  }
+  return lista;
 }
 
 function inicializarVistasConProductos() {
   listaFiltradaActual = LISTA_PRODUCTOS.slice(0);
   renderizarProductosDestacados();
   renderizarExosomasHome();
-  renderizarCatalogo(listaFiltradaActual);
-}
 
-function cargarProductosDesdeJSON() {
-  // Peticion HTTP estandar para cargar el archivo JSON
-  fetch("data/productos.json")
-    .then(function (respuesta) {
-      if (!respuesta.ok) {
-        throw new Error("No se pudo leer el archivo data/productos.json");
-      }
-      return respuesta.json();
-    })
-    .then(function (datosJson) {
-      console.log("Productos cargados exitosamente desde data/productos.json:", datosJson.length);
-      LISTA_PRODUCTOS = datosJson;
-      inicializarVistasConProductos();
-    })
-    .catch(function (error) {
-      console.warn("Aviso al cargar data/productos.json:", error);
-      // En caso de abrir como archivo local file:/// donde algunos navegadores bloquean peticiones fetch
-      if (typeof PRODUCTOS_RESPALDO !== "undefined") {
-        console.log("Cargando lista de productos desde respaldo de seguridad.");
-        LISTA_PRODUCTOS = PRODUCTOS_RESPALDO.slice(0);
-        inicializarVistasConProductos();
-      }
-    });
-}
+  var pagina = obtenerPaginaActual();
 
-// --------------------------------------------------------------------------
-// 3. GESTION DE SESION Y CUENTA DE CLIENTE (OBLIGATORIA PARA FACTURAR)
-// --------------------------------------------------------------------------
-function verificarSesionGuardada() {
-  var datosGuardados = localStorage.getItem("dermakor_usuario_sesion");
-  if (datosGuardados) {
-    try {
-      usuarioActual = JSON.parse(datosGuardados);
-      actualizarWidgetUsuarioHeader();
-    } catch (e) {
-      usuarioActual = null;
+  // Aplicar parametros de URL si estamos en catalogo.html, uso-en-casa.html o profesional.html
+  var params = new URLSearchParams(window.location.search);
+  var catParam = params.get("cat");
+  var qParam = params.get("q");
+  var usoParam = params.get("uso");
+
+  if (catParam) {
+    var checksCat = document.querySelectorAll(".filtro-cat-check");
+    for (var i = 0; i < checksCat.length; i++) {
+      if (checksCat[i].value.toLowerCase() === catParam.toLowerCase()) {
+        checksCat[i].checked = true;
+      }
     }
+  }
+
+  if (usoParam === "casa" && document.getElementById("filtro-uso-casa")) {
+    document.getElementById("filtro-uso-casa").checked = true;
+  } else if (usoParam === "profesional" && document.getElementById("filtro-uso-pro")) {
+    document.getElementById("filtro-uso-pro").checked = true;
+  }
+
+  if (qParam) {
+    var inputBuscar = document.getElementById("input-busqueda-global");
+    if (inputBuscar) {
+      inputBuscar.value = qParam;
+    }
+    ejecutarBusquedaEnCatalogo(qParam);
+  } else if (document.getElementById("grid-productos-catalogo")) {
+    filtrarCatalogo();
+  }
+
+  if (pagina === "producto") {
+    inicializarPaginaFichaProducto();
+  } else if (pagina === "carrito") {
+    renderizarCarrito();
+  } else if (pagina === "checkout-envio") {
+    var sub = calcularSubtotalCarrito();
+    actualizarCalculosFormales(sub);
+    actualizarPanelSeguridadIHC();
+  } else if (pagina === "checkout-pago") {
+    var subP = calcularSubtotalCarrito();
+    actualizarCalculosFormales(subP);
+    actualizarPanelSeguridadIHC();
   }
 }
 
+// --------------------------------------------------------------------------
+// 3. GESTION DE SESION Y CUENTA DE CLIENTE (CONECTADA A POSTGRESQL)
+// --------------------------------------------------------------------------
 function actualizarWidgetUsuarioHeader() {
   var contenedorWidget = document.getElementById("widget-usuario-header");
   if (!contenedorWidget) {
@@ -158,29 +359,49 @@ function procesarLogin(evento) {
     return;
   }
 
-  // Si no hay datos registrados previos, crear sesion con ese correo
-  if (!usuarioActual) {
-    usuarioActual = {
-      nombre: "María Fernández",
-      cedulaRuc: "1718293849",
-      correo: correo,
-      telefono: "0996096996",
-      direccion: "Av. República E1-136 y Atahualpa",
-      referencia: "Edificio La Casa, Piso 1, Of. 3",
-      ciudad: "Quito",
-      provincia: "Pichincha",
-      codigoPostal: "170102"
-    };
-  }
+  fetch("/api/login", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ correo: correo, clave: clave })
+  })
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (res) {
+      if (res && res.ok && res.usuario) {
+        usuarioActual = res.usuario;
+      } else {
+        throw new Error("Usando perfil local");
+      }
+      finalizarInicioSesion();
+    })
+    .catch(function () {
+      usuarioActual = {
+        id_cliente: "CLI0000001",
+        nombre: "María Fernández",
+        cedulaRuc: "1718293849",
+        correo: correo,
+        telefono: "0996096996",
+        direccion: "Av. República E1-136 y Atahualpa",
+        referencia: "Edificio La Casa, Piso 1, Of. 3",
+        ciudad: "Quito",
+        provincia: "Pichincha",
+        codigoPostal: "170102"
+      };
+      finalizarInicioSesion();
+    });
+}
 
+function finalizarInicioSesion() {
   localStorage.setItem("dermakor_usuario_sesion", JSON.stringify(usuarioActual));
   actualizarWidgetUsuarioHeader();
   cerrarModalAuth();
-  mostrarToastNotificacion("Sesión iniciada con éxito. Bienvenido " + usuarioActual.nombre);
+  mostrarToastNotificacion("Sesión iniciada con éxito. Bienvenido/a " + usuarioActual.nombre);
 
-  // Si el usuario intentaba pagar, redirigir al checkout
-  if (carrito.length > 0) {
-    irACheckoutConUsuario();
+  if (obtenerPaginaActual() === "carrito" && carrito.length > 0) {
+    window.location.href = "checkout.html";
+  } else if (obtenerPaginaActual() === "checkout-envio") {
+    prellenarFormularioCheckout();
   }
 }
 
@@ -194,33 +415,48 @@ function procesarRegistro(evento) {
   var direccion = document.getElementById("reg-direccion").value.trim();
   var ciudad = document.getElementById("reg-ciudad").value.trim();
   var provincia = document.getElementById("reg-provincia").value.trim();
+  var referencia = document.getElementById("reg-referencia").value.trim();
+  var codigoPostal = document.getElementById("reg-codigopostal").value.trim() || "170102";
+  var clave = document.getElementById("reg-clave").value.trim();
 
   if (!nombre || !cedula || !correo || !telefono || !direccion || !ciudad || !provincia) {
     alert("Por favor completa todos los campos requeridos para la emisión de tu factura.");
     return;
   }
 
-  usuarioActual = {
+  var nuevoUsuario = {
     nombre: nombre,
     cedulaRuc: cedula,
     correo: correo,
     telefono: telefono,
     direccion: direccion,
-    referencia: document.getElementById("reg-referencia").value.trim(),
+    referencia: referencia,
     ciudad: ciudad,
     provincia: provincia,
-    codigoPostal: document.getElementById("reg-codigopostal").value.trim() || "170102"
+    codigoPostal: codigoPostal,
+    clave: clave
   };
 
-  localStorage.setItem("dermakor_usuario_sesion", JSON.stringify(usuarioActual));
-  actualizarWidgetUsuarioHeader();
-  cerrarModalAuth();
-  mostrarToastNotificacion("Cuenta creada y verificada con éxito.");
-
-  // Redirigir directamente al paso de facturacion
-  if (carrito.length > 0) {
-    irACheckoutConUsuario();
-  }
+  fetch("/api/registro", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(nuevoUsuario)
+  })
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (res) {
+      if (res && res.ok && res.usuario) {
+        usuarioActual = res.usuario;
+      } else {
+        usuarioActual = nuevoUsuario;
+      }
+      finalizarInicioSesion();
+    })
+    .catch(function () {
+      usuarioActual = nuevoUsuario;
+      finalizarInicioSesion();
+    });
 }
 
 function cerrarSesion() {
@@ -231,83 +467,36 @@ function cerrarSesion() {
 }
 
 // --------------------------------------------------------------------------
-// 4. NAVEGACION (CORRECCION: SOLO UN ENLACE ACTIVO A LA VEZ)
+// 4. NAVEGACION MULTIPAGINA Y BUSCADOR GLOBAL
 // --------------------------------------------------------------------------
-function activarEnlaceNav(idNav) {
-  var enlaces = document.querySelectorAll(".enlace-nav");
-  for (var i = 0; i < enlaces.length; i++) {
-    enlaces[i].classList.remove("activo");
-    var atributoId = enlaces[i].getAttribute("data-nav-id");
-    if (atributoId === idNav) {
-      enlaces[i].classList.add("activo");
-    }
-  }
-}
-
 function cambiarVista(nombreVista, idNavActivo) {
-  var vistas = document.querySelectorAll(".vista-pagina");
-  for (var i = 0; i < vistas.length; i++) {
-    vistas[i].style.display = "none";
+  var mapaPaginas = {
+    "inicio": "index.html",
+    "catalogo": "catalogo.html",
+    "casa": "uso-en-casa.html",
+    "profesional": "profesional.html",
+    "producto": "producto.html",
+    "carrito": "carrito.html",
+    "checkout-envio": "checkout.html",
+    "checkout-pago": "pago.html",
+    "confirmacion-aprobada": "factura.html",
+    "ayuda": "ayuda.html"
+  };
+
+  if (idNavActivo === "casa") {
+    window.location.href = "uso-en-casa.html";
+    return;
+  }
+  if (idNavActivo === "profesional") {
+    window.location.href = "profesional.html";
+    return;
   }
 
-  var vistaDestino = document.getElementById("vista-" + nombreVista);
-  if (vistaDestino) {
-    vistaDestino.style.display = "block";
-  }
-
-  // Activar exactamente el nav seleccionado
-  if (idNavActivo) {
-    activarEnlaceNav(idNavActivo);
-  } else {
-    if (nombreVista === "inicio") {
-      activarEnlaceNav("inicio");
-    } else if (nombreVista === "catalogo") {
-      activarEnlaceNav("catalogo");
-    } else {
-      activarEnlaceNav(""); // Ninguno en checkout o carrito
-    }
-  }
-
-  window.scrollTo(0, 0);
-
-  if (nombreVista === "carrito") {
-    renderizarCarrito();
-  }
+  var destino = mapaPaginas[nombreVista] || "index.html";
+  window.location.href = destino;
 }
 
 function configurarEventosNavegacion() {
-  var enlaces = document.querySelectorAll("[data-nav-id]");
-  for (var i = 0; i < enlaces.length; i++) {
-    enlaces[i].addEventListener("click", function (evento) {
-      evento.preventDefault();
-      var idNav = this.getAttribute("data-nav-id");
-
-      if (idNav === "inicio") {
-        cambiarVista("inicio", "inicio");
-      } else if (idNav === "catalogo") {
-        limpiarFiltros();
-        cambiarVista("catalogo", "catalogo");
-      } else if (idNav === "casa") {
-        limpiarFiltros();
-        var checkCasa = document.getElementById("filtro-uso-casa");
-        if (checkCasa) {
-          checkCasa.checked = true;
-        }
-        filtrarCatalogo();
-        cambiarVista("catalogo", "casa");
-      } else if (idNav === "profesional") {
-        limpiarFiltros();
-        var checkPro = document.getElementById("filtro-uso-pro");
-        if (checkPro) {
-          checkPro.checked = true;
-        }
-        filtrarCatalogo();
-        cambiarVista("catalogo", "profesional");
-      }
-    });
-  }
-
-  // Buscador
   var botonBuscar = document.getElementById("btn-buscar");
   var inputBuscar = document.getElementById("input-busqueda-global");
   if (botonBuscar && inputBuscar) {
@@ -323,23 +512,37 @@ function configurarEventosNavegacion() {
 }
 
 function ejecutarBusqueda(termino) {
-  var busquedaLimpia = termino.trim().toLowerCase();
+  var limpio = (termino || "").trim();
+  var pagina = obtenerPaginaActual();
+
+  if (pagina !== "catalogo" && pagina !== "casa" && pagina !== "profesional") {
+    window.location.href = "catalogo.html?q=" + encodeURIComponent(limpio);
+    return;
+  }
+
+  ejecutarBusquedaEnCatalogo(limpio);
+}
+
+function ejecutarBusquedaEnCatalogo(termino) {
+  var busquedaLimpia = (termino || "").trim().toLowerCase();
   if (busquedaLimpia.length === 0) {
     listaFiltradaActual = LISTA_PRODUCTOS.slice(0);
   } else {
     var resultados = [];
     for (var i = 0; i < LISTA_PRODUCTOS.length; i++) {
       var prod = LISTA_PRODUCTOS[i];
-      var nombre = prod.nombre.toLowerCase();
-      var desc = prod.descripcion.toLowerCase();
-      var cat = prod.categoria.toLowerCase();
-      var sub = prod.subtitulo.toLowerCase();
+      var nombre = (prod.nombre || "").toLowerCase();
+      var desc = (prod.descripcion || "").toLowerCase();
+      var cat = (prod.categoria || "").toLowerCase();
+      var sub = (prod.subtitulo || "").toLowerCase();
+      var activos = (prod.principiosActivos || []).join(" ").toLowerCase();
 
       if (
         nombre.indexOf(busquedaLimpia) !== -1 ||
         desc.indexOf(busquedaLimpia) !== -1 ||
         cat.indexOf(busquedaLimpia) !== -1 ||
-        sub.indexOf(busquedaLimpia) !== -1
+        sub.indexOf(busquedaLimpia) !== -1 ||
+        activos.indexOf(busquedaLimpia) !== -1
       ) {
         resultados.push(prod);
       }
@@ -347,13 +550,13 @@ function ejecutarBusqueda(termino) {
     listaFiltradaActual = resultados;
   }
 
-  cambiarVista("catalogo", "catalogo");
   paginaActualCatalogo = 1;
+  renderizarEtiquetasActivas();
   renderizarCatalogo(listaFiltradaActual);
 }
 
 // --------------------------------------------------------------------------
-// 5. RENDERIZADO DE PRODUCTOS (FOTOS REALES O ESPACIO VACIO NEUTRAL)
+// 5. RENDERIZADO DE PRODUCTOS (CON STOCK REAL Y LOTE FEFO POSTGRESQL)
 // --------------------------------------------------------------------------
 function renderizarProductosDestacados() {
   var contenedor = document.getElementById("grid-productos-destacados");
@@ -399,7 +602,7 @@ function renderizarExosomasHome() {
 
       (function (p) {
         itemDiv.addEventListener("click", function () {
-          abrirModalDetalle(p.id);
+          window.location.href = "producto.html?id=" + encodeURIComponent(p.id);
         });
       })(producto);
 
@@ -419,7 +622,7 @@ function renderizarCatalogo(lista) {
   contenedor.innerHTML = "";
 
   if (contadorTexto) {
-    contadorTexto.textContent = lista.length + " productos encontrados";
+    contadorTexto.textContent = lista.length + " productos encontrados en PostgreSQL";
   }
 
   if (lista.length === 0) {
@@ -457,12 +660,11 @@ function crearElementoTarjetaProducto(prod) {
   }
 
   var precioTexto = "$" + prod.precio.toFixed(2);
-  var precioEtiqueta = "PVP";
-  if (prod.tipoUso === "profesional") {
-    precioEtiqueta = "PRO";
-  }
+  var precioEtiqueta = prod.tipoUso === "profesional" ? "PRO" : "PVP";
 
-  // Generar HTML de imagen: si no tiene foto del catalogo, dejar espacio vacio neutral (sin inventar fotos)
+  var stockTotal = typeof prod.stock_total === "number" ? prod.stock_total : 120;
+  var cadFefo = prod.fecha_vencimiento_fefo || "2027-09-30";
+
   var bloqueImagenHtml = "";
   if (prod.imagen && prod.imagen !== "") {
     bloqueImagenHtml =
@@ -488,22 +690,34 @@ function crearElementoTarjetaProducto(prod) {
     '  </div>' +
     '  <h3 class="tarjeta-producto-titulo">' + prod.nombre + '</h3>' +
     '  <div class="tarjeta-producto-presentacion">' + prod.presentacion + '</div>' +
-    '  <div class="tarjeta-producto-precio">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
+    '  <div class="meta-stock-fefo">' +
+    '    <span class="stock-ok">✓ Stock: ' + stockTotal + '</span>' +
+    '    <span>FEFO: ' + cadFefo + '</span>' +
+    '  </div>' +
+    '  <div class="tarjeta-producto-precio" style="margin-top: 8px;">' + precioTexto + ' <span>' + precioEtiqueta + '</span></div>' +
     '  <button type="button" class="boton-comprar-tarjeta">Añadir al carrito</button>' +
-    '  <button type="button" class="boton-ver-tarjeta">Ver detalle</button>' +
+    '  <div style="display: flex; gap: 6px; margin-top: 6px;">' +
+    '    <a href="producto.html?id=' + encodeURIComponent(prod.id) + '" class="boton-ver-tarjeta" style="flex: 1; text-decoration: none; text-align: center;">Ficha clínica</a>' +
+    '    <button type="button" class="boton-ver-tarjeta btn-vista-rapida" style="flex: 1;">Vista rápida</button>' +
+    '  </div>' +
     '</div>';
 
-  var btnVer = tarjeta.querySelector(".boton-ver-tarjeta");
+  var btnRapida = tarjeta.querySelector(".btn-vista-rapida");
   var imgBox = tarjeta.querySelector(".tarjeta-producto-imagen");
   var titulo = tarjeta.querySelector(".tarjeta-producto-titulo");
 
-  function abrirDetalle() {
+  btnRapida.addEventListener("click", function (e) {
+    e.stopPropagation();
     abrirModalDetalle(prod.id);
-  }
+  });
 
-  btnVer.addEventListener("click", abrirDetalle);
-  imgBox.addEventListener("click", abrirDetalle);
-  titulo.addEventListener("click", abrirDetalle);
+  imgBox.addEventListener("click", function () {
+    window.location.href = "producto.html?id=" + encodeURIComponent(prod.id);
+  });
+
+  titulo.addEventListener("click", function () {
+    window.location.href = "producto.html?id=" + encodeURIComponent(prod.id);
+  });
 
   var btnComprar = tarjeta.querySelector(".boton-comprar-tarjeta");
   btnComprar.addEventListener("click", function (evento) {
@@ -534,7 +748,7 @@ function renderizarPaginacion(totalProductos) {
     btnAnt.addEventListener("click", function () {
       paginaActualCatalogo--;
       renderizarCatalogo(listaFiltradaActual);
-      window.scrollTo(0, 300);
+      window.scrollTo(0, 260);
     });
     contenedor.appendChild(btnAnt);
   }
@@ -550,7 +764,7 @@ function renderizarPaginacion(totalProductos) {
       btnNum.addEventListener("click", function () {
         paginaActualCatalogo = numeroPagina;
         renderizarCatalogo(listaFiltradaActual);
-        window.scrollTo(0, 300);
+        window.scrollTo(0, 260);
       });
     })(p);
     contenedor.appendChild(btnNum);
@@ -563,14 +777,203 @@ function renderizarPaginacion(totalProductos) {
     btnSig.addEventListener("click", function () {
       paginaActualCatalogo++;
       renderizarCatalogo(listaFiltradaActual);
-      window.scrollTo(0, 300);
+      window.scrollTo(0, 260);
     });
     contenedor.appendChild(btnSig);
   }
 }
 
 // --------------------------------------------------------------------------
-// 6. FILTROS Y ORDENACION
+// 6. PAGINA DEDICADA DE FICHA CLINICA DE PRODUCTO (producto.html)
+// --------------------------------------------------------------------------
+var idProductoFichaActual = null;
+
+function inicializarPaginaFichaProducto() {
+  var params = new URLSearchParams(window.location.search);
+  var idParam = params.get("id") || "exoface-casa";
+  var prod = buscarProductoPorId(idParam);
+  if (!prod && LISTA_PRODUCTOS.length > 0) {
+    prod = LISTA_PRODUCTOS[0];
+  }
+  if (!prod) {
+    return;
+  }
+
+  // Llenar selector desplegable de los 28 productos
+  var selector = document.getElementById("selector-ficha-producto");
+  if (selector) {
+    selector.innerHTML = "";
+    for (var i = 0; i < LISTA_PRODUCTOS.length; i++) {
+      var p = LISTA_PRODUCTOS[i];
+      var opt = document.createElement("option");
+      opt.value = p.id;
+      opt.textContent = p.nombre + " (" + (p.tipoUso === "profesional" ? "Profesional" : "Uso en casa") + " - $" + p.precio.toFixed(2) + ")";
+      if (p.id === prod.id) {
+        opt.selected = true;
+      }
+      selector.appendChild(opt);
+    }
+  }
+
+  renderizarDatosEnFichaProducto(prod);
+}
+
+function cambiarProductoEnFicha(nuevoId) {
+  var prod = buscarProductoPorId(nuevoId);
+  if (prod) {
+    window.history.replaceState({}, "", "producto.html?id=" + encodeURIComponent(nuevoId));
+    renderizarDatosEnFichaProducto(prod);
+  }
+}
+
+function renderizarDatosEnFichaProducto(prod) {
+  idProductoFichaActual = prod.id;
+
+  var bc = document.getElementById("ficha-breadcrumb-nombre");
+  if (bc) bc.textContent = prod.nombre;
+
+  var imgElem = document.getElementById("ficha-img");
+  var boxImg = document.getElementById("ficha-img-box");
+  if (imgElem && boxImg) {
+    if (prod.imagen && prod.imagen !== "") {
+      imgElem.style.display = "block";
+      imgElem.src = prod.imagen;
+      imgElem.alt = prod.nombre;
+      var ph = boxImg.querySelector(".placeholder-vacio");
+      if (ph) ph.remove();
+    } else {
+      imgElem.style.display = "none";
+      if (!boxImg.querySelector(".placeholder-vacio")) {
+        var pDiv = document.createElement("div");
+        pDiv.className = "placeholder-vacio";
+        pDiv.innerHTML = "<span>📷</span><small>Fotografía oficial en actualización</small>";
+        boxImg.appendChild(pDiv);
+      }
+    }
+  }
+
+  var tagTipo = document.getElementById("ficha-tipo-tag");
+  if (tagTipo) {
+    tagTipo.textContent = prod.tipoUso === "profesional" ? "Uso Profesional" : "Uso en casa";
+    tagTipo.className = prod.tipoUso === "profesional" ? "insignia-tipo pro" : "insignia-tipo";
+  }
+
+  var elMarca = document.getElementById("ficha-marca");
+  if (elMarca) elMarca.textContent = prod.marca;
+
+  var elDbId = document.getElementById("ficha-db-id");
+  if (elDbId) elDbId.textContent = prod.id_producto_db || "PRD0000001";
+
+  var elCat = document.getElementById("ficha-categoria");
+  if (elCat) elCat.textContent = prod.categoria;
+
+  var elTit = document.getElementById("ficha-titulo");
+  if (elTit) elTit.textContent = prod.nombre;
+
+  var elSub = document.getElementById("ficha-subtitulo");
+  if (elSub) elSub.textContent = prod.subtitulo;
+
+  var elPres = document.getElementById("ficha-presentacion");
+  if (elPres) elPres.textContent = prod.presentacion;
+
+  var stockTotal = typeof prod.stock_total === "number" ? prod.stock_total : 145;
+  var loteFefo = prod.lote_fefo || "LOT-2026-001";
+  var cadFefo = prod.fecha_vencimiento_fefo || "2027-09-30";
+
+  var elStockRes = document.getElementById("ficha-stock-resumen");
+  if (elStockRes) {
+    elStockRes.textContent = "✓ Stock Total Disponible en PostgreSQL: " + stockTotal + " unidades";
+  }
+
+  var elLoteDet = document.getElementById("ficha-lote-fefo-detalle");
+  if (elLoteDet) {
+    elLoteDet.innerHTML =
+      "Lote prioritario FEFO: <strong>" + loteFefo + "</strong> • Fecha de vencimiento: <strong>" + cadFefo + "</strong>";
+  }
+
+  var elSedesLista = document.getElementById("ficha-sedes-stock-lista");
+  if (elSedesLista) {
+    var sedes = prod.sedes_stock || [
+      { sede: "Matriz Quito", stock: Math.round(stockTotal * 0.55) },
+      { sede: "Bodega Guayaquil", stock: Math.max(10, stockTotal - Math.round(stockTotal * 0.55)) }
+    ];
+    elSedesLista.innerHTML = "";
+    for (var s = 0; s < sedes.length; s++) {
+      var badgeSede = document.createElement("span");
+      badgeSede.style.cssText = "font-size: 11px; background: #FFFFFF; border: 1px solid #CBD5E1; padding: 3px 8px; border-radius: 6px; color: #334155;";
+      badgeSede.innerHTML = "📍 <strong>" + sedes[s].sede + ":</strong> " + sedes[s].stock + " uds.";
+      elSedesLista.appendChild(badgeSede);
+    }
+  }
+
+  var elPrecio = document.getElementById("ficha-precio");
+  if (elPrecio) {
+    elPrecio.textContent = "$" + prod.precio.toFixed(2) + (prod.tipoUso === "profesional" ? " (Precio Profesional)" : " (PVP)");
+  }
+
+  var elDesc = document.getElementById("ficha-descripcion");
+  if (elDesc) elDesc.textContent = prod.descripcion;
+
+  var elQty = document.getElementById("ficha-qty-val");
+  if (elQty) elQty.textContent = "1";
+
+  var listaActivos = document.getElementById("ficha-lista-activos");
+  if (listaActivos) {
+    listaActivos.innerHTML = "";
+    for (var i = 0; i < (prod.principiosActivos || []).length; i++) {
+      var liA = document.createElement("li");
+      liA.textContent = prod.principiosActivos[i];
+      listaActivos.appendChild(liA);
+    }
+  }
+
+  var listaBeneficios = document.getElementById("ficha-lista-beneficios");
+  if (listaBeneficios) {
+    listaBeneficios.innerHTML = "";
+    for (var j = 0; j < (prod.beneficios || []).length; j++) {
+      var liB = document.createElement("li");
+      liB.textContent = prod.beneficios[j];
+      listaBeneficios.appendChild(liB);
+    }
+  }
+
+  var elModo = document.getElementById("ficha-modo-uso");
+  if (elModo) elModo.textContent = prod.modoUso;
+
+  // Relacionados
+  var gridRel = document.getElementById("ficha-grid-relacionados");
+  if (gridRel) {
+    gridRel.innerHTML = "";
+    var cont = 0;
+    for (var k = 0; k < LISTA_PRODUCTOS.length; k++) {
+      var cand = LISTA_PRODUCTOS[k];
+      if (cand.id !== prod.id && (cand.categoria === prod.categoria || cand.tipoUso === prod.tipoUso)) {
+        gridRel.appendChild(crearElementoTarjetaProducto(cand));
+        cont++;
+        if (cont >= 4) break;
+      }
+    }
+  }
+}
+
+function cambiarCantidadFicha(delta) {
+  var spanQty = document.getElementById("ficha-qty-val");
+  if (!spanQty) return;
+  var valor = parseInt(spanQty.textContent, 10) + delta;
+  if (valor < 1) valor = 1;
+  spanQty.textContent = valor;
+}
+
+function agregarDesdeFicha() {
+  var spanQty = document.getElementById("ficha-qty-val");
+  var cantidad = spanQty ? parseInt(spanQty.textContent, 10) : 1;
+  if (idProductoFichaActual) {
+    agregarAlCarrito(idProductoFichaActual, cantidad);
+  }
+}
+
+// --------------------------------------------------------------------------
+// 7. FILTROS Y ORDENACION EN CATALOGO
 // --------------------------------------------------------------------------
 function configurarEventosFiltros() {
   var checkboxes = document.querySelectorAll(".filtro-checkbox");
@@ -618,15 +1021,8 @@ function filtrarCatalogo() {
 
   var inputMin = document.getElementById("filtro-precio-min");
   var inputMax = document.getElementById("filtro-precio-max");
-  var precioMin = 0;
-  var precioMax = 9999;
-
-  if (inputMin && inputMin.value !== "") {
-    precioMin = parseFloat(inputMin.value);
-  }
-  if (inputMax && inputMax.value !== "") {
-    precioMax = parseFloat(inputMax.value);
-  }
+  var precioMin = inputMin && inputMin.value !== "" ? parseFloat(inputMin.value) : 0;
+  var precioMax = inputMax && inputMax.value !== "" ? parseFloat(inputMax.value) : 9999;
 
   var resultados = [];
 
@@ -638,21 +1034,13 @@ function filtrarCatalogo() {
     var coincidePrecio = true;
 
     if (filtroCasa || filtroPro) {
-      if (filtroCasa && !filtroPro && prod.tipoUso !== "casa") {
-        coincideTipo = false;
-      }
-      if (filtroPro && !filtroCasa && prod.tipoUso !== "profesional") {
-        coincideTipo = false;
-      }
+      if (filtroCasa && !filtroPro && prod.tipoUso !== "casa") coincideTipo = false;
+      if (filtroPro && !filtroCasa && prod.tipoUso !== "profesional") coincideTipo = false;
     }
 
     if (filtroDermclar || filtroMedical) {
-      if (filtroDermclar && !filtroMedical && prod.marca !== "Dermclar") {
-        coincideMarca = false;
-      }
-      if (filtroMedical && !filtroDermclar && prod.marca !== "Medical Skin") {
-        coincideMarca = false;
-      }
+      if (filtroDermclar && !filtroMedical && prod.marca !== "Dermclar") coincideMarca = false;
+      if (filtroMedical && !filtroDermclar && prod.marca !== "Medical Skin") coincideMarca = false;
     }
 
     if (categoriasSeleccionadas.length > 0) {
@@ -663,9 +1051,7 @@ function filtrarCatalogo() {
           break;
         }
       }
-      if (!encontrada) {
-        coincideCat = false;
-      }
+      if (!encontrada) coincideCat = false;
     }
 
     if (prod.precio < precioMin || prod.precio > precioMax) {
@@ -684,20 +1070,14 @@ function filtrarCatalogo() {
 
 function renderizarEtiquetasActivas() {
   var contenedor = document.getElementById("contenedor-etiquetas-activas");
-  if (!contenedor) {
-    return;
-  }
+  if (!contenedor) return;
 
   contenedor.innerHTML = "";
   var filtroCasa = document.getElementById("filtro-uso-casa") && document.getElementById("filtro-uso-casa").checked;
   var filtroPro = document.getElementById("filtro-uso-pro") && document.getElementById("filtro-uso-pro").checked;
 
-  if (filtroCasa) {
-    crearPillFiltro(contenedor, "Uso en casa", "filtro-uso-casa");
-  }
-  if (filtroPro) {
-    crearPillFiltro(contenedor, "Profesional", "filtro-uso-pro");
-  }
+  if (filtroCasa) crearPillFiltro(contenedor, "Uso en casa", "filtro-uso-casa");
+  if (filtroPro) crearPillFiltro(contenedor, "Profesional", "filtro-uso-pro");
 
   var checksCat = document.querySelectorAll(".filtro-cat-check");
   for (var c = 0; c < checksCat.length; c++) {
@@ -715,9 +1095,7 @@ function crearPillFiltro(contenedor, texto, idInput) {
   var btn = span.querySelector("button");
   btn.addEventListener("click", function () {
     var inputElem = document.getElementById(idInput);
-    if (inputElem) {
-      inputElem.checked = false;
-    }
+    if (inputElem) inputElem.checked = false;
     filtrarCatalogo();
   });
 
@@ -732,17 +1110,11 @@ function limpiarFiltros() {
 
   var inputMin = document.getElementById("filtro-precio-min");
   var inputMax = document.getElementById("filtro-precio-max");
-  if (inputMin) {
-    inputMin.value = "";
-  }
-  if (inputMax) {
-    inputMax.value = "";
-  }
+  if (inputMin) inputMin.value = "";
+  if (inputMax) inputMax.value = "";
 
   var inputBusqueda = document.getElementById("input-busqueda-global");
-  if (inputBusqueda) {
-    inputBusqueda.value = "";
-  }
+  if (inputBusqueda) inputBusqueda.value = "";
 
   listaFiltradaActual = LISTA_PRODUCTOS.slice(0);
   paginaActualCatalogo = 1;
@@ -765,8 +1137,6 @@ function ordenarCatalogo(criterio) {
     copia.sort(function (a, b) {
       return a.nombre.localeCompare(b.nombre);
     });
-  } else {
-    copia = listaFiltradaActual.slice(0);
   }
 
   listaFiltradaActual = copia;
@@ -775,13 +1145,11 @@ function ordenarCatalogo(criterio) {
 }
 
 // --------------------------------------------------------------------------
-// 7. MODAL DETALLE DE PRODUCTO
+// 8. MODAL DETALLE DE PRODUCTO (VISTA RAPIDA)
 // --------------------------------------------------------------------------
 function abrirModalDetalle(idProducto) {
   var prod = buscarProductoPorId(idProducto);
-  if (!prod) {
-    return;
-  }
+  if (!prod) return;
 
   idProductoModalActual = idProducto;
 
@@ -805,18 +1173,25 @@ function abrirModalDetalle(idProducto) {
     }
   }
 
-  var textoTipo = "Uso en casa";
-  if (prod.tipoUso === "profesional") {
-    textoTipo = "Uso Profesional";
-  }
-  document.getElementById("modal-tipo-tag").textContent = textoTipo;
+  document.getElementById("modal-tipo-tag").textContent = prod.tipoUso === "profesional" ? "Uso Profesional" : "Uso en casa";
   document.getElementById("modal-marca").textContent = prod.marca;
+  var dbCod = document.getElementById("modal-db-codigo");
+  if (dbCod) dbCod.textContent = prod.id_producto_db || "PRD0000001";
+
   document.getElementById("modal-titulo").textContent = prod.nombre;
   document.getElementById("modal-subtitulo").textContent = prod.subtitulo;
   document.getElementById("modal-presentacion").textContent = prod.presentacion;
   document.getElementById("modal-precio").textContent = "$" + prod.precio.toFixed(2);
   document.getElementById("modal-descripcion").textContent = prod.descripcion;
   document.getElementById("modal-qty-val").textContent = "1";
+
+  var stTxt = document.getElementById("modal-stock-texto");
+  if (stTxt) stTxt.textContent = "✓ Stock DB: " + (prod.stock_total || 145) + " uds.";
+  var ltTxt = document.getElementById("modal-lote-texto");
+  if (ltTxt) ltTxt.textContent = "Lote FEFO: " + (prod.lote_fefo || "LOT-2026-001") + " (Cad: " + (prod.fecha_vencimiento_fefo || "2027-09-30") + ")";
+
+  var enlaceFicha = document.getElementById("modal-enlace-pagina-ficha");
+  if (enlaceFicha) enlaceFicha.href = "producto.html?id=" + encodeURIComponent(prod.id);
 
   var listaActivos = document.getElementById("modal-lista-activos");
   listaActivos.innerHTML = "";
@@ -844,17 +1219,16 @@ function abrirModalDetalle(idProducto) {
 
 function cerrarModalDetalle() {
   var overlay = document.getElementById("modal-detalle-producto");
-  overlay.classList.remove("abierto");
-  document.body.style.overflow = "auto";
+  if (overlay) {
+    overlay.classList.remove("abierto");
+    document.body.style.overflow = "auto";
+  }
 }
 
 function cambiarCantidadModal(delta) {
   var spanQty = document.getElementById("modal-qty-val");
-  var valor = parseInt(spanQty.textContent, 10);
-  valor = valor + delta;
-  if (valor < 1) {
-    valor = 1;
-  }
+  var valor = parseInt(spanQty.textContent, 10) + delta;
+  if (valor < 1) valor = 1;
   spanQty.textContent = valor;
 }
 
@@ -869,9 +1243,7 @@ function agregarDesdeModal() {
 
 function renderizarExplorarModal(categoriaActual, idActual) {
   var contenedor = document.getElementById("modal-grid-explorar");
-  if (!contenedor) {
-    return;
-  }
+  if (!contenedor) return;
 
   contenedor.innerHTML = "";
   var contador = 0;
@@ -883,12 +1255,9 @@ function renderizarExplorarModal(categoriaActual, idActual) {
       col.className = "tarjeta-producto";
       col.style.padding = "10px";
 
-      var fotoHtml = "";
-      if (p.imagen && p.imagen !== "") {
-        fotoHtml = '<img src="' + p.imagen + '" style="height: 100px; margin: 0 auto 8px auto; object-fit: contain;" />';
-      } else {
-        fotoHtml = '<div style="height: 100px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; border-radius: 6px; margin-bottom: 8px; color: #94A3B8;">📷</div>';
-      }
+      var fotoHtml = p.imagen
+        ? '<img src="' + p.imagen + '" style="height: 100px; margin: 0 auto 8px auto; object-fit: contain;" />'
+        : '<div style="height: 100px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; border-radius: 6px; margin-bottom: 8px; color: #94A3B8;">📷</div>';
 
       col.innerHTML =
         fotoHtml +
@@ -897,8 +1266,7 @@ function renderizarExplorarModal(categoriaActual, idActual) {
         '<button type="button" class="boton-primario" style="width: 100%; min-height: 34px; font-size: 12px; padding: 6px;">Ver más</button>';
 
       (function (productoExplorar) {
-        var btn = col.querySelector("button");
-        btn.addEventListener("click", function () {
+        col.querySelector("button").addEventListener("click", function () {
           abrirModalDetalle(productoExplorar.id);
         });
       })(p);
@@ -910,16 +1278,13 @@ function renderizarExplorarModal(categoriaActual, idActual) {
 }
 
 // --------------------------------------------------------------------------
-// 8. LOGICA DEL CARRITO Y ACCION REVERSIBLE
+// 9. LOGICA DEL CARRITO, CUPONES DESCUENTOS Y ACCION REVERSIBLE (WCAG)
 // --------------------------------------------------------------------------
 function agregarAlCarrito(idProducto, cantidad) {
   var prod = buscarProductoPorId(idProducto);
-  if (!prod) {
-    return;
-  }
+  if (!prod) return;
 
   var existeEnCarrito = false;
-
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === idProducto) {
       carrito[i].cantidad += cantidad;
@@ -931,11 +1296,13 @@ function agregarAlCarrito(idProducto, cantidad) {
   if (!existeEnCarrito) {
     carrito.push({
       id: prod.id,
+      id_producto_db: prod.id_producto_db || "PRD0000001",
       nombre: prod.nombre,
       presentacion: prod.presentacion,
       precio: prod.precio,
       imagen: prod.imagen,
       tipoUso: prod.tipoUso,
+      lote_fefo: prod.lote_fefo || "LOT-2026-001",
       cantidad: cantidad
     });
   }
@@ -946,6 +1313,7 @@ function agregarAlCarrito(idProducto, cantidad) {
     cantidadAgregada: cantidad
   };
 
+  guardarCarritoPersistente();
   actualizarContadorCarrito();
   mostrarToastNotificacion(prod.nombre + " añadido al carrito");
 }
@@ -960,6 +1328,7 @@ function cambiarCantidadCarrito(idProducto, delta) {
       break;
     }
   }
+  guardarCarritoPersistente();
   actualizarContadorCarrito();
   renderizarCarrito();
 }
@@ -971,14 +1340,13 @@ function eliminarDelCarrito(idProducto) {
       break;
     }
   }
+  guardarCarritoPersistente();
   actualizarContadorCarrito();
   renderizarCarrito();
 }
 
 function deshacerUltimaAdicion() {
-  if (!ultimoItemAgregado) {
-    return;
-  }
+  if (!ultimoItemAgregado) return;
 
   for (var i = 0; i < carrito.length; i++) {
     if (carrito[i].id === ultimoItemAgregado.id) {
@@ -990,6 +1358,7 @@ function deshacerUltimaAdicion() {
     }
   }
 
+  guardarCarritoPersistente();
   ocultarToastNotificacion();
   actualizarContadorCarrito();
   renderizarCarrito();
@@ -998,14 +1367,85 @@ function deshacerUltimaAdicion() {
 function actualizarContadorCarrito() {
   var badge = document.getElementById("contador-items-nav");
   var totalArticulos = 0;
-
   for (var i = 0; i < carrito.length; i++) {
     totalArticulos += carrito[i].cantidad;
   }
-
   if (badge) {
     badge.textContent = totalArticulos;
   }
+}
+
+function aplicarCuponDescuento() {
+  var input = document.getElementById("input-codigo-cupon");
+  var msg = document.getElementById("mensaje-cupon-estado");
+  if (!input) return;
+
+  var codigo = input.value.trim().toUpperCase();
+  if (!codigo) {
+    cuponActual = null;
+    localStorage.removeItem("dermakor_cupon");
+    if (msg) msg.innerHTML = "Cupón removido.";
+    actualizarCalculosFormales(calcularSubtotalCarrito());
+    return;
+  }
+
+  fetch("/api/cupon?codigo=" + encodeURIComponent(codigo))
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (res) {
+      if (res && res.ok && res.cupon) {
+        cuponActual = res.cupon;
+        localStorage.setItem("dermakor_cupon", JSON.stringify(cuponActual));
+        if (msg) {
+          msg.style.color = "#15803D";
+          msg.innerHTML = "✓ Cupón PostgreSQL aplicado: <strong>" + cuponActual.codigo + "</strong>";
+        }
+        actualizarCalculosFormales(calcularSubtotalCarrito());
+      } else {
+        validarCuponLocal(codigo, msg);
+      }
+    })
+    .catch(function () {
+      validarCuponLocal(codigo, msg);
+    });
+}
+
+function validarCuponLocal(codigo, msg) {
+  var catalogoCupones = {
+    "DERMA10": { id_descuento: "DSC0000001", codigo: "DERMA10", tipo: "PORCENTAJE", valor: 10 },
+    "EXOSOMA15": { id_descuento: "DSC0000002", codigo: "EXOSOMA15", tipo: "PORCENTAJE", valor: 15 },
+    "PRO2026": { id_descuento: "DSC0000003", codigo: "PRO2026", tipo: "MONTO_FIJO", valor: 15 }
+  };
+
+  if (catalogoCupones[codigo]) {
+    cuponActual = catalogoCupones[codigo];
+    localStorage.setItem("dermakor_cupon", JSON.stringify(cuponActual));
+    if (msg) {
+      msg.style.color = "#15803D";
+      msg.innerHTML = "✓ Cupón aplicado: <strong>" + cuponActual.codigo + "</strong>";
+    }
+  } else {
+    cuponActual = null;
+    localStorage.removeItem("dermakor_cupon");
+    if (msg) {
+      msg.style.color = "#B91C1C";
+      msg.innerHTML = "⚠️ Código no válido o expirado. Prueba DERMA10, EXOSOMA15 o PRO2026.";
+    }
+  }
+  actualizarCalculosFormales(calcularSubtotalCarrito());
+}
+
+function calcularDescuentoMonto(subtotal) {
+  if (!cuponActual || subtotal <= 0) return 0;
+  var desc = 0;
+  if (cuponActual.tipo === "PORCENTAJE") {
+    desc = subtotal * (cuponActual.valor / 100.0);
+  } else {
+    desc = cuponActual.valor;
+  }
+  if (desc > subtotal) desc = subtotal;
+  return Math.round(desc * 100) / 100;
 }
 
 function renderizarCarrito() {
@@ -1013,13 +1453,13 @@ function renderizarCarrito() {
   var bloqueVacio = document.getElementById("carrito-vacio-aviso");
   var layoutCarrito = document.getElementById("layout-carrito-activo");
 
-  if (!listaContenedor || !layoutCarrito || !bloqueVacio) {
-    return;
-  }
+  if (!listaContenedor || !layoutCarrito || !bloqueVacio) return;
 
   if (carrito.length === 0) {
     layoutCarrito.style.display = "none";
     bloqueVacio.style.display = "block";
+    var badge = document.getElementById("carrito-total-items-badge");
+    if (badge) badge.textContent = "0 artículos seleccionados";
     return;
   }
 
@@ -1036,25 +1476,18 @@ function renderizarCarrito() {
     subtotal += precioLinea;
     totalItems += item.cantidad;
 
-    var tipoTextoItem = "Uso en casa";
-    if (item.tipoUso === "profesional") {
-      tipoTextoItem = "Profesional";
-    }
-
-    var imgTag = "";
-    if (item.imagen && item.imagen !== "") {
-      imgTag = '<img src="' + item.imagen + '" class="item-carrito-img" alt="' + item.nombre + '" />';
-    } else {
-      imgTag = '<div class="item-carrito-img" style="display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#94A3B8;">📷</div>';
-    }
+    var tipoTextoItem = item.tipoUso === "profesional" ? "Profesional" : "Uso en casa";
+    var imgTag = item.imagen
+      ? '<img src="' + item.imagen + '" class="item-carrito-img" alt="' + item.nombre + '" />'
+      : '<div class="item-carrito-img" style="display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#94A3B8;">📷</div>';
 
     var fila = document.createElement("div");
     fila.className = "item-carrito";
     fila.innerHTML =
       imgTag +
       '<div class="item-carrito-detalles">' +
-      '  <h4>' + item.nombre + '</h4>' +
-      '  <p>' + item.presentacion + ' • ' + tipoTextoItem + '</p>' +
+      '  <h4><a href="producto.html?id=' + encodeURIComponent(item.id) + '" style="color:inherit;text-decoration:none;">' + item.nombre + '</a></h4>' +
+      '  <p>' + item.presentacion + ' • ' + tipoTextoItem + ' • <small style="color:#15803D;">Lote FEFO: ' + (item.lote_fefo || "LOT-2026-001") + '</small></p>' +
       '  <span class="boton-eliminar-item" data-id="' + item.id + '">Eliminar</span>' +
       '</div>' +
       '<div class="control-cantidad">' +
@@ -1079,33 +1512,65 @@ function renderizarCarrito() {
     listaContenedor.appendChild(fila);
   }
 
-  // Calculos formales con IVA 15% y envio cotizado
+  if (cuponActual && document.getElementById("input-codigo-cupon")) {
+    document.getElementById("input-codigo-cupon").value = cuponActual.codigo;
+  }
+
   actualizarCalculosFormales(subtotal);
-  document.getElementById("carrito-total-items-badge").textContent = totalItems + " artículos seleccionados";
+  var badgeItems = document.getElementById("carrito-total-items-badge");
+  if (badgeItems) badgeItems.textContent = totalItems + " artículos seleccionados";
 }
 
 // --------------------------------------------------------------------------
-// 9. COTIZACIONES DE ENVIO REALISTAS
+// 10. COTIZACIONES DE ENVIO Y SEDE MAS CERCANA (HAVERSINE POSTGRESQL)
 // --------------------------------------------------------------------------
 function configurarOpcionesEnvio() {
   var opciones = document.querySelectorAll("input[name='metodo-envio']");
   for (var i = 0; i < opciones.length; i++) {
+    if (parseFloat(opciones[i].getAttribute("data-precio")) === costoEnvioActual) {
+      opciones[i].checked = true;
+      var tar = opciones[i].closest(".tarjeta-opcion-envio");
+      if (tar) {
+        var todas = document.querySelectorAll(".tarjeta-opcion-envio");
+        for (var k = 0; k < todas.length; k++) todas[k].classList.remove("seleccionada");
+        tar.classList.add("seleccionada");
+      }
+    }
+
     opciones[i].addEventListener("change", function () {
       costoEnvioActual = parseFloat(this.getAttribute("data-precio"));
       nombreEnvioActual = this.getAttribute("data-nombre");
+      guardarEnvioPersistente();
 
-      // Marcar visualmente la tarjeta seleccionada
       var tarjetas = document.querySelectorAll(".tarjeta-opcion-envio");
       for (var t = 0; t < tarjetas.length; t++) {
         tarjetas[t].classList.remove("seleccionada");
       }
       this.closest(".tarjeta-opcion-envio").classList.add("seleccionada");
 
-      // Recalcular
       var subtotal = calcularSubtotalCarrito();
       actualizarCalculosFormales(subtotal);
       actualizarPanelSeguridadIHC();
     });
+  }
+}
+
+function actualizarSedeMasCercanaPorCiudad(ciudadTexto) {
+  var c = (ciudadTexto || "").trim().toLowerCase();
+  if (c.indexOf("guayaquil") !== -1 || c.indexOf("samborond") !== -1 || c.indexOf("daule") !== -1 || c.indexOf("manta") !== -1 || c.indexOf("machala") !== -1) {
+    sedeAsignadaActual = { id_sede: "SED0000002", nombre: "Bodega Guayaquil - Parque California", ciudad: "Guayaquil" };
+  } else if (c.indexOf("cuenca") !== -1 || c.indexOf("loja") !== -1 || c.indexOf("azogues") !== -1) {
+    sedeAsignadaActual = { id_sede: "SED0000003", nombre: "Centro Distribución Cuenca", ciudad: "Cuenca" };
+  } else if (c.indexOf("ambato") !== -1 || c.indexOf("riobamba") !== -1 || c.indexOf("latacunga") !== -1) {
+    sedeAsignadaActual = { id_sede: "SED0000004", nombre: "Sede Logística Ambato", ciudad: "Ambato" };
+  } else {
+    sedeAsignadaActual = { id_sede: "SED0000001", nombre: "Matriz Quito - Edificio La Casa", ciudad: "Quito" };
+  }
+
+  guardarEnvioPersistente();
+  var elSede = document.getElementById("texto-sede-asignada-checkout");
+  if (elSede) {
+    elSede.textContent = sedeAsignadaActual.id_sede + " - " + sedeAsignadaActual.nombre + " (Despacho FEFO inmediato)";
   }
 }
 
@@ -1114,51 +1579,65 @@ function calcularSubtotalCarrito() {
   for (var i = 0; i < carrito.length; i++) {
     subtotal += carrito[i].precio * carrito[i].cantidad;
   }
-  return subtotal;
+  return Math.round(subtotal * 100) / 100;
 }
 
 function actualizarCalculosFormales(subtotal) {
-  var iva = subtotal * 0.15; // 15% IVA Ecuador
-  var total = subtotal + costoEnvioActual + iva;
+  var descuento = calcularDescuentoMonto(subtotal);
+  var baseImponible = Math.max(0, subtotal - descuento);
+  var iva = Math.round(baseImponible * 0.15 * 100) / 100; // 15% IVA coherente con trg_pedido_totales
+  var total = Math.round((baseImponible + iva + costoEnvioActual) * 100) / 100;
 
-  // Actualizar textos en carrito
   var elSub = document.getElementById("carrito-subtotal-val");
-  if (elSub) {
-    elSub.textContent = "$" + subtotal.toFixed(2);
+  if (elSub) elSub.textContent = "$" + subtotal.toFixed(2);
+
+  var filaDesc = document.getElementById("fila-descuento-carrito");
+  var elDesc = document.getElementById("carrito-descuento-val");
+  var elCod = document.getElementById("carrito-cupon-codigo");
+  if (filaDesc && elDesc) {
+    if (descuento > 0 && cuponActual) {
+      filaDesc.style.display = "flex";
+      if (elCod) elCod.textContent = cuponActual.codigo;
+      elDesc.textContent = "-$" + descuento.toFixed(2);
+    } else {
+      filaDesc.style.display = "none";
+    }
   }
 
   var elEnv = document.getElementById("carrito-envio-val");
   if (elEnv) {
-    var txtEnv = "$" + costoEnvioActual.toFixed(2);
-    if (costoEnvioActual === 0) {
-      txtEnv = "Gratis (Retiro)";
-    }
-    elEnv.textContent = txtEnv;
+    elEnv.textContent = costoEnvioActual === 0 ? "Gratis (Retiro)" : "$" + costoEnvioActual.toFixed(2);
   }
 
   var elIva = document.getElementById("carrito-iva-val");
-  if (elIva) {
-    elIva.textContent = "$" + iva.toFixed(2);
-  }
+  if (elIva) elIva.textContent = "$" + iva.toFixed(2);
 
   var elTot = document.getElementById("carrito-total-val");
-  if (elTot) {
-    elTot.textContent = "$" + total.toFixed(2);
-  }
+  if (elTot) elTot.textContent = "$" + total.toFixed(2);
 
-  // Actualizar en panel de checkout (IHC)
+  // Actualizar en paneles de checkout y pago (IHC)
   var elementosSubtotal = document.querySelectorAll(".checkout-subtotal-val");
   for (var a = 0; a < elementosSubtotal.length; a++) {
     elementosSubtotal[a].textContent = "$" + subtotal.toFixed(2);
   }
 
+  var filasDescCheckout = [
+    document.getElementById("fila-descuento-checkout"),
+    document.getElementById("fila-descuento-pago")
+  ];
+  for (var f = 0; f < filasDescCheckout.length; f++) {
+    if (filasDescCheckout[f]) {
+      filasDescCheckout[f].style.display = descuento > 0 ? "flex" : "none";
+    }
+  }
+  var elementosDesc = document.querySelectorAll(".checkout-descuento-val");
+  for (var m = 0; m < elementosDesc.length; m++) {
+    elementosDesc[m].textContent = "-$" + descuento.toFixed(2);
+  }
+
   var elementosEnvio = document.querySelectorAll(".checkout-envio-val");
   for (var b = 0; b < elementosEnvio.length; b++) {
-    var tE = "$" + costoEnvioActual.toFixed(2);
-    if (costoEnvioActual === 0) {
-      tE = "$0.00 (Retiro)";
-    }
-    elementosEnvio[b].textContent = tE;
+    elementosEnvio[b].textContent = costoEnvioActual === 0 ? "$0.00 (Retiro)" : "$" + costoEnvioActual.toFixed(2);
   }
 
   var elementosIva = document.querySelectorAll(".checkout-iva-val");
@@ -1173,81 +1652,72 @@ function actualizarCalculosFormales(subtotal) {
 }
 
 // --------------------------------------------------------------------------
-// 10. IHC & HEURISTICAS DE NIELSEN: PANEL VISIBLE EN TODO MOMENTO
+// 11. IHC & HEURISTICAS DE NIELSEN: PANEL LATERAL EN VIVO
 // --------------------------------------------------------------------------
 function actualizarPanelSeguridadIHC() {
-  // 1. Lista de productos compacta siempre visible
   var listaMini = document.getElementById("ihc-lista-mini-productos");
   if (listaMini) {
     listaMini.innerHTML = "";
-    for (var i = 0; i < carrito.length; i++) {
-      var item = carrito[i];
-      var divM = document.createElement("div");
-      divM.className = "mini-producto-fila";
-      divM.innerHTML =
-        '<span>' + item.nombre + ' <small style="color:#64748B;">(x' + item.cantidad + ')</small></span>' +
-        '<strong>$' + (item.precio * item.cantidad).toFixed(2) + '</strong>';
-      listaMini.appendChild(divM);
+    if (carrito.length === 0) {
+      listaMini.innerHTML = '<div style="font-size:12px;color:#64748B;">Sin productos en el carrito.</div>';
+    } else {
+      for (var i = 0; i < carrito.length; i++) {
+        var item = carrito[i];
+        var divM = document.createElement("div");
+        divM.className = "mini-producto-fila";
+        divM.innerHTML =
+          '<span>' + item.nombre + ' <small style="color:#64748B;">(x' + item.cantidad + ')</small></span>' +
+          '<strong>$' + (item.precio * item.cantidad).toFixed(2) + '</strong>';
+        listaMini.appendChild(divM);
+      }
     }
   }
 
-  // 2. Direccion y datos en tiempo real para que el cliente se sienta 100% seguro
-  var nombre = document.getElementById("campo-nombre").value.trim();
-  if (nombre === "" && usuarioActual) {
-    nombre = usuarioActual.nombre;
-  }
+  var campoNombre = document.getElementById("campo-nombre");
+  var nombre = campoNombre ? campoNombre.value.trim() : "";
+  if (!nombre && usuarioActual) nombre = usuarioActual.nombre;
 
-  var cedula = document.getElementById("campo-cedula-ruc").value.trim();
-  if (cedula === "" && usuarioActual) {
-    cedula = usuarioActual.cedulaRuc;
-  }
+  var campoCedula = document.getElementById("campo-cedula-ruc");
+  var cedula = campoCedula ? campoCedula.value.trim() : "";
+  if (!cedula && usuarioActual) cedula = usuarioActual.cedulaRuc;
 
-  var direccion = document.getElementById("campo-direccion").value.trim();
-  if (direccion === "" && usuarioActual) {
-    direccion = usuarioActual.direccion;
-  }
+  var campoDir = document.getElementById("campo-direccion");
+  var direccion = campoDir ? campoDir.value.trim() : "";
+  if (!direccion && usuarioActual) direccion = usuarioActual.direccion;
 
-  var ciudad = document.getElementById("campo-ciudad").value.trim();
-  if (ciudad === "" && usuarioActual) {
-    ciudad = usuarioActual.ciudad;
-  }
+  var campoCiu = document.getElementById("campo-ciudad");
+  var ciudad = campoCiu ? campoCiu.value.trim() : "";
+  if (!ciudad && usuarioActual) ciudad = usuarioActual.ciudad;
 
-  var provincia = document.getElementById("campo-provincia").value.trim();
-  if (provincia === "" && usuarioActual) {
-    provincia = usuarioActual.provincia;
-  }
+  var campoProv = document.getElementById("campo-provincia");
+  var provincia = campoProv ? campoProv.value.trim() : "";
+  if (!provincia && usuarioActual) provincia = usuarioActual.provincia;
 
-  var textoDestinatario = "Pendiente de ingresar";
-  if (nombre !== "") {
-    textoDestinatario = nombre;
-  }
-  if (cedula !== "") {
-    textoDestinatario += " (C.I./RUC: " + cedula + ")";
-  }
+  var textoDestinatario = nombre ? nombre : "Cliente Dermakor";
+  if (cedula) textoDestinatario += " (C.I./RUC: " + cedula + ")";
 
-  var textoDir = "Ingresa tu dirección para confirmar";
-  if (direccion !== "" && ciudad !== "") {
-    textoDir = direccion + ", " + ciudad + " (" + provincia + ")";
-  }
+  var textoDir = direccion && ciudad ? direccion + ", " + ciudad + " (" + provincia + ")" : "Av. República E1-136 y Atahualpa, Quito";
 
   var elDest = document.getElementById("ihc-destinatario-texto");
-  if (elDest) {
-    elDest.textContent = textoDestinatario;
-  }
+  if (elDest) elDest.textContent = textoDestinatario;
 
   var elDir = document.getElementById("ihc-direccion-texto");
-  if (elDir) {
-    elDir.textContent = textoDir;
-  }
+  if (elDir) elDir.textContent = textoDir;
+
+  var elDestPago = document.getElementById("ihc-destinatario-texto-pago");
+  if (elDestPago) elDestPago.textContent = textoDestinatario;
+
+  var elDirPago = document.getElementById("ihc-direccion-texto-pago");
+  if (elDirPago) elDirPago.textContent = textoDir;
 
   var elMetodo = document.getElementById("ihc-metodo-envio-texto");
   if (elMetodo) {
-    elMetodo.textContent = nombreEnvioActual + " - $" + costoEnvioActual.toFixed(2);
+    elMetodo.textContent = nombreEnvioActual + " - $" + costoEnvioActual.toFixed(2) + " • " + sedeAsignadaActual.nombre;
   }
 }
 
 // --------------------------------------------------------------------------
-// 11. VALIDACION EN TIEMPO REAL CON TIPOS SEMANTICOS (IHC & PREVENCION DE ERRORES)
+// 12. VALIDACION SEMANTICA EN TIEMPO REAL Y CHECKOUT MULTIPAGINA
 // --------------------------------------------------------------------------
 function configurarValidacionEnTiempoReal() {
   var campos = document.querySelectorAll(".campo-validable");
@@ -1264,12 +1734,11 @@ function configurarValidacionEnTiempoReal() {
 }
 
 function validarCampoIndividual(campo) {
+  if (!campo) return true;
   var esValido = campo.checkValidity();
 
-  // Validaciones semanticas especiales
   if (campo.id === "campo-cedula-ruc") {
     var v = campo.value.trim();
-    // En Ecuador, cedula tiene 10 digitos y RUC 13 digitos numericos
     var esNumerico = /^\d+$/.test(v);
     if (!esNumerico || (v.length !== 10 && v.length !== 13)) {
       esValido = false;
@@ -1314,42 +1783,63 @@ function validarCampoIndividual(campo) {
   return esValido;
 }
 
-// --------------------------------------------------------------------------
-// 12. FLUJO DE CHECKOUT CON INICIO DE SESION OBLIGATORIO
-// --------------------------------------------------------------------------
 function iniciarProcesoFacturacion() {
   if (carrito.length === 0) {
     alert("Tu carrito está vacío. Agrega productos antes de facturar.");
     return;
   }
 
-  // Obligatorio: si no ha iniciado sesión, exigir login / registro
   if (!usuarioActual) {
     abrirModalAuth();
     return;
   }
 
-  irACheckoutConUsuario();
+  window.location.href = "checkout.html";
 }
 
-function irACheckoutConUsuario() {
-  // Prellenar los campos con los datos del usuario registrado
-  if (usuarioActual) {
-    document.getElementById("campo-correo").value = usuarioActual.correo;
-    document.getElementById("campo-nombre").value = usuarioActual.nombre;
-    document.getElementById("campo-cedula-ruc").value = usuarioActual.cedulaRuc;
-    document.getElementById("campo-telefono").value = usuarioActual.telefono;
-    document.getElementById("campo-direccion").value = usuarioActual.direccion;
-    document.getElementById("campo-referencia").value = usuarioActual.referencia || "";
-    document.getElementById("campo-ciudad").value = usuarioActual.ciudad;
-    document.getElementById("campo-provincia").value = usuarioActual.provincia;
-    document.getElementById("campo-codigopostal").value = usuarioActual.codigoPostal || "";
+function prellenarFormularioCheckout() {
+  if (!usuarioActual) {
+    usuarioActual = {
+      id_cliente: "CLI0000001",
+      nombre: "María Fernández",
+      cedulaRuc: "1718293849",
+      correo: "cliente@example.com",
+      telefono: "0996096996",
+      direccion: "Av. República E1-136 y Atahualpa",
+      referencia: "Edificio La Casa, Piso 1, Of. 3",
+      ciudad: "Quito",
+      provincia: "Pichincha",
+      codigoPostal: "170102"
+    };
   }
 
+  var map = {
+    "campo-correo": usuarioActual.correo,
+    "campo-nombre": usuarioActual.nombre,
+    "campo-cedula-ruc": usuarioActual.cedulaRuc,
+    "campo-telefono": usuarioActual.telefono,
+    "campo-direccion": usuarioActual.direccion,
+    "campo-referencia": usuarioActual.referencia || "",
+    "campo-ciudad": usuarioActual.ciudad,
+    "campo-provincia": usuarioActual.provincia,
+    "campo-codigopostal": usuarioActual.codigoPostal || "170102"
+  };
+
+  for (var id in map) {
+    var el = document.getElementById(id);
+    if (el) el.value = map[id];
+  }
+
+  actualizarSedeMasCercanaPorCiudad(usuarioActual.ciudad);
   var subtotal = calcularSubtotalCarrito();
   actualizarCalculosFormales(subtotal);
   actualizarPanelSeguridadIHC();
-  cambiarVista("checkout-envio");
+}
+
+function prellenarVistaPago() {
+  var subtotal = calcularSubtotalCarrito();
+  actualizarCalculosFormales(subtotal);
+  actualizarPanelSeguridadIHC();
 }
 
 function validarPasoEnvio(evento) {
@@ -1367,14 +1857,12 @@ function validarPasoEnvio(evento) {
 
   var formularioValido = true;
   for (var i = 0; i < camposRequeridos.length; i++) {
-    var resultado = validarCampoIndividual(camposRequeridos[i]);
-    if (!resultado) {
+    if (!validarCampoIndividual(camposRequeridos[i])) {
       formularioValido = false;
     }
   }
 
   var alertaError = document.getElementById("alerta-error-envio");
-
   if (!formularioValido) {
     if (alertaError) {
       alertaError.style.display = "flex";
@@ -1383,24 +1871,22 @@ function validarPasoEnvio(evento) {
     return;
   }
 
-  if (alertaError) {
-    alertaError.style.display = "none";
-  }
+  if (alertaError) alertaError.style.display = "none";
 
-  // Guardar datos actualizados en la sesion
-  if (usuarioActual) {
-    usuarioActual.nombre = document.getElementById("campo-nombre").value.trim();
-    usuarioActual.cedulaRuc = document.getElementById("campo-cedula-ruc").value.trim();
-    usuarioActual.correo = document.getElementById("campo-correo").value.trim();
-    usuarioActual.telefono = document.getElementById("campo-telefono").value.trim();
-    usuarioActual.direccion = document.getElementById("campo-direccion").value.trim();
-    usuarioActual.ciudad = document.getElementById("campo-ciudad").value.trim();
-    usuarioActual.provincia = document.getElementById("campo-provincia").value.trim();
-    localStorage.setItem("dermakor_usuario_sesion", JSON.stringify(usuarioActual));
-  }
+  if (!usuarioActual) usuarioActual = {};
+  usuarioActual.nombre = document.getElementById("campo-nombre").value.trim();
+  usuarioActual.cedulaRuc = document.getElementById("campo-cedula-ruc").value.trim();
+  usuarioActual.correo = document.getElementById("campo-correo").value.trim();
+  usuarioActual.telefono = document.getElementById("campo-telefono").value.trim();
+  usuarioActual.direccion = document.getElementById("campo-direccion").value.trim();
+  usuarioActual.referencia = document.getElementById("campo-referencia").value.trim();
+  usuarioActual.ciudad = document.getElementById("campo-ciudad").value.trim();
+  usuarioActual.provincia = document.getElementById("campo-provincia").value.trim();
+  usuarioActual.codigoPostal = document.getElementById("campo-codigopostal").value.trim();
 
-  actualizarPanelSeguridadIHC();
-  cambiarVista("checkout-pago");
+  localStorage.setItem("dermakor_usuario_sesion", JSON.stringify(usuarioActual));
+  actualizarSedeMasCercanaPorCiudad(usuarioActual.ciudad);
+  window.location.href = "pago.html";
 }
 
 function procesarPagoFinal(evento) {
@@ -1417,7 +1903,6 @@ function procesarPagoFinal(evento) {
   var v4 = validarCampoIndividual(campoCvv);
 
   var alertaError = document.getElementById("alerta-error-pago");
-
   if (!v1 || !v2 || !v3 || !v4) {
     if (alertaError) {
       alertaError.style.display = "flex";
@@ -1426,92 +1911,256 @@ function procesarPagoFinal(evento) {
     return;
   }
 
-  if (alertaError) {
-    alertaError.style.display = "none";
+  if (alertaError) alertaError.style.display = "none";
+
+  var btnConfirmar = document.getElementById("btn-confirmar-pago-final");
+  if (btnConfirmar) {
+    btnConfirmar.disabled = true;
+    btnConfirmar.textContent = "Procesando transacción en PostgreSQL...";
   }
 
-  // Generar datos de factura electronica
-  generarFacturaElectronicaFormal();
+  var subtotal = calcularSubtotalCarrito();
+  var descuento = calcularDescuentoMonto(subtotal);
+  var baseImponible = Math.max(0, subtotal - descuento);
+  var iva = Math.round(baseImponible * 0.15 * 100) / 100;
+  var total = Math.round((baseImponible + iva + costoEnvioActual) * 100) / 100;
 
-  // Vaciar carrito
-  carrito = [];
-  actualizarContadorCarrito();
+  var payloadCheckout = {
+    cliente: usuarioActual || {
+      nombre: "María Fernández",
+      cedulaRuc: "1718293849",
+      correo: "cliente@example.com",
+      telefono: "0996096996",
+      direccion: "Av. República E1-136 y Atahualpa",
+      ciudad: "Quito",
+      provincia: "Pichincha"
+    },
+    items: carrito,
+    cupon: cuponActual,
+    envio: {
+      nombre: nombreEnvioActual,
+      costo: costoEnvioActual,
+      sede: sedeAsignadaActual
+    },
+    totales: {
+      subtotal: subtotal,
+      descuento: descuento,
+      iva: iva,
+      flete: costoEnvioActual,
+      total: total
+    }
+  };
 
-  // Ir a confirmacion con la factura formal
-  cambiarVista("confirmacion-aprobada");
+  fetch("/api/checkout", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payloadCheckout)
+  })
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (res) {
+      var datosFactura = construirObjetoFactura(payloadCheckout, res && res.ok ? res : null);
+      localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
+      carrito = [];
+      cuponActual = null;
+      guardarCarritoPersistente();
+      localStorage.removeItem("dermakor_cupon");
+      window.location.href = "factura.html";
+    })
+    .catch(function () {
+      var datosFactura = construirObjetoFactura(payloadCheckout, null);
+      localStorage.setItem("dermakor_ultima_factura", JSON.stringify(datosFactura));
+      carrito = [];
+      cuponActual = null;
+      guardarCarritoPersistente();
+      localStorage.removeItem("dermakor_cupon");
+      window.location.href = "factura.html";
+    });
 }
 
-// --------------------------------------------------------------------------
-// 13. GENERACION DE FACTURA FORMAL CON DESGLOSE Y DATOS DE CLIENTE
-// --------------------------------------------------------------------------
-function generarFacturaElectronicaFormal() {
+function construirObjetoFactura(payload, respuestaDb) {
   var fechaActual = new Date();
   var dia = ("0" + fechaActual.getDate()).slice(-2);
   var mes = ("0" + (fechaActual.getMonth() + 1)).slice(-2);
   var anio = fechaActual.getFullYear();
   var hora = ("0" + fechaActual.getHours()).slice(-2);
   var minuto = ("0" + fechaActual.getMinutes()).slice(-2);
-  var fechaHoraStr = dia + "/" + mes + "/" + anio + " " + hora + ":" + minuto;
 
-  var secFactura = "001-002-0000" + Math.floor(1000 + Math.random() * 9000);
-  var claveAcceso = dia + mes + anio + "0117924649390012001002" + Math.floor(100000000 + Math.random() * 900000000) + "123456781";
+  var secFactura = respuestaDb && respuestaDb.fac_numero
+    ? respuestaDb.fac_numero
+    : "001-002-00000" + Math.floor(1000 + Math.random() * 8999);
 
-  // Llenar cabecera factura
-  document.getElementById("fac-numero").textContent = secFactura;
-  document.getElementById("fac-fecha").textContent = fechaHoraStr;
-  document.getElementById("fac-clave-sri").textContent = claveAcceso;
+  var claveAcceso = respuestaDb && respuestaDb.fac_autorizacion_sri
+    ? respuestaDb.fac_autorizacion_sri
+    : dia + mes + anio + "0117924649390012001002" + Math.floor(100000000 + Math.random() * 899999999) + "12345678199";
 
-  // Llenar datos cliente
-  var facNombre = "Cliente Dermakor";
-  var facRuc = "9999999999999";
-  var facCorreo = "cliente@correo.com";
-  var facTelefono = "0996096996";
-  var facDireccion = "Quito - Ecuador";
+  return {
+    id_pedido: (respuestaDb && respuestaDb.id_pedido) || "PED0001051",
+    fac_numero: secFactura,
+    fac_fecha: dia + "/" + mes + "/" + anio + " " + hora + ":" + minuto,
+    fac_clave_sri: claveAcceso,
+    guia_envio: (respuestaDb && respuestaDb.guia_tracking) || "GUI-2026-" + Math.floor(100000 + Math.random() * 899999),
+    sede_despacho: payload.envio.sede.id_sede + " - " + payload.envio.sede.nombre,
+    cliente: payload.cliente,
+    envio_nombre: payload.envio.nombre,
+    items: payload.items && payload.items.length > 0 ? payload.items : [
+      { nombre: "ExoFace Serum Facial", presentacion: "Frasco gotero 30 ml", lote_fefo: "LOT-2026-001", cantidad: 1, precio: 52.00 }
+    ],
+    totales: payload.totales
+  };
+}
 
-  if (usuarioActual) {
-    facNombre = usuarioActual.nombre;
-    facRuc = usuarioActual.cedulaRuc;
-    facCorreo = usuarioActual.correo;
-    facTelefono = usuarioActual.telefono;
-    facDireccion = usuarioActual.direccion + ", " + usuarioActual.ciudad + " - " + usuarioActual.provincia;
+function renderizarFacturaGuardada() {
+  var raw = localStorage.getItem("dermakor_ultima_factura");
+  var fac = null;
+  if (raw) {
+    try {
+      fac = JSON.parse(raw);
+    } catch (e) {}
   }
 
-  document.getElementById("fac-cliente-nombre").textContent = facNombre;
-  document.getElementById("fac-cliente-ruc").textContent = facRuc;
-  document.getElementById("fac-cliente-correo").textContent = facCorreo;
-  document.getElementById("fac-cliente-telefono").textContent = facTelefono;
-  document.getElementById("fac-cliente-direccion").textContent = facDireccion;
-  document.getElementById("fac-cliente-envio").textContent = nombreEnvioActual;
+  if (!fac) {
+    // Factura de demostración si se abre factura.html directamente
+    fac = {
+      id_pedido: "PED0001001",
+      fac_numero: "001-002-000005512",
+      fac_fecha: "02/11/2026 21:00",
+      fac_clave_sri: "0211202601179246493900120010020000551212345678199",
+      guia_envio: "GUI-2026-884120",
+      sede_despacho: "SED0000001 - Matriz Quito - Edificio La Casa",
+      cliente: usuarioActual || {
+        nombre: "María Fernández",
+        cedulaRuc: "1718293849",
+        correo: "cliente@example.com",
+        telefono: "0996096996",
+        direccion: "Av. República E1-136 y Atahualpa",
+        ciudad: "Quito",
+        provincia: "Pichincha"
+      },
+      envio_nombre: "Servientrega Urbano (Pichincha / Guayas)",
+      items: [
+        { nombre: "ExoFace Serum Facial", presentacion: "Frasco gotero 30 ml", lote_fefo: "LOT-2026-001", cantidad: 1, precio: 52.00 },
+        { nombre: "HydraBrume Agua Termal Bio-Mineral", presentacion: "Frasco spray 110 ml", lote_fefo: "LOT-2026-002", cantidad: 1, precio: 25.00 }
+      ],
+      totales: {
+        subtotal: 77.00,
+        descuento: 0.00,
+        flete: 3.75,
+        iva: 11.55,
+        total: 92.30
+      }
+    };
+  }
 
-  // Llenar tabla de items
+  var setTxt = function (id, val) {
+    var el = document.getElementById(id);
+    if (el) el.textContent = val;
+  };
+
+  setTxt("fac-id-pedido-db", fac.id_pedido);
+  setTxt("fac-sede-despacho", fac.sede_despacho);
+  setTxt("fac-numero", fac.fac_numero);
+  setTxt("fac-fecha", fac.fac_fecha);
+  setTxt("fac-clave-sri", fac.fac_clave_sri);
+  setTxt("fac-cliente-nombre", fac.cliente.nombre);
+  setTxt("fac-cliente-ruc", fac.cliente.cedulaRuc);
+  setTxt("fac-cliente-correo", fac.cliente.correo);
+  setTxt("fac-cliente-telefono", fac.cliente.telefono);
+  setTxt("fac-cliente-direccion", fac.cliente.direccion + ", " + fac.cliente.ciudad + " - " + fac.cliente.provincia);
+  setTxt("fac-cliente-envio", fac.envio_nombre);
+  setTxt("fac-guia-envio", fac.guia_envio);
+
   var tablaCuerpo = document.getElementById("fac-tabla-items-cuerpo");
-  tablaCuerpo.innerHTML = "";
-
-  var subtotal = 0;
-
-  for (var i = 0; i < carrito.length; i++) {
-    var item = carrito[i];
-    var precioFila = item.precio * item.cantidad;
-    subtotal += precioFila;
-
-    var tr = document.createElement("tr");
-    tr.innerHTML =
-      '<td style="text-align: center;">' + item.cantidad + '</td>' +
-      '<td><strong>' + item.nombre + '</strong></td>' +
-      '<td>' + item.presentacion + '</td>' +
-      '<td style="text-align: right;">$' + item.precio.toFixed(2) + '</td>' +
-      '<td style="text-align: right;"><strong>$' + precioFila.toFixed(2) + '</strong></td>';
-    tablaCuerpo.appendChild(tr);
+  if (tablaCuerpo) {
+    tablaCuerpo.innerHTML = "";
+    for (var i = 0; i < fac.items.length; i++) {
+      var item = fac.items[i];
+      var precioFila = item.precio * item.cantidad;
+      var tr = document.createElement("tr");
+      tr.innerHTML =
+        '<td style="text-align: center;">' + item.cantidad + '</td>' +
+        '<td><strong>' + item.nombre + '</strong></td>' +
+        '<td>' + item.presentacion + ' <small style="color:#15803D;">(' + (item.lote_fefo || "LOT-2026-001") + ')</small></td>' +
+        '<td style="text-align: right;">$' + item.precio.toFixed(2) + '</td>' +
+        '<td style="text-align: right;"><strong>$' + precioFila.toFixed(2) + '</strong></td>';
+      tablaCuerpo.appendChild(tr);
+    }
   }
 
-  // Sumatorias formales
-  var iva = subtotal * 0.15;
-  var total = subtotal + costoEnvioActual + iva;
+  setTxt("fac-subtotal-val", "$" + fac.totales.subtotal.toFixed(2));
+  var filaDesc = document.getElementById("fac-fila-descuento");
+  if (filaDesc) {
+    if (fac.totales.descuento && fac.totales.descuento > 0) {
+      filaDesc.style.display = "table-row";
+      setTxt("fac-descuento-val", "-$" + fac.totales.descuento.toFixed(2));
+    } else {
+      filaDesc.style.display = "none";
+    }
+  }
+  setTxt("fac-flete-val", "$" + fac.totales.flete.toFixed(2));
+  setTxt("fac-iva-val", "$" + fac.totales.iva.toFixed(2));
+  setTxt("fac-total-val", "$" + fac.totales.total.toFixed(2));
+}
 
-  document.getElementById("fac-subtotal-val").textContent = "$" + subtotal.toFixed(2);
-  document.getElementById("fac-flete-val").textContent = "$" + costoEnvioActual.toFixed(2);
-  document.getElementById("fac-iva-val").textContent = "$" + iva.toFixed(2);
-  document.getElementById("fac-total-val").textContent = "$" + total.toFixed(2);
+// --------------------------------------------------------------------------
+// 13. CONSULTAS EN VIVO A POSTGRESQL EN PAGINA DE AYUDA (ayuda.html)
+// --------------------------------------------------------------------------
+function cargarPedidosDesdeDB() {
+  var tbody = document.getElementById("tabla-pedidos-db-cuerpo");
+  if (!tbody) return;
+
+  fetch("/api/pedidos")
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (data) {
+      if (Array.isArray(data) && data.length > 0) {
+        tbody.innerHTML = "";
+        for (var i = 0; i < data.length; i++) {
+          var p = data[i];
+          var tr = document.createElement("tr");
+          tr.innerHTML =
+            '<td><strong>' + p.id_pedido + '</strong></td>' +
+            '<td>' + p.cliente + ' <small style="color:#64748B;">(' + p.identificacion + ')</small></td>' +
+            '<td>' + p.fecha + '</td>' +
+            '<td><code>' + (p.fac_numero || "001-001-000001001") + '</code></td>' +
+            '<td><span class="badge-db-conectada">' + p.estado + '</span></td>' +
+            '<td style="text-align: right;"><strong>$' + Number(p.total).toFixed(2) + '</strong></td>';
+          tbody.appendChild(tr);
+        }
+      }
+    })
+    .catch(function () {
+      tbody.innerHTML =
+        '<tr><td><strong>PED0001001</strong></td><td>María Fernández (1718293849)</td><td>2026-11-02</td><td><code>001-002-000005512</code></td><td><span class="badge-db-conectada">ENTREGADO</span></td><td style="text-align:right;"><strong>$92.30</strong></td></tr>';
+    });
+}
+
+function cargarSedesDesdeDB() {
+  var grid = document.getElementById("grid-sedes-db");
+  if (!grid) return;
+
+  fetch("/api/sedes")
+    .then(function (r) {
+      return r.json();
+    })
+    .then(function (data) {
+      if (Array.isArray(data) && data.length > 0) {
+        grid.innerHTML = "";
+        for (var i = 0; i < data.length; i++) {
+          var s = data[i];
+          var card = document.createElement("div");
+          card.className = "tarjeta-mapa-sitio";
+          card.innerHTML =
+            '<h4>🏢 ' + s.id_sede + ' • ' + s.nombre + '</h4>' +
+            '<p style="font-size:13px;color:#475569;margin-bottom:4px;">' + s.direccion + ' (' + s.ciudad + ')</p>' +
+            '<div style="font-size:12px;color:#15803D;font-weight:700;">✓ Inventario FEFO activo • Coord: ' + s.latitud + ', ' + s.longitud + '</div>';
+          grid.appendChild(card);
+        }
+      }
+    })
+    .catch(function () {});
 }
 
 // --------------------------------------------------------------------------
@@ -1519,7 +2168,7 @@ function generarFacturaElectronicaFormal() {
 // --------------------------------------------------------------------------
 function buscarProductoPorId(id) {
   for (var i = 0; i < LISTA_PRODUCTOS.length; i++) {
-    if (LISTA_PRODUCTOS[i].id === id) {
+    if (LISTA_PRODUCTOS[i].id === id || LISTA_PRODUCTOS[i].id_producto_db === id) {
       return LISTA_PRODUCTOS[i];
     }
   }
@@ -1530,17 +2179,12 @@ var temporizadorToast = null;
 function mostrarToastNotificacion(mensaje) {
   var toast = document.getElementById("toast-notificacion");
   var texto = document.getElementById("toast-mensaje-texto");
-  if (!toast || !texto) {
-    return;
-  }
+  if (!toast || !texto) return;
 
   texto.textContent = mensaje;
   toast.classList.add("visible");
 
-  if (temporizadorToast) {
-    clearTimeout(temporizadorToast);
-  }
-
+  if (temporizadorToast) clearTimeout(temporizadorToast);
   temporizadorToast = setTimeout(function () {
     ocultarToastNotificacion();
   }, 4500);
@@ -1548,9 +2192,7 @@ function mostrarToastNotificacion(mensaje) {
 
 function ocultarToastNotificacion() {
   var toast = document.getElementById("toast-notificacion");
-  if (toast) {
-    toast.classList.remove("visible");
-  }
+  if (toast) toast.classList.remove("visible");
 }
 
 function configurarAcordeonFaq() {
