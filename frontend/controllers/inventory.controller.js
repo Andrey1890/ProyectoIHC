@@ -132,6 +132,9 @@
         if (prev && Array.from(prodSel.options).some(function (o) { return o.value === prev; })) {
           prodSel.value = prev;
         }
+        if (!prodSel.value && prodSel.options.length > 0) {
+          prodSel.selectedIndex = 0;
+        }
       }
 
       if (!kardexBound) {
