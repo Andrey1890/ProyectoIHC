@@ -49,7 +49,7 @@ class ProductoRepository {
     return Array.isArray(raw) ? raw.map((item) => ProductoFactory.createFromJson(item).toDTO()) : [];
   }
 
-  #mapPrismaProductRow(row) {
+  #mapPrismaProductRow(row, reservadoByLote = new Map()) {
     const imgs = Array.isArray(row.ProductoImagenes)
       ? [...row.ProductoImagenes]
       : (row.ProductoImagenes ? [row.ProductoImagenes] : []);
@@ -63,12 +63,15 @@ class ProductoRepository {
     const lotes = Array.isArray(row.Lotes)
       ? row.Lotes
       : (row.Lotes ? [row.Lotes] : []);
-    const stock = lotes.reduce((sum, lote) => {
+    let stock = 0;
+    let stockReservado = 0;
+    for (const lote of lotes) {
       const est = String(lote.lot_estado || "").trim();
-      return est === "ACTIVO" || est === "DISPONIBLE"
-        ? sum + Number(lote.lot_stock_actual || 0)
-        : sum;
-    }, 0);
+      if (est === "ACTIVO" || est === "DISPONIBLE") {
+        stock += Number(lote.lot_stock_actual || 0);
+      }
+      stockReservado += reservadoByLote.get(String(lote.id_lote || "").trim()) || 0;
+    }
 
     const precio =
       row.pro_precio && typeof row.pro_precio.toNumber === "function"
@@ -83,25 +86,43 @@ class ProductoRepository {
       pro_precio: precio,
       cat_nombre: row.Categorias?.cat_nombre || "",
       img_url: String(imgs[0]?.img_url || "").trim(),
-      stock
+      stock,
+      stock_reservado: stockReservado,
+      stock_fisico: stock + stockReservado
     };
   }
 
   async findAll(filters = {}) {
     try {
       const prisma = this.#db.getPrisma();
-      const rows = await prisma.productos.findMany({
-        include: {
-          Categorias: true,
-          ProductoImagenes: true,
-          Lotes: true
-        },
-        orderBy: { id_producto: "asc" }
-      });
+      const [rows, ordenesSalida, ordenSalidaDetalle] = await Promise.all([
+        prisma.productos.findMany({
+          include: {
+            Categorias: true,
+            ProductoImagenes: true,
+            Lotes: true
+          },
+          orderBy: { id_producto: "asc" }
+        }),
+        prisma.ordenesSalida.findMany(),
+        prisma.ordenSalidaDetalle.findMany()
+      ]);
+
+      const reservadoOsaIds = new Set(
+        (Array.isArray(ordenesSalida) ? ordenesSalida : [])
+          .filter((o) => String(o.osa_estado || "").trim().toUpperCase() === "RESERVADO")
+          .map((o) => String(o.id_orden_salida || "").trim())
+      );
+      const reservadoByLote = new Map();
+      for (const det of Array.isArray(ordenSalidaDetalle) ? ordenSalidaDetalle : []) {
+        if (!reservadoOsaIds.has(String(det.id_orden_salida || "").trim())) continue;
+        const idLote = String(det.id_lote || "").trim();
+        reservadoByLote.set(idLote, (reservadoByLote.get(idLote) || 0) + Number(det.osd_cantidad_despachada || 0));
+      }
 
       const catalog = (Array.isArray(rows) ? rows : [])
         .filter((r) => String(r.pro_estado || "").trim() === "ACTIVO")
-        .map((r) => ProductoFactory.createFromDbRow(this.#mapPrismaProductRow(r)).toDTO());
+        .map((r) => ProductoFactory.createFromDbRow(this.#mapPrismaProductRow(r, reservadoByLote)).toDTO());
 
       return this.#modelHelper.filterProducts(catalog, filters);
     } catch (error) {

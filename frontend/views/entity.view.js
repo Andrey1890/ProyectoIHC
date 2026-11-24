@@ -135,6 +135,35 @@
     }
   }
 
+  var FRIENDLY_LABELS = {
+    id_ciudad: "Ciudad",
+    id_pais: "País",
+    id_proveedor: "Proveedor",
+    id_sede: "Sede",
+    id_producto: "Producto",
+    id_categoria: "Categoría",
+    id_rol: "Rol",
+    id_usuario: "Usuario",
+    id_cliente: "Cliente",
+    id_empleado: "Empleado",
+    prv_ruc: "RUC (13 dígitos)",
+    prv_razon_social: "Razón social",
+    prv_telefono: "Teléfono",
+    prv_email: "Correo electrónico",
+    lot_numero: "Número de lote",
+    lot_fecha_fabricacion: "Fecha de fabricación",
+    lot_fecha_caducidad: "Fecha de caducidad",
+    lot_stock_actual: "Stock disponible",
+    lot_estado: "Estado del lote",
+    usu_nombre: "Nombre completo",
+    usu_email: "Correo electrónico",
+    usu_estado: "Estado"
+  };
+
+  function formatFieldLabel(fieldName) {
+    return FRIENDLY_LABELS[fieldName] ? (FRIENDLY_LABELS[fieldName] + " (" + fieldName + ")") : fieldName;
+  }
+
   function formatInputDateValue(rawVal, kind) {
     if (rawVal == null || rawVal === "") return "";
     var s = String(rawVal).trim();
@@ -189,7 +218,7 @@
       label.htmlFor = "crud-field-" + field.name;
       label.textContent = isUsuarioHash
         ? "Contraseña (se cifra con bcrypt)"
-        : field.name + (!field.optional && !field.hasDefault && !isAutoPkCreate ? " *" : "");
+        : formatFieldLabel(field.name) + (!field.optional && !field.hasDefault && !isAutoPkCreate ? " *" : "");
       group.appendChild(label);
 
       var fkOpts = field.fk ? fkOptionsMap[field.name] : null;

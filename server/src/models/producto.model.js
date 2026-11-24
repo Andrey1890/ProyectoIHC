@@ -37,6 +37,8 @@ class ProductoModel {
     this.precio = Number(Number(props.precio || 0).toFixed(2));
     this.precioProfesional = Number(Number(props.precioProfesional ?? this.precio).toFixed(2));
     this.stock = Number.isFinite(Number(props.stock)) ? Number.parseInt(props.stock, 10) : 25;
+    this.stock_reservado = Number.isFinite(Number(props.stock_reservado)) ? Number.parseInt(props.stock_reservado, 10) : 0;
+    this.stock_fisico = Number.isFinite(Number(props.stock_fisico)) ? Number.parseInt(props.stock_fisico, 10) : (this.stock + this.stock_reservado);
     this.imagen = String(props.imagen || "").trim();
     this.destacadoHome = Boolean(props.destacadoHome);
     this.esExosoma = Boolean(props.esExosoma || normalizeText(this.categoria) === "exosomas");
@@ -67,6 +69,8 @@ class ProductoModel {
       precio: this.precio,
       precioProfesional: this.precioProfesional,
       stock: this.stock,
+      stock_reservado: this.stock_reservado,
+      stock_fisico: this.stock_fisico,
       imagen: this.imagen,
       destacadoHome: this.destacadoHome,
       createdAt: this.createdAt,
@@ -120,6 +124,8 @@ class ProductoFactory {
       precio,
       precioProfesional: meta.precioProfesional ?? Number((precio * 0.85).toFixed(2)),
       stock: Number(row.stock ?? 25),
+      stock_reservado: Number(row.stock_reservado ?? 0),
+      stock_fisico: Number(row.stock_fisico ?? Number(row.stock ?? 25) + Number(row.stock_reservado ?? 0)),
       imagen: String(row.img_url || meta.imagen || "").trim(),
       destacadoHome: Boolean(meta.destacadoHome),
       esExosoma: Boolean(meta.esExosoma),

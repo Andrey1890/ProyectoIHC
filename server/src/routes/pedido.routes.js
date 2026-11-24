@@ -41,6 +41,18 @@ router.post(
   pedidoController.procesarCheckout
 );
 
+router.post(
+  "/:id/aprobar",
+  [loggerMiddleware, sanitizeMiddleware, authenticateJwt, authorizeRoles("admin"), validateIdMiddleware],
+  pedidoController.aprobarPedido
+);
+
+router.post(
+  "/:id/cancelar",
+  [loggerMiddleware, sanitizeMiddleware, authenticateJwt, authorizeRoles("admin"), validateIdMiddleware],
+  pedidoController.cancelarPedido
+);
+
 router.put(
   "/:id",
   [loggerMiddleware, sanitizeMiddleware, authenticateJwt, authorizeRoles("admin"), validateIdMiddleware],

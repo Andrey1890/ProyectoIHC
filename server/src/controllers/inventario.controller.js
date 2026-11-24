@@ -77,11 +77,22 @@ async function obtenerResumen(req, res, next) {
   }
 }
 
+async function crearVentaAdmin(req, res, next) {
+  try {
+    const repo = getInventarioRepository();
+    const result = await repo.crearVentaAdmin(req.body || {});
+    return res.status(201).json(result);
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   crearCompra,
   recibirCompra,
   anularCompra,
   crearAjuste,
+  crearVentaAdmin,
   listarLotes,
   obtenerKardex,
   obtenerResumen

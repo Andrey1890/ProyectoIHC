@@ -63,6 +63,18 @@
     });
   }
 
+  async function createVentaAdmin(payload) {
+    return global.DermakorMVC.ApiModel.request("/api/v1/inventario/ventas", {
+      method: "POST",
+      body: payload
+    });
+  }
+
+  async function fetchCiudades() {
+    var res = await global.DermakorMVC.ApiModel.request("/api/v1/ciudades?raw=true");
+    return toArray(res);
+  }
+
   async function fetchCompras() {
     var res = await global.DermakorMVC.ApiModel.request("/api/v1/compras?raw=true");
     return toArray(res);
@@ -105,6 +117,8 @@
     recibirCompra: recibirCompra,
     anularCompra: anularCompra,
     createAjuste: createAjuste,
+    createVentaAdmin: createVentaAdmin,
+    fetchCiudades: fetchCiudades,
     fetchCompras: fetchCompras,
     fetchCompraDetalles: fetchCompraDetalles,
     fetchProveedores: fetchProveedores,

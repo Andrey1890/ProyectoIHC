@@ -13,6 +13,7 @@ router.post("/compras/:id/recepcion", [...adminChain, validateIdMiddleware], inv
 router.post("/compras/:id/anular", [...adminChain, validateIdMiddleware], inventarioController.anularCompra);
 
 router.post("/ajustes", adminChain, inventarioController.crearAjuste);
+router.post("/ventas", adminChain, inventarioController.crearVentaAdmin);
 
 router.get("/lotes", adminChain, inventarioController.listarLotes);
 router.get("/kardex", adminChain, inventarioController.obtenerKardex);

@@ -21,12 +21,18 @@
     products.forEach(function (p) {
       var tr = document.createElement("tr");
       var safeId = p.id_producto_db || p.id || "";
+      var stockDisp = Number(p.stock || 0);
+      var stockRes = Number(p.stock_reservado || 0);
+      var stockBadge = stockRes > 0
+        ? "<div><strong>" + stockDisp + " disp.</strong></div><small style=\"color:#92400E;\">Reservado: " + stockRes + " · Físico: " + (stockDisp + stockRes) + "</small>"
+        : String(stockDisp);
+
       tr.innerHTML =
         "<td><code>" + escapeHtml(safeId) + "</code></td>" +
         "<td><strong>" + escapeHtml(p.nombre) + "</strong><br/><small>" + escapeHtml(p.marca || "Dermakor") + "</small></td>" +
         "<td>" + escapeHtml(p.categoria || "Cuidado facial") + "</td>" +
         "<td>$" + Number(p.precio || 0).toFixed(2) + "</td>" +
-        "<td>" + Number(p.stock || 0) + "</td>" +
+        "<td>" + stockBadge + "</td>" +
         '<td><div style="display:flex;gap:6px;flex-wrap:wrap;">' +
           '<button type="button" class="btn-accion-sm btn-edit-prod">Editar</button>' +
           '<button type="button" class="btn-accion-sm peligro btn-del-prod">Eliminar</button>' +
@@ -42,24 +48,127 @@
     });
   }
 
-  function renderOrdersTable(tbody, orders) {
+  function orderEstadoMeta(rawEstado) {
+    var st = String(rawEstado || "PAGADO").trim().toUpperCase();
+    if (st === "PENDIENTE") {
+      return { text: "PENDIENTE · Stock Reservado", cls: "badge-semaforo por-vencer" };
+    }
+    if (st === "CANCELADO" || st === "ANULADO") {
+      return { text: "CANCELADO · Stock Regresado", cls: "badge-semaforo vencido" };
+    }
+    return { text: st + " · Stock Restado", cls: "badge-semaforo vigente" };
+  }
+
+  function renderOrdersTable(tbody, orders, handlers) {
     if (!tbody) return;
-    tbody.innerHTML = "";
+    while (tbody.firstChild) tbody.removeChild(tbody.firstChild);
+    var showActions = Boolean(handlers && (handlers.onApprove || handlers.onCancel || handlers.onViewKardex));
+
     if (!Array.isArray(orders) || orders.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="6">No se encontraron pedidos registrados.</td></tr>';
+      var trEmpty = document.createElement("tr");
+      var tdEmpty = document.createElement("td");
+      tdEmpty.colSpan = showActions ? 8 : 6;
+      tdEmpty.textContent = "No se encontraron pedidos registrados.";
+      trEmpty.appendChild(tdEmpty);
+      tbody.appendChild(trEmpty);
       return;
     }
 
     orders.forEach(function (o) {
       var tr = document.createElement("tr");
-      var fechaStr = String(o.createdAt || o.fecha || "").split("T")[0];
-      tr.innerHTML =
-        "<td><code>" + escapeHtml(o.id_pedido || o.id) + "</code></td>" +
-        "<td>" + escapeHtml(o.cliente || o.userId || "Cliente") + "</td>" +
-        "<td>" + escapeHtml(fechaStr) + "</td>" +
-        "<td><code>" + escapeHtml(o.fac_numero || o.ped_numero || "-") + "</code></td>" +
-        '<td><span class="badge-rol-usuario badge-rol-admin">' + escapeHtml(o.estado || "PAGADO") + "</span></td>" +
-        "<td><strong>$" + Number(o.total || 0).toFixed(2) + "</strong></td>";
+      var fechaStr = String(o.createdAt || o.fecha || "").replace("T", " ").slice(0, 16);
+      var estadoUpper = String(o.estado || "PAGADO").trim().toUpperCase();
+      var metaEst = orderEstadoMeta(estadoUpper);
+
+      var tdId = document.createElement("td");
+      var codeId = document.createElement("code");
+      codeId.textContent = o.id_pedido || o.id || "";
+      var smallFac = document.createElement("div");
+      smallFac.style.fontSize = "11px";
+      smallFac.style.color = "#475569";
+      smallFac.textContent = o.fac_numero || o.ped_numero || "";
+      tdId.appendChild(codeId);
+      tdId.appendChild(smallFac);
+      tr.appendChild(tdId);
+
+      var tdCli = document.createElement("td");
+      tdCli.textContent = o.cliente || o.userId || "Cliente";
+      tr.appendChild(tdCli);
+
+      if (showActions) {
+        var tdDet = document.createElement("td");
+        var detList = Array.isArray(o.detalles) ? o.detalles : [];
+        tdDet.textContent = detList.length > 0
+          ? detList.map(function (d) { return (d.productoNombre || d.id_producto) + " × " + d.cantidad; }).join(", ")
+          : "-";
+        tr.appendChild(tdDet);
+      }
+
+      var tdFecha = document.createElement("td");
+      tdFecha.textContent = fechaStr;
+      tr.appendChild(tdFecha);
+
+      if (!showActions) {
+        var tdRef = document.createElement("td");
+        var cRef = document.createElement("code");
+        cRef.textContent = o.fac_numero || o.ped_numero || "-";
+        tdRef.appendChild(cRef);
+        tr.appendChild(tdRef);
+      }
+
+      var tdEst = document.createElement("td");
+      var badge = document.createElement("span");
+      badge.className = metaEst.cls;
+      badge.textContent = metaEst.text;
+      tdEst.appendChild(badge);
+      tr.appendChild(tdEst);
+
+      var tdTot = document.createElement("td");
+      var strongTot = document.createElement("strong");
+      strongTot.textContent = "$" + Number(o.total || 0).toFixed(2);
+      tdTot.appendChild(strongTot);
+      tr.appendChild(tdTot);
+
+      if (showActions) {
+        var tdAcc = document.createElement("td");
+        var wrap = document.createElement("div");
+        wrap.style.display = "flex";
+        wrap.style.gap = "6px";
+        wrap.style.flexWrap = "wrap";
+
+        if (estadoUpper === "PENDIENTE" && handlers.onApprove) {
+          var btnApr = document.createElement("button");
+          btnApr.type = "button";
+          btnApr.className = "btn-accion-sm";
+          btnApr.style.borderColor = "#059669";
+          btnApr.style.color = "#065F46";
+          btnApr.textContent = "✅ Aprobar";
+          btnApr.addEventListener("click", function () { handlers.onApprove(o); });
+          wrap.appendChild(btnApr);
+        }
+
+        if ((estadoUpper === "PENDIENTE" || estadoUpper === "APROBADO" || estadoUpper === "PAGADO") && handlers.onCancel) {
+          var btnCan = document.createElement("button");
+          btnCan.type = "button";
+          btnCan.className = "btn-accion-sm peligro";
+          btnCan.textContent = "↩️ Cancelar";
+          btnCan.addEventListener("click", function () { handlers.onCancel(o); });
+          wrap.appendChild(btnCan);
+        }
+
+        if (handlers.onViewKardex && Array.isArray(o.detalles) && o.detalles.length > 0) {
+          var btnKar = document.createElement("button");
+          btnKar.type = "button";
+          btnKar.className = "btn-accion-sm";
+          btnKar.textContent = "📊 Kárdex";
+          btnKar.addEventListener("click", function () { handlers.onViewKardex(o.detalles[0].id_producto); });
+          wrap.appendChild(btnKar);
+        }
+
+        tdAcc.appendChild(wrap);
+        tr.appendChild(tdAcc);
+      }
+
       tbody.appendChild(tr);
     });
   }

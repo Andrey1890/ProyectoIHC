@@ -44,12 +44,120 @@
     }
   }
 
+  var ventasBound = false;
+
+  async function populateVentaProductosSelect() {
+    var MVC = global.DermakorMVC;
+    var sel = document.getElementById("venta-prod-select");
+    if (!sel) return;
+    while (sel.firstChild) sel.removeChild(sel.firstChild);
+
+    try {
+      var list = await MVC.ProductModel.fetchAll("limit=100");
+      var sorted = (Array.isArray(list) ? list : []).slice().sort(function (a, b) {
+        return String(b.id_producto_db || "").localeCompare(String(a.id_producto_db || ""));
+      });
+      sorted.forEach(function (p) {
+        var id = p.id_producto_db || p.id_producto || "";
+        if (!id) return;
+        var opt = document.createElement("option");
+        opt.value = id;
+        var disp = Number(p.stock || 0);
+        var res = Number(p.stock_reservado || 0);
+        opt.textContent = "[" + (p.codigo || id) + "] " + p.nombre + " — Disp: " + disp + (res > 0 ? " (Res: " + res + ")" : "") + " — $" + Number(p.precio || 0).toFixed(2);
+        sel.appendChild(opt);
+      });
+    } catch (_err) {
+      // Silencioso
+    }
+  }
+
   async function loadAllOrdersTab() {
     var MVC = global.DermakorMVC;
     var tbody = document.getElementById("admin-pedidos-tbody");
+    var cardsEl = document.getElementById("ventas-resumen-cards");
+
+    if (!ventasBound) {
+      ventasBound = true;
+      var formVenta = document.getElementById("form-admin-venta-rapida");
+      if (formVenta) {
+        formVenta.addEventListener("submit", async function (ev) {
+          ev.preventDefault();
+          var idProd = document.getElementById("venta-prod-select")?.value;
+          var qty = Number.parseInt(document.getElementById("venta-cantidad-input")?.value || "1", 10);
+          var cliNom = document.getElementById("venta-cliente-input")?.value.trim() || "María Fernández";
+          var estInit = document.getElementById("venta-estado-select")?.value || "PENDIENTE";
+          try {
+            var res = await MVC.InventoryModel.createVentaAdmin({
+              cliente_nombre: cliNom,
+              estado_inicial: estInit,
+              items: [{ id_producto: idProd, cantidad: qty }]
+            });
+            showStatus(
+              "Pedido " + (res.ped_numero || res.id_pedido) + " creado en estado " + (res.estado || estInit) +
+              (estInit === "PENDIENTE" ? " (inventario reservado)." : " (inventario restado definitivamente)."),
+              true
+            );
+            await loadAllOrdersTab();
+          } catch (err) {
+            showStatus(err.message || "No se pudo registrar la venta/reserva.", false);
+          }
+        });
+      }
+    }
+
+    await populateVentaProductosSelect();
+
     try {
       var list = await MVC.OrderModel.fetchAllOrders();
-      MVC.AdminView.renderOrdersTable(tbody, list);
+      if (cardsEl && MVC.InventoryView) {
+        var cntPend = list.filter(function (o) { return String(o.estado || "").trim().toUpperCase() === "PENDIENTE"; }).length;
+        var cntApr = list.filter(function (o) {
+          var s = String(o.estado || "").trim().toUpperCase();
+          return s === "APROBADO" || s === "PAGADO";
+        }).length;
+        var cntCan = list.filter(function (o) {
+          var s = String(o.estado || "").trim().toUpperCase();
+          return s === "CANCELADO" || s === "ANULADO";
+        }).length;
+        MVC.InventoryView.renderSummaryCards(cardsEl, [
+          { label: "Total Pedidos", value: list.length },
+          { label: "⏳ En Pendiente (Reservados)", value: cntPend, tone: "por-vencer" },
+          { label: "✅ Aprobados / Pagados", value: cntApr, tone: "vigente" },
+          { label: "↩️ Cancelados (Devueltos)", value: cntCan, tone: "vencido" }
+        ]);
+      }
+
+      MVC.AdminView.renderOrdersTable(tbody, list, {
+        onApprove: async function (o) {
+          try {
+            await MVC.OrderModel.aprobarOrder(o.id_pedido);
+            showStatus("Pedido " + (o.ped_numero || o.id_pedido) + " APROBADO: el stock reservado pasó a venta definitiva.", true);
+            await loadAllOrdersTab();
+          } catch (err) {
+            showStatus(err.message || "Error al aprobar el pedido.", false);
+          }
+        },
+        onCancel: async function (o) {
+          if (!global.confirm("¿Cancelar pedido " + (o.ped_numero || o.id_pedido) + " y devolver el inventario a los lotes?")) return;
+          try {
+            var res = await MVC.OrderModel.cancelarOrder(o.id_pedido, "Anulado desde Panel Admin");
+            showStatus(
+              "Pedido " + (o.ped_numero || o.id_pedido) + " CANCELADO: regresaron " + (res.unidades_devueltas || 0) + " unidad(es) al inventario.",
+              true
+            );
+            await loadAllOrdersTab();
+          } catch (err) {
+            showStatus(err.message || "Error al cancelar el pedido.", false);
+          }
+        },
+        onViewKardex: function (idProd) {
+          switchTab("kardex");
+          if (MVC.InventoryController) {
+            MVC.InventoryController.loadKardexTab(idProd);
+          }
+        }
+      });
     } catch (err) {
       showStatus(err.message || "Solo el administrador puede consultar todos los pedidos.", false);
     }
@@ -161,6 +269,18 @@
         if (tab === "tablas" && MVC.EntityController) {
           MVC.EntityController.load();
         }
+      });
+    });
+
+    document.querySelectorAll(".admin-guia-paso").forEach(function (stepBtn) {
+      stepBtn.addEventListener("click", function () {
+        var targetTab = stepBtn.getAttribute("data-go-tab");
+        if (!targetTab) return;
+        switchTab(targetTab);
+        if (targetTab === "compras" && MVC.InventoryController) MVC.InventoryController.loadComprasTab();
+        if (targetTab === "pedidos-admin") loadAllOrdersTab();
+        if (targetTab === "kardex" && MVC.InventoryController) MVC.InventoryController.loadKardexTab();
+        if (targetTab === "lotes" && MVC.InventoryController) MVC.InventoryController.loadLotesTab();
       });
     });
 

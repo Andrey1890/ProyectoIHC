@@ -76,15 +76,34 @@
       </section>
 
       <section id="admin-main-panel" style="display: none;">
+        <div class="admin-guia-bar" data-admin-only="true" aria-label="Flujo guiado de inventario y ventas">
+          <button type="button" class="admin-guia-paso" data-go-tab="compras">
+            <span class="guia-num">1</span>
+            <span><strong>Proveedor y Producto</strong><small>Registro rápido sin salir</small></span>
+          </button>
+          <button type="button" class="admin-guia-paso" data-go-tab="compras">
+            <span class="guia-num">2</span>
+            <span><strong>Compra y Recepción</strong><small>Dividir en 2+ lotes FEFO</small></span>
+          </button>
+          <button type="button" class="admin-guia-paso" data-go-tab="pedidos-admin">
+            <span class="guia-num">3</span>
+            <span><strong>Ventas y Reservas</strong><small>Pendiente / Aprobar / Cancelar</small></span>
+          </button>
+          <button type="button" class="admin-guia-paso" data-go-tab="kardex">
+            <span class="guia-num">4</span>
+            <span><strong>Lotes y Kárdex</strong><small>Ver físico, reservado y saldo</small></span>
+          </button>
+        </div>
+
         <div class="admin-tabs-bar" role="tablist" aria-label="Secciones de administración y pedidos">
           <button type="button" class="admin-tab-btn" data-tab="productos" data-admin-only="true">📦 Productos (CRUD Admin)</button>
           <button type="button" class="admin-tab-btn" data-tab="kardex" data-admin-only="true">📊 Kárdex</button>
           <button type="button" class="admin-tab-btn" data-tab="lotes" data-admin-only="true">🏷️ Lotes y Caducidades</button>
           <button type="button" class="admin-tab-btn" data-tab="compras" data-admin-only="true">🚚 Compras a Proveedores</button>
           <button type="button" class="admin-tab-btn" data-tab="ajustes" data-admin-only="true">⚖️ Ajustes de Inventario</button>
-          <button type="button" class="admin-tab-btn" data-tab="pedidos-admin" data-admin-only="true">🧾 Todos los Pedidos (Admin)</button>
+          <button type="button" class="admin-tab-btn" data-tab="pedidos-admin" data-admin-only="true">🛍️ Ventas y Reservas</button>
           <button type="button" class="admin-tab-btn" data-tab="tablas" data-admin-only="true">🗄️ CRUD Tablas BD</button>
-          <button type="button" class="admin-tab-btn" data-tab="mis-pedidos">🛍️ Mis Pedidos</button>
+          <button type="button" class="admin-tab-btn" data-tab="mis-pedidos">🧾 Mis Pedidos</button>
         </div>
 
         <!-- TAB 1: CRUD PRODUCTOS ADMIN -->
@@ -215,9 +234,12 @@
                   <th>Fabricación</th>
                   <th>Caducidad</th>
                   <th>Días</th>
-                  <th>Stock</th>
+                  <th>Físico</th>
+                  <th>Reservado</th>
+                  <th>Disponible</th>
                   <th>Estado</th>
                   <th>Semáforo</th>
+                  <th>Kárdex</th>
                 </tr>
               </thead>
               <tbody id="lotes-tbody"></tbody>
@@ -227,10 +249,72 @@
 
         <!-- TAB: COMPRAS A PROVEEDORES Y RECEPCIÓN (ORDEN DE ENTRADA) -->
         <div class="admin-tab-panel" data-panel="compras" data-admin-only="true" style="display:none;">
+          <div style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom:14px;">
+            <button type="button" id="compra-btn-nuevo-prov" class="btn-accion-sm">+ Nuevo Proveedor rápido</button>
+            <button type="button" id="compra-btn-nuevo-prod" class="btn-accion-sm">+ Nuevo Producto rápido (para comprar)</button>
+          </div>
+
+          <div id="compra-panel-nuevo-prov" class="caja-formulario" style="display:none; margin-bottom:16px; border-color:#1E40AF;">
+            <h3 class="subtitulo-formulario">Registro Rápido de Proveedor</h3>
+            <form id="form-compra-nuevo-prov">
+              <div class="fila-formulario tres">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prov-razon">Razón social *</label>
+                  <input type="text" id="quick-prov-razon" class="campo-control" maxlength="100" required placeholder="Laboratorios Dermatech S.A." />
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prov-ruc">RUC (13 dígitos) *</label>
+                  <input type="text" id="quick-prov-ruc" class="campo-control" maxlength="13" required placeholder="1792345678001" />
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prov-ciudad">Ciudad *</label>
+                  <select id="quick-prov-ciudad" class="campo-control" required></select>
+                </div>
+              </div>
+              <div class="fila-formulario">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prov-tel">Teléfono *</label>
+                  <input type="text" id="quick-prov-tel" class="campo-control" maxlength="15" required value="0991234567" />
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prov-email">Correo electrónico *</label>
+                  <input type="email" id="quick-prov-email" class="campo-control" maxlength="100" required placeholder="ventas@proveedor.com" />
+                </div>
+              </div>
+              <button type="submit" class="boton-primario">Guardar Proveedor y Seleccionar</button>
+            </form>
+          </div>
+
+          <div id="compra-panel-nuevo-prod" class="caja-formulario" style="display:none; margin-bottom:16px; border-color:#0F766E;">
+            <h3 class="subtitulo-formulario">Crear Producto Rápido (Stock inicial 0 para abastecer por compra)</h3>
+            <form id="form-compra-nuevo-prod">
+              <div class="fila-formulario">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prod-nombre">Nombre del producto *</label>
+                  <input type="text" id="quick-prod-nombre" class="campo-control" maxlength="100" required placeholder="Sérum Bio-Retinol 50ml" />
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prod-marca">Marca *</label>
+                  <input type="text" id="quick-prod-marca" class="campo-control" value="Dermakor Clinical" required />
+                </div>
+              </div>
+              <div class="fila-formulario">
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prod-categoria">Categoría *</label>
+                  <input type="text" id="quick-prod-categoria" class="campo-control" value="Cuidado facial" required />
+                </div>
+                <div class="campo-grupo">
+                  <label class="campo-etiqueta" for="quick-prod-precio">Precio PVP (USD) *</label>
+                  <input type="number" step="0.01" min="0.01" id="quick-prod-precio" class="campo-control" required placeholder="48.00" />
+                </div>
+              </div>
+              <button type="submit" class="boton-primario">Crear Producto y Agregar a Compra</button>
+            </form>
+          </div>
+
           <form id="form-compra-nueva" class="caja-formulario" style="margin-bottom: 20px;">
             <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
               <h2 class="subtitulo-formulario" style="margin:0;">Nueva Orden de Compra a Proveedor</h2>
-              <button type="button" id="compra-btn-nuevo-prov" class="btn-accion-sm">+ Nuevo proveedor</button>
             </div>
             <div class="fila-formulario tres">
               <div class="campo-grupo">
@@ -341,18 +425,54 @@
           </div>
         </div>
 
-        <!-- TAB 2: TODOS LOS PEDIDOS (ADMIN) -->
+        <!-- TAB 2: VENTAS Y RESERVAS (PENDIENTE / APROBADO / CANCELADO) -->
         <div class="admin-tab-panel" data-panel="pedidos-admin" data-admin-only="true" style="display:none;">
+          <form id="form-admin-venta-rapida" class="caja-formulario" style="margin-bottom: 18px;">
+            <h2 class="subtitulo-formulario">Registrar Compra / Pedido de Cliente sobre un Producto</h2>
+            <p style="font-size:13px; color:#475569; margin:0 0 12px 0;">
+              <strong>Pendiente:</strong> reserva unidades del lote FEFO sin finalizar factura.
+              <strong>Aprobada:</strong> resta definitivamente el inventario.
+              <strong>Cancelada:</strong> regresa las unidades exactas al lote.
+            </p>
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="venta-prod-select">Producto *</label>
+                <select id="venta-prod-select" class="campo-control" required></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="venta-cantidad-input">Cantidad *</label>
+                <input type="number" id="venta-cantidad-input" class="campo-control" min="1" step="1" value="1" required />
+              </div>
+            </div>
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="venta-cliente-input">Cliente *</label>
+                <input type="text" id="venta-cliente-input" class="campo-control" value="María Fernández" required />
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="venta-estado-select">Acción / Estado inicial *</label>
+                <select id="venta-estado-select" class="campo-control">
+                  <option value="PENDIENTE">⏳ Dejar en PENDIENTE (Reservar inventario)</option>
+                  <option value="APROBADO">✅ Realizar / APROBAR de inmediato (Restar inventario)</option>
+                </select>
+              </div>
+            </div>
+            <button type="submit" class="boton-primario">Registrar Pedido / Reserva</button>
+          </form>
+
+          <div id="ventas-resumen-cards" class="admin-resumen-grid"></div>
+
           <div class="tabla-admin-wrap">
-            <table class="tabla-admin" aria-label="Listado global de pedidos">
+            <table class="tabla-admin" aria-label="Listado global de pedidos y reservas">
               <thead>
                 <tr>
-                  <th>Pedido</th>
-                  <th>Cliente / ID</th>
+                  <th>Pedido / Factura</th>
+                  <th>Cliente</th>
+                  <th>Productos</th>
                   <th>Fecha</th>
-                  <th>Factura / Ref.</th>
                   <th>Estado</th>
                   <th>Total</th>
+                  <th>Acciones</th>
                 </tr>
               </thead>
               <tbody id="admin-pedidos-tbody"></tbody>

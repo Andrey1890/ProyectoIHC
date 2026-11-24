@@ -475,13 +475,56 @@ class InventarioRepository {
     });
   }
 
+  async crearVentaAdmin(payload = {}) {
+    const items = Array.isArray(payload.items) ? payload.items : [];
+    if (items.length === 0) {
+      throw new HttpAppError(400, "Debe seleccionar al menos un producto para la venta.", "VALIDATION_ITEMS");
+    }
+
+    const { getPedidoRepository } = require("./pedido.model");
+    const estadoRaw = trimStr(payload.estado_inicial || "PENDIENTE").toUpperCase();
+    const estadoInicial = estadoRaw === "APROBADO" || estadoRaw === "PAGADO" ? estadoRaw : "PENDIENTE";
+
+    const cliente = {
+      nombre: trimStr(payload.cliente_nombre) || "Cliente Mostrador Dermakor",
+      cedulaRuc: trimStr(payload.cliente_cedula) || "1718293849",
+      correo: trimStr(payload.cliente_correo) || "cliente@example.com",
+      telefono: trimStr(payload.cliente_telefono) || "0990000000",
+      direccion: trimStr(payload.direccion) || "Quito, Sede Principal"
+    };
+
+    return getPedidoRepository().createCheckoutTransaction({
+      cliente,
+      items,
+      envio: {
+        id_sede: trimStr(payload.id_sede) || "SED0000001",
+        direccion: cliente.direccion
+      },
+      estadoInicial
+    });
+  }
+
   async listarLotesConSemaforo({ estado = "", id_producto = "" } = {}) {
     const prisma = this.#db.getPrisma();
-    const [lotes, productos, sedes] = await Promise.all([
+    const [lotes, productos, sedes, ordenesSalida, ordenSalidaDetalle] = await Promise.all([
       prisma.lotes.findMany(),
       prisma.productos.findMany(),
-      prisma.sedes.findMany()
+      prisma.sedes.findMany(),
+      prisma.ordenesSalida.findMany(),
+      prisma.ordenSalidaDetalle.findMany()
     ]);
+
+    const reservadoOsaIds = new Set(
+      (Array.isArray(ordenesSalida) ? ordenesSalida : [])
+        .filter((o) => trimStr(o.osa_estado).toUpperCase() === "RESERVADO")
+        .map((o) => trimStr(o.id_orden_salida))
+    );
+    const reservadoByLote = new Map();
+    for (const det of Array.isArray(ordenSalidaDetalle) ? ordenSalidaDetalle : []) {
+      if (!reservadoOsaIds.has(trimStr(det.id_orden_salida))) continue;
+      const idLote = trimStr(det.id_lote);
+      reservadoByLote.set(idLote, (reservadoByLote.get(idLote) || 0) + Number(det.osd_cantidad_despachada || 0));
+    }
 
     const prodMap = new Map(productos.map((p) => [trimStr(p.id_producto), p]));
     const sedeMap = new Map(sedes.map((s) => [trimStr(s.id_sede), s]));
@@ -491,14 +534,17 @@ class InventarioRepository {
     const enriched = lotes
       .filter((l) => !filterProd || trimStr(l.id_producto) === filterProd)
       .map((l) => {
+        const idLote = trimStr(l.id_lote);
         const idProd = trimStr(l.id_producto);
         const idSede = trimStr(l.id_sede);
         const prod = prodMap.get(idProd);
         const sede = sedeMap.get(idSede);
         const { dias_para_caducar, semaforo } = computeSemaforo(l.lot_fecha_caducidad);
+        const stockDisp = Number(l.lot_stock_actual || 0);
+        const stockRes = reservadoByLote.get(idLote) || 0;
 
         return {
-          id_lote: trimStr(l.id_lote),
+          id_lote: idLote,
           id_producto: idProd,
           pro_codigo: trimStr(prod?.pro_codigo),
           producto_nombre: trimStr(prod?.pro_nombre) || idProd,
@@ -507,7 +553,10 @@ class InventarioRepository {
           lot_numero: trimStr(l.lot_numero),
           lot_fecha_fabricacion: toIsoDate(l.lot_fecha_fabricacion),
           lot_fecha_caducidad: toIsoDate(l.lot_fecha_caducidad),
-          lot_stock_actual: Number(l.lot_stock_actual || 0),
+          lot_stock_actual: stockDisp,
+          stock_disponible: stockDisp,
+          stock_reservado: stockRes,
+          stock_fisico: stockDisp + stockRes,
           lot_estado: trimStr(l.lot_estado),
           dias_para_caducar,
           semaforo
@@ -515,12 +564,17 @@ class InventarioRepository {
       })
       .sort((a, b) => a.lot_fecha_caducidad.localeCompare(b.lot_fecha_caducidad));
 
+    const stockDispTotal = enriched.reduce((acc, l) => acc + l.stock_disponible, 0);
+    const stockResTotal = enriched.reduce((acc, l) => acc + l.stock_reservado, 0);
     const resumen = {
       total_lotes: enriched.length,
       vencidos: enriched.filter((l) => l.semaforo === "VENCIDO").length,
       por_vencer: enriched.filter((l) => l.semaforo === "POR_VENCER").length,
       vigentes: enriched.filter((l) => l.semaforo === "VIGENTE").length,
-      stock_total: enriched.reduce((acc, l) => acc + l.lot_stock_actual, 0)
+      stock_total: stockDispTotal,
+      stock_disponible_total: stockDispTotal,
+      stock_reservado_total: stockResTotal,
+      stock_fisico_total: stockDispTotal + stockResTotal
     };
 
     const filtered = filterEstado
@@ -552,7 +606,8 @@ class InventarioRepository {
       ordenesSalida,
       ordenSalidaDetalle,
       ajustesInventario,
-      ajusteDetalle
+      ajusteDetalle,
+      pedidos
     ] = await Promise.all([
       prisma.productos.findMany(),
       prisma.lotes.findMany(),
@@ -561,7 +616,8 @@ class InventarioRepository {
       prisma.ordenesSalida.findMany(),
       prisma.ordenSalidaDetalle.findMany(),
       prisma.ajustesInventario.findMany(),
-      prisma.ajusteDetalle.findMany()
+      prisma.ajusteDetalle.findMany(),
+      prisma.pedidos.findMany()
     ]);
 
     const prod = productos.find((p) => trimStr(p.id_producto) === targetProd);
@@ -580,6 +636,7 @@ class InventarioRepository {
     const oenMap = new Map(ordenesEntrada.map((o) => [trimStr(o.id_orden_entrada), o]));
     const osaMap = new Map(ordenesSalida.map((o) => [trimStr(o.id_orden_salida), o]));
     const ajuMap = new Map(ajustesInventario.map((a) => [trimStr(a.id_ajuste), a]));
+    const pedMap = new Map(pedidos.map((p) => [trimStr(p.id_pedido), p]));
 
     const rawMovs = [];
 
@@ -604,25 +661,91 @@ class InventarioRepository {
       });
     }
 
-    // Salidas (Despachos / Pedidos FEFO)
+    // Salidas, Reservas Pendientes y Devoluciones por Cancelación
+    let stockReservado = 0;
+    let ventasAprobadas = 0;
+    let devueltoCanceladas = 0;
+
     for (const det of ordenSalidaDetalle) {
       const idLote = trimStr(det.id_lote);
       const lote = loteMap.get(idLote);
       if (!lote) continue;
       const osa = osaMap.get(trimStr(det.id_orden_salida));
+      const osaEstado = trimStr(osa?.osa_estado).toUpperCase();
+      const osaNum = trimStr(osa?.osa_numero) || trimStr(det.id_orden_salida);
+      const ped = osa?.id_pedido ? pedMap.get(trimStr(osa.id_pedido)) : null;
+      const pedNum = trimStr(ped?.ped_numero);
+      const docLabel = pedNum || osaNum;
+      const fechaBase = osa?.osa_fecha ? new Date(osa.osa_fecha).toISOString() : new Date().toISOString();
       const qty = Number(det.osd_cantidad_despachada || 0);
-      rawMovs.push({
-        fecha: osa?.osa_fecha ? new Date(osa.osa_fecha).toISOString() : new Date().toISOString(),
-        sortRank: 3,
-        tipo: "SALIDA",
-        documento: trimStr(osa?.osa_numero) || trimStr(det.id_orden_salida),
-        id_lote: idLote,
-        lot_numero: trimStr(lote.lot_numero),
-        entrada: 0,
-        salida: qty,
-        costo_unit: toNum(det.osd_precio_unit, 0),
-        detalle: trimStr(osa?.osa_observacion) || "Despacho de pedido"
-      });
+      const precioUnit = toNum(det.osd_precio_unit, 0);
+
+      if (osaEstado === "RESERVADO") {
+        stockReservado += qty;
+        rawMovs.push({
+          fecha: fechaBase,
+          sortRank: 3,
+          tipo: "RESERVA_PENDIENTE",
+          documento: docLabel,
+          id_lote: idLote,
+          lot_numero: trimStr(lote.lot_numero),
+          entrada: 0,
+          salida: qty,
+          costo_unit: precioUnit,
+          detalle: `Compra en PENDIENTE — stock reservado (${osaNum})`
+        });
+      } else if (osaEstado === "ANULADO") {
+        devueltoCanceladas += qty;
+        rawMovs.push({
+          fecha: fechaBase,
+          sortRank: 3,
+          tipo: "RESERVA_INICIAL",
+          documento: docLabel,
+          id_lote: idLote,
+          lot_numero: trimStr(lote.lot_numero),
+          entrada: 0,
+          salida: qty,
+          costo_unit: precioUnit,
+          detalle: `Apartado inicial antes de anular (${docLabel})`
+        });
+
+        const obsStr = trimStr(osa?.osa_observacion);
+        const revMatch = obsStr.match(/REVERSO:(\S+)/);
+        let revIso = new Date(new Date(fechaBase).getTime() + 1000).toISOString();
+        if (revMatch) {
+          const cand = revMatch[1].endsWith("Z") ? revMatch[1] : `${revMatch[1]}Z`;
+          const dt = new Date(cand);
+          if (!Number.isNaN(dt.getTime())) {
+            revIso = dt.toISOString();
+          }
+        }
+        rawMovs.push({
+          fecha: revIso,
+          sortRank: 4,
+          tipo: "DEVOLUCION_CANCELADA",
+          documento: docLabel,
+          id_lote: idLote,
+          lot_numero: trimStr(lote.lot_numero),
+          entrada: qty,
+          salida: 0,
+          costo_unit: precioUnit,
+          detalle: "Compra CANCELADA — inventario regresa al lote"
+        });
+      } else {
+        ventasAprobadas += qty;
+        rawMovs.push({
+          fecha: fechaBase,
+          sortRank: 3,
+          tipo: "VENTA_APROBADA",
+          documento: docLabel,
+          id_lote: idLote,
+          lot_numero: trimStr(lote.lot_numero),
+          entrada: 0,
+          salida: qty,
+          costo_unit: precioUnit,
+          detalle: `Venta aprobada — stock restado (${osaNum})`
+        });
+      }
     }
 
     // Ajustes de inventario (+/-)
@@ -653,17 +776,18 @@ class InventarioRepository {
       return cmp !== 0 ? cmp : a.sortRank - b.sortRank;
     });
 
-    const stockActual = filteredLotes.reduce((acc, l) => acc + Number(l.lot_stock_actual || 0), 0);
+    const stockDisponible = filteredLotes.reduce((acc, l) => acc + Number(l.lot_stock_actual || 0), 0);
+    const stockFisico = stockDisponible + stockReservado;
     const netoMovs = rawMovs.reduce((acc, m) => acc + (m.entrada - m.salida), 0);
-    const saldoInicial = stockActual - netoMovs;
+    const saldoInicial = stockDisponible - netoMovs;
 
     let totalEntradas = 0;
     let totalSalidas = 0;
     let netoAjustes = 0;
     for (const m of rawMovs) {
       if (m.tipo === "ENTRADA") totalEntradas += m.entrada;
-      else if (m.tipo === "SALIDA") totalSalidas += m.salida;
-      else netoAjustes += m.entrada - m.salida;
+      else if (m.tipo === "VENTA_APROBADA" || m.tipo === "RESERVA_PENDIENTE" || m.tipo === "SALIDA") totalSalidas += m.salida;
+      else if (m.tipo === "AJUSTE_INGRESO" || m.tipo === "AJUSTE_EGRESO") netoAjustes += m.entrada - m.salida;
     }
 
     let running = saldoInicial;
@@ -706,11 +830,17 @@ class InventarioRepository {
         pro_nombre: trimStr(prod.pro_nombre),
         pro_precio: toNum(prod.pro_precio, 0)
       },
-      stock_actual: stockActual,
+      stock_actual: stockDisponible,
+      stock_disponible: stockDisponible,
+      stock_reservado: stockReservado,
+      stock_fisico: stockFisico,
       saldo_inicial: saldoInicial,
       totales: {
         entradas: totalEntradas,
         salidas: totalSalidas,
+        ventas_aprobadas: ventasAprobadas,
+        reservado_pendiente: stockReservado,
+        devuelto_canceladas: devueltoCanceladas,
         ajustes: netoAjustes
       },
       movimientos

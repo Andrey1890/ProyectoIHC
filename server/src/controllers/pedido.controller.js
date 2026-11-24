@@ -70,10 +70,32 @@ async function procesarCheckout(req, res, next) {
   }
 }
 
+async function aprobarPedido(req, res, next) {
+  try {
+    const pedidoRepo = ModelFactory.getRepository("pedido");
+    const pedido = await pedidoRepo.aprobarPedido(req.params.id);
+    return res.status(200).json({ ok: true, pedido });
+  } catch (error) {
+    return next(error);
+  }
+}
+
+async function cancelarPedido(req, res, next) {
+  try {
+    const pedidoRepo = ModelFactory.getRepository("pedido");
+    const result = await pedidoRepo.cancelarPedido(req.params.id, req.body?.motivo || "");
+    return res.status(200).json({ ok: true, ...result });
+  } catch (error) {
+    return next(error);
+  }
+}
+
 module.exports = {
   ...baseCrud,
   listarPedidos,
   misPedidos,
   obtenerPedidoPorId,
-  procesarCheckout
+  procesarCheckout,
+  aprobarPedido,
+  cancelarPedido
 };

@@ -2371,4 +2371,55 @@ textarea:focus-visible,
   font-weight: 600;
 }
 
+.admin-guia-bar {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 10px;
+  margin-bottom: 16px;
+}
+
+.admin-guia-paso {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  text-align: left;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #CBD5E1;
+  background: #F8FAFC;
+  cursor: pointer;
+  color: #0F172A;
+}
+
+.admin-guia-paso:hover {
+  border-color: var(--color-primario);
+  background: #EFF6FF;
+}
+
+.admin-guia-paso .guia-num {
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: var(--color-primario);
+  color: #FFFFFF;
+  font-weight: 800;
+  font-size: 13px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.admin-guia-paso strong {
+  display: block;
+  font-size: 13px;
+}
+
+.admin-guia-paso small {
+  display: block;
+  font-size: 11px;
+  color: #475569;
+}
+
+
 

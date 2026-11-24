@@ -42,6 +42,7 @@ class PedidoModel {
     this.fecha = props.fecha || null;
     this.createdAt = props.createdAt || props.fecha || null;
     this.estado = String(props.estado || "").trim();
+    this.osa_estado = String(props.osa_estado || "").trim();
     this.subtotal = toNum(props.subtotal);
     this.descuento = toNum(props.descuento);
     this.iva = toNum(props.iva);
@@ -61,6 +62,7 @@ class PedidoModel {
       fecha: this.fecha,
       createdAt: this.createdAt,
       estado: this.estado,
+      osa_estado: this.osa_estado,
       subtotal: this.subtotal,
       descuento: this.descuento,
       iva: this.iva,
@@ -187,18 +189,43 @@ class PedidoRepository {
   async findRecent(limit = 50) {
     const safeLimit = Math.min(100, Math.max(1, Number.parseInt(limit, 10) || 50));
     const prisma = this.#db.getPrisma();
-    const rows = await prisma.pedidos.findMany({
-      include: {
-        Clientes: true,
-        Facturas: true,
-        PedidoDetalle: true
-      },
-      orderBy: { ped_fecha: "desc" },
-      take: safeLimit
-    });
-    return (Array.isArray(rows) ? rows : []).map((row) =>
-      PedidoFactory.mapPrismaRelationRow(row).toDTO()
+    const [rows, productos, ordenesSalida] = await Promise.all([
+      prisma.pedidos.findMany({
+        include: {
+          Clientes: true,
+          Facturas: true,
+          PedidoDetalle: true
+        },
+        orderBy: { ped_fecha: "desc" },
+        take: safeLimit
+      }),
+      prisma.productos.findMany(),
+      prisma.ordenesSalida.findMany()
+    ]);
+
+    const prodMap = new Map(
+      (Array.isArray(productos) ? productos : []).map((p) => [
+        String(p.id_producto || "").trim(),
+        String(p.pro_nombre || "").trim()
+      ])
     );
+    const osaByPedido = new Map();
+    for (const o of Array.isArray(ordenesSalida) ? ordenesSalida : []) {
+      const idPed = String(o.id_pedido || "").trim();
+      if (idPed && !osaByPedido.has(idPed)) {
+        osaByPedido.set(idPed, String(o.osa_estado || "").trim());
+      }
+    }
+
+    return (Array.isArray(rows) ? rows : []).map((row) => {
+      const dto = PedidoFactory.mapPrismaRelationRow(row).toDTO();
+      dto.osa_estado = osaByPedido.get(dto.id_pedido) || "";
+      dto.detalles = (dto.detalles || []).map((d) => ({
+        ...d,
+        productoNombre: d.productoNombre || prodMap.get(String(d.id_producto || "").trim()) || d.id_producto
+      }));
+      return dto;
+    });
   }
 
   async findByUser(userContext = {}) {
@@ -235,18 +262,38 @@ class PedidoRepository {
 
   async findById(idPedido) {
     const prisma = this.#db.getPrisma();
-    const row = await prisma.pedidos.findFirst({
-      where: { id_pedido: String(idPedido || "").trim() },
-      include: {
-        Clientes: true,
-        Facturas: true,
-        PedidoDetalle: true
-      }
-    });
+    const targetId = String(idPedido || "").trim();
+    const [row, productos, ordenesSalida] = await Promise.all([
+      prisma.pedidos.findFirst({
+        where: { id_pedido: targetId },
+        include: {
+          Clientes: true,
+          Facturas: true,
+          PedidoDetalle: true
+        }
+      }),
+      prisma.productos.findMany(),
+      prisma.ordenesSalida.findMany()
+    ]);
     if (!row) {
       throw new HttpAppError(404, `Pedido '${idPedido}' no encontrado.`, "ORDER_NOT_FOUND");
     }
-    return PedidoFactory.mapPrismaRelationRow(row).toDTO();
+    const prodMap = new Map(
+      (Array.isArray(productos) ? productos : []).map((p) => [
+        String(p.id_producto || "").trim(),
+        String(p.pro_nombre || "").trim()
+      ])
+    );
+    const osaMatch = (Array.isArray(ordenesSalida) ? ordenesSalida : []).find(
+      (o) => String(o.id_pedido || "").trim() === targetId
+    );
+    const dto = PedidoFactory.mapPrismaRelationRow(row).toDTO();
+    dto.osa_estado = osaMatch ? String(osaMatch.osa_estado || "").trim() : "";
+    dto.detalles = (dto.detalles || []).map((d) => ({
+      ...d,
+      productoNombre: d.productoNombre || prodMap.get(String(d.id_producto || "").trim()) || d.id_producto
+    }));
+    return dto;
   }
 
   async findSedes() {
@@ -282,7 +329,15 @@ class PedidoRepository {
     };
   }
 
-  async createCheckoutTransaction({ cliente, items, cupon = null, envio = {} }) {
+  async createCheckoutTransaction({ cliente, items, cupon = null, envio = {}, estadoInicial = "PAGADO" }) {
+    const estadoUpper = String(estadoInicial || "PAGADO").trim().toUpperCase();
+    const isPendiente = estadoUpper === "PENDIENTE";
+    const pedEstado = isPendiente ? "PENDIENTE" : (estadoUpper === "APROBADO" ? "APROBADO" : "PAGADO");
+    const osaEstado = isPendiente ? "RESERVADO" : "DESPACHADO";
+    const pagEstado = isPendiente ? "PENDIENTE" : "APROBADO";
+    const facEstado = isPendiente ? "PENDIENTE" : "EMITIDA";
+    const envEstado = isPendiente ? "PENDIENTE" : "DESPACHADO";
+
     return this.#db.withTransaction(async (tx) => {
       const direccion = String(envio.direccion || cliente.direccion || "Quito, Ecuador").slice(0, 150);
       const targetCi = String(cliente.cedulaRuc || "").trim();
@@ -393,12 +448,13 @@ class PedidoRepository {
           ped_descuento: totals.discountAmt,
           ped_iva: totals.ivaAmt,
           ped_total: totals.finalTotal,
-          ped_estado: "PAGADO"
+          ped_estado: pedEstado
         }
       });
 
       const idOrdenSalida = await this.#db.nextId(tx, "OrdenesSalida", "id_orden_salida", "OSA");
       const osaNumero = `OSA-2026-${idOrdenSalida.replace("OSA", "").slice(-4)}`;
+      const osaObs = (isPendiente ? `Reserva pendiente pedido ${pedNumero}` : `Despacho aprobado pedido ${pedNumero}`).slice(0, 150);
       await tx.ordenesSalida.create({
         data: {
           id_orden_salida: idOrdenSalida,
@@ -406,8 +462,8 @@ class PedidoRepository {
           id_sede: idSede,
           id_empleado: "EMP0000001",
           osa_numero: osaNumero,
-          osa_observacion: "Despacho automatico web REST Prisma",
-          osa_estado: "DESPACHADO"
+          osa_observacion: osaObs,
+          osa_estado: osaEstado
         }
       });
 
@@ -423,30 +479,51 @@ class PedidoRepository {
           }
         });
 
-        const lotes = await tx.lotes.findMany({
-          where: { id_producto: item.id_producto },
-          orderBy: { lot_fecha_caducidad: "asc" }
+        const allLotes = await tx.lotes.findMany({
+          where: { id_producto: item.id_producto }
         });
-        const validLote = (Array.isArray(lotes) ? lotes : []).find((l) => {
-          const est = String(l.lot_estado || "").trim();
-          return (est === "ACTIVO" || est === "DISPONIBLE") && Number(l.lot_stock_actual || 0) >= item.cantidad;
-        });
+        const activeLotes = (Array.isArray(allLotes) ? allLotes : [])
+          .filter((l) => {
+            const est = String(l.lot_estado || "").trim().toUpperCase();
+            return (est === "ACTIVO" || est === "DISPONIBLE") && Number(l.lot_stock_actual || 0) > 0;
+          })
+          .sort((a, b) => new Date(a.lot_fecha_caducidad).getTime() - new Date(b.lot_fecha_caducidad).getTime());
 
-        if (validLote) {
-          const idLote = String(validLote.id_lote).trim();
+        const totalDisp = activeLotes.reduce((acc, l) => acc + Number(l.lot_stock_actual || 0), 0);
+        if (totalDisp < item.cantidad) {
+          const prodRow = (Array.isArray(catalogRows) ? catalogRows : []).find(
+            (p) => String(p.id_producto || "").trim() === item.id_producto
+          );
+          const prodName = String(prodRow?.pro_nombre || item.id_producto).trim();
+          throw new HttpAppError(
+            409,
+            `Stock disponible insuficiente para '${prodName}' (disponible: ${totalDisp}, solicitado: ${item.cantidad}).`,
+            "INSUFFICIENT_STOCK"
+          );
+        }
+
+        let remaining = item.cantidad;
+        for (const lote of activeLotes) {
+          if (remaining <= 0) break;
+          const idLote = String(lote.id_lote).trim();
+          const lotStock = Number(lote.lot_stock_actual || 0);
+          const take = Math.min(remaining, lotStock);
+          if (take <= 0) continue;
+
           await tx.lotes.update({
             where: { id_lote: idLote },
-            data: { lot_stock_actual: { decrement: item.cantidad } }
+            data: { lot_stock_actual: { decrement: take } }
           });
           await tx.ordenSalidaDetalle.create({
             data: {
               id_orden_salida: idOrdenSalida,
               id_lote: idLote,
-              osd_cantidad_despachada: item.cantidad,
+              osd_cantidad_despachada: take,
               osd_precio_unit: item.precioUnit,
-              osd_subtotal: lineSubtotal
+              osd_subtotal: Number((take * item.precioUnit).toFixed(2))
             }
           });
+          remaining -= take;
         }
       }
 
@@ -465,7 +542,7 @@ class PedidoRepository {
           pag_metodo: "TARJETA_WEB",
           pag_monto: totals.finalTotal,
           pag_referencia: `PAY-REST-${pedSeq.slice(-6)}`,
-          pag_estado: "APROBADO"
+          pag_estado: pagEstado
         }
       });
 
@@ -479,7 +556,7 @@ class PedidoRepository {
           fac_numero: facNumero,
           fac_autorizacion_sri: facAutSri,
           fac_total: totals.finalTotal,
-          fac_estado: "EMITIDA"
+          fac_estado: facEstado
         }
       });
 
@@ -492,7 +569,7 @@ class PedidoRepository {
           env_direccion_entrega: direccion,
           env_transportista: "Servientrega Ecuador",
           env_numero_guia: guiaTracking,
-          env_estado: "DESPACHADO"
+          env_estado: envEstado
         }
       });
 
@@ -502,6 +579,8 @@ class PedidoRepository {
         id_pedido: idPedido,
         userId: idCliente,
         ped_numero: pedNumero,
+        estado: pedEstado,
+        osa_estado: osaEstado,
         id_factura: idFactura,
         fac_numero: facNumero,
         fac_autorizacion_sri: facAutSri,
@@ -521,6 +600,191 @@ class PedidoRepository {
         }))
       };
     });
+  }
+
+  async aprobarPedido(idPedidoRaw) {
+    const idPedido = String(idPedidoRaw || "").trim();
+    if (!idPedido) {
+      throw new HttpAppError(400, "id_pedido es obligatorio.", "VALIDATION_ID");
+    }
+
+    const prisma = this.#db.getPrisma();
+    const ped = await prisma.pedidos.findFirst({ where: { id_pedido: idPedido } });
+    if (!ped) {
+      throw new HttpAppError(404, `Pedido '${idPedido}' no encontrado.`, "ORDER_NOT_FOUND");
+    }
+    const estadoActual = String(ped.ped_estado || "").trim().toUpperCase();
+    if (estadoActual !== "PENDIENTE") {
+      throw new HttpAppError(
+        409,
+        `Solo se pueden aprobar pedidos en estado PENDIENTE (actual: ${estadoActual}).`,
+        "ORDER_INVALID_STATE"
+      );
+    }
+
+    await this.#db.withTransaction(async (tx) => {
+      await tx.pedidos.update({
+        where: { id_pedido: idPedido },
+        data: { ped_estado: "APROBADO" }
+      });
+
+      const [ordenes, pagos, facturas, envios] = await Promise.all([
+        tx.ordenesSalida.findMany(),
+        tx.pagos.findMany(),
+        tx.facturas.findMany(),
+        tx.envios.findMany()
+      ]);
+
+      const pedNum = String(ped.ped_numero || idPedido).trim();
+      const targetOrdenes = (Array.isArray(ordenes) ? ordenes : []).filter(
+        (o) => String(o.id_pedido || "").trim() === idPedido
+      );
+      const ordenIds = new Set();
+
+      for (const osa of targetOrdenes) {
+        const idOsa = String(osa.id_orden_salida || "").trim();
+        ordenIds.add(idOsa);
+        await tx.ordenesSalida.update({
+          where: { id_orden_salida: idOsa },
+          data: {
+            osa_estado: "DESPACHADO",
+            osa_observacion: `Venta aprobada ${pedNum}`.slice(0, 150)
+          }
+        });
+      }
+
+      for (const p of Array.isArray(pagos) ? pagos : []) {
+        if (String(p.id_pedido || "").trim() === idPedido) {
+          await tx.pagos.update({
+            where: { id_pago: String(p.id_pago).trim() },
+            data: { pag_estado: "APROBADO" }
+          });
+        }
+      }
+
+      for (const f of Array.isArray(facturas) ? facturas : []) {
+        if (String(f.id_pedido || "").trim() === idPedido) {
+          await tx.facturas.update({
+            where: { id_factura: String(f.id_factura).trim() },
+            data: { fac_estado: "EMITIDA" }
+          });
+        }
+      }
+
+      for (const e of Array.isArray(envios) ? envios : []) {
+        if (ordenIds.has(String(e.id_orden_salida || "").trim())) {
+          await tx.envios.update({
+            where: { id_envio: String(e.id_envio).trim() },
+            data: { env_estado: "DESPACHADO" }
+          });
+        }
+      }
+    });
+
+    return this.findById(idPedido);
+  }
+
+  async cancelarPedido(idPedidoRaw, motivo = "") {
+    const idPedido = String(idPedidoRaw || "").trim();
+    if (!idPedido) {
+      throw new HttpAppError(400, "id_pedido es obligatorio.", "VALIDATION_ID");
+    }
+
+    const prisma = this.#db.getPrisma();
+    const ped = await prisma.pedidos.findFirst({ where: { id_pedido: idPedido } });
+    if (!ped) {
+      throw new HttpAppError(404, `Pedido '${idPedido}' no encontrado.`, "ORDER_NOT_FOUND");
+    }
+    const estadoActual = String(ped.ped_estado || "").trim().toUpperCase();
+    if (estadoActual === "CANCELADO" || estadoActual === "ANULADO") {
+      throw new HttpAppError(
+        409,
+        `El pedido '${idPedido}' ya se encuentra ${estadoActual}.`,
+        "ORDER_ALREADY_CANCELLED"
+      );
+    }
+
+    let unidadesDevueltas = 0;
+
+    await this.#db.withTransaction(async (tx) => {
+      const [ordenes, osDetalles, pagos, facturas, envios] = await Promise.all([
+        tx.ordenesSalida.findMany(),
+        tx.ordenSalidaDetalle.findMany(),
+        tx.pagos.findMany(),
+        tx.facturas.findMany(),
+        tx.envios.findMany()
+      ]);
+
+      const targetOrdenes = (Array.isArray(ordenes) ? ordenes : []).filter(
+        (o) => String(o.id_pedido || "").trim() === idPedido
+      );
+      const ordenIds = new Set(targetOrdenes.map((o) => String(o.id_orden_salida || "").trim()));
+
+      for (const det of Array.isArray(osDetalles) ? osDetalles : []) {
+        const idOsa = String(det.id_orden_salida || "").trim();
+        if (!ordenIds.has(idOsa)) continue;
+        const idLote = String(det.id_lote || "").trim();
+        const qty = Number(det.osd_cantidad_despachada || 0);
+        if (idLote && qty > 0) {
+          await tx.lotes.update({
+            where: { id_lote: idLote },
+            data: { lot_stock_actual: { increment: qty } }
+          });
+          unidadesDevueltas += qty;
+        }
+      }
+
+      const reversoIso = new Date().toISOString().slice(0, 19);
+      const cleanMotivo = String(motivo || "").trim();
+      const obsCancel = (`Cancelado${cleanMotivo ? ": " + cleanMotivo : ""} | REVERSO:${reversoIso}`).slice(0, 150);
+
+      for (const osa of targetOrdenes) {
+        await tx.ordenesSalida.update({
+          where: { id_orden_salida: String(osa.id_orden_salida).trim() },
+          data: {
+            osa_estado: "ANULADO",
+            osa_observacion: obsCancel
+          }
+        });
+      }
+
+      await tx.pedidos.update({
+        where: { id_pedido: idPedido },
+        data: { ped_estado: "CANCELADO" }
+      });
+
+      for (const p of Array.isArray(pagos) ? pagos : []) {
+        if (String(p.id_pedido || "").trim() === idPedido) {
+          await tx.pagos.update({
+            where: { id_pago: String(p.id_pago).trim() },
+            data: { pag_estado: "ANULADO" }
+          });
+        }
+      }
+
+      for (const f of Array.isArray(facturas) ? facturas : []) {
+        if (String(f.id_pedido || "").trim() === idPedido) {
+          await tx.facturas.update({
+            where: { id_factura: String(f.id_factura).trim() },
+            data: { fac_estado: "ANULADA" }
+          });
+        }
+      }
+
+      for (const e of Array.isArray(envios) ? envios : []) {
+        if (ordenIds.has(String(e.id_orden_salida || "").trim())) {
+          await tx.envios.update({
+            where: { id_envio: String(e.id_envio).trim() },
+            data: { env_estado: "CANCELADO" }
+          });
+        }
+      }
+    });
+
+    return {
+      pedido: await this.findById(idPedido),
+      unidades_devueltas: unidadesDevueltas
+    };
   }
 
   #computeTotals(subtotalAccum, cuponData) {

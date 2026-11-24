@@ -44,9 +44,9 @@
 
   function getKardexTipoClass(tipo) {
     var t = String(tipo || "").toUpperCase();
-    if (t === "ENTRADA") return "kardex-entrada";
-    if (t === "SALIDA") return "kardex-salida";
-    if (t.indexOf("AJUSTE") === 0) return "kardex-ajuste";
+    if (t === "ENTRADA" || t === "DEVOLUCION_CANCELADA") return "kardex-entrada";
+    if (t === "SALIDA" || t === "VENTA_APROBADA") return "kardex-salida";
+    if (t === "RESERVA_PENDIENTE" || t === "RESERVA_INICIAL" || t.indexOf("AJUSTE") === 0) return "kardex-ajuste";
     return "kardex-inicial";
   }
 
@@ -114,14 +114,14 @@
     return "VIGENTE";
   }
 
-  function renderLotesTable(tbody, lotes) {
+  function renderLotesTable(tbody, lotes, handlers) {
     if (!tbody) return;
     clearEl(tbody);
 
     if (!Array.isArray(lotes) || lotes.length === 0) {
       var trEmpty = document.createElement("tr");
       var tdEmpty = document.createElement("td");
-      tdEmpty.colSpan = 9;
+      tdEmpty.colSpan = 12;
       tdEmpty.textContent = "No hay lotes registrados para este filtro.";
       trEmpty.appendChild(tdEmpty);
       tbody.appendChild(trEmpty);
@@ -158,9 +158,16 @@
       tr.appendChild(makeCell(l.lot_fecha_caducidad || "-"));
       tr.appendChild(makeCell(String(l.dias_para_caducar) + " d"));
 
+      var disp = Number(l.stock_disponible != null ? l.stock_disponible : (l.lot_stock_actual || 0));
+      var res = Number(l.stock_reservado || 0);
+      var fis = Number(l.stock_fisico != null ? l.stock_fisico : (disp + res));
+
+      tr.appendChild(makeCell(fis));
+      tr.appendChild(makeCell(res > 0 ? String(res) : "0", res > 0 ? "kardex-num-neg" : ""));
+
       var tdStock = document.createElement("td");
       var stStrong = document.createElement("strong");
-      stStrong.textContent = String(l.lot_stock_actual != null ? l.lot_stock_actual : 0);
+      stStrong.textContent = String(disp);
       tdStock.appendChild(stStrong);
       tr.appendChild(tdStock);
 
@@ -172,6 +179,17 @@
       badge.textContent = getSemaforoLabel(l.semaforo);
       tdSem.appendChild(badge);
       tr.appendChild(tdSem);
+
+      var tdAcc = document.createElement("td");
+      var btnKar = document.createElement("button");
+      btnKar.type = "button";
+      btnKar.className = "btn-accion-sm";
+      btnKar.textContent = "📊 Kárdex";
+      btnKar.addEventListener("click", function () {
+        if (handlers && handlers.onViewKardex) handlers.onViewKardex(l);
+      });
+      tdAcc.appendChild(btnKar);
+      tr.appendChild(tdAcc);
 
       tbody.appendChild(tr);
     });

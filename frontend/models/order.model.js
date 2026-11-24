@@ -26,11 +26,27 @@
     return (res && res.data) || [];
   }
 
+  async function aprobarOrder(idPedido) {
+    return global.DermakorMVC.ApiModel.request(
+      "/api/pedidos/" + encodeURIComponent(idPedido) + "/aprobar",
+      { method: "POST", body: {} }
+    );
+  }
+
+  async function cancelarOrder(idPedido, motivo) {
+    return global.DermakorMVC.ApiModel.request(
+      "/api/pedidos/" + encodeURIComponent(idPedido) + "/cancelar",
+      { method: "POST", body: { motivo: motivo || "Cancelado desde Panel Admin" } }
+    );
+  }
+
   global.DermakorMVC = global.DermakorMVC || {};
   global.DermakorMVC.OrderModel = {
     createOrder: createOrder,
     fetchMyOrders: fetchMyOrders,
     fetchAllOrders: fetchAllOrders,
-    fetchEntityTable: fetchEntityTable
+    fetchEntityTable: fetchEntityTable,
+    aprobarOrder: aprobarOrder,
+    cancelarOrder: cancelarOrder
   };
 })(window);

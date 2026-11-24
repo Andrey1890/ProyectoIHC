@@ -39,6 +39,12 @@
     return d.toISOString().slice(0, 10);
   }
 
+  function plusDaysIso(days) {
+    var d = new Date();
+    d.setDate(d.getDate() + (days || 60));
+    return d.toISOString().slice(0, 10);
+  }
+
   function buildProductLabel(p) {
     var id = p.id_producto_db || p.id_producto || p.id || "";
     var name = p.pro_nombre || p.nombre || id;
@@ -46,10 +52,13 @@
     return (cod ? "[" + cod + "] " : "") + name + " (" + id + ")";
   }
 
-  async function ensureProductsLoaded() {
+  async function ensureProductsLoaded(force) {
     var MVC = global.DermakorMVC;
-    if (cachedProducts.length === 0) {
-      cachedProducts = await MVC.ProductModel.fetchAll("limit=100");
+    if (force || cachedProducts.length === 0) {
+      var list = await MVC.ProductModel.fetchAll("limit=100");
+      cachedProducts = (Array.isArray(list) ? list : []).slice().sort(function (a, b) {
+        return String(b.id_producto_db || "").localeCompare(String(a.id_producto_db || ""));
+      });
     }
     return cachedProducts;
   }
@@ -98,12 +107,16 @@
         id_lote: loteSel ? loteSel.value : ""
       });
       var tot = data.totales || {};
+      var disp = data.stock_disponible != null ? data.stock_disponible : data.stock_actual;
+      var resv = data.stock_reservado != null ? data.stock_reservado : 0;
+      var fis = data.stock_fisico != null ? data.stock_fisico : (Number(disp || 0) + Number(resv || 0));
       MVC.InventoryView.renderSummaryCards(cardsEl, [
-        { label: "Stock Actual", value: data.stock_actual, tone: "vigente" },
-        { label: "Saldo Inicial", value: data.saldo_inicial },
-        { label: "Entradas (+)", value: "+" + (tot.entradas || 0), tone: "vigente" },
-        { label: "Salidas (-)", value: "-" + (tot.salidas || 0), tone: "vencido" },
-        { label: "Ajustes (Neto)", value: tot.ajustes || 0, tone: "por-vencer" }
+        { label: "Stock Físico en Bodega", value: fis },
+        { label: "Reservado en Pendiente", value: resv, tone: "por-vencer" },
+        { label: "Disponible para Venta", value: disp, tone: "vigente" },
+        { label: "Entradas Proveedor (+)", value: "+" + (tot.entradas || 0), tone: "vigente" },
+        { label: "Ventas Aprobadas (-)", value: "-" + (tot.ventas_aprobadas != null ? tot.ventas_aprobadas : (tot.salidas || 0)), tone: "vencido" },
+        { label: "Regresado por Cancelación (+)", value: "+" + (tot.devuelto_canceladas || 0), tone: "vigente" }
       ]);
       MVC.InventoryView.renderKardexTable(tbody, data.movimientos || []);
     } catch (err) {
@@ -117,7 +130,7 @@
     var btnConsult = document.getElementById("kardex-btn-consultar");
 
     try {
-      var prods = await ensureProductsLoaded();
+      var prods = await ensureProductsLoaded(true);
       if (prodSel) {
         var prev = preselectProdId || prodSel.value;
         clearEl(prodSel);
@@ -175,12 +188,20 @@
       var r = res.resumen || {};
       MVC.InventoryView.renderSummaryCards(cardsEl, [
         { label: "Total Lotes", value: r.total_lotes || 0 },
-        { label: "Vencidos", value: r.vencidos || 0, tone: "vencido" },
         { label: "Por Vencer (<=90d)", value: r.por_vencer || 0, tone: "por-vencer" },
         { label: "Vigentes (>90d)", value: r.vigentes || 0, tone: "vigente" },
-        { label: "Stock Total", value: r.stock_total || 0 }
+        { label: "Stock Físico", value: r.stock_fisico_total != null ? r.stock_fisico_total : (r.stock_total || 0) },
+        { label: "Reservado", value: r.stock_reservado_total || 0, tone: "por-vencer" },
+        { label: "Disponible", value: r.stock_disponible_total != null ? r.stock_disponible_total : (r.stock_total || 0), tone: "vigente" }
       ]);
-      MVC.InventoryView.renderLotesTable(tbody, res.lotes || []);
+      MVC.InventoryView.renderLotesTable(tbody, res.lotes || [], {
+        onViewKardex: function (lote) {
+          if (global.DermakorMVC.AdminController && global.DermakorMVC.AdminController.switchTab) {
+            global.DermakorMVC.AdminController.switchTab("kardex");
+          }
+          loadKardexTab(lote.id_producto);
+        }
+      });
     } catch (err) {
       showStatus(err.message || "Error al consultar lotes y caducidades.", false);
     }
@@ -391,7 +412,7 @@
 
     var thead = document.createElement("thead");
     var htr = document.createElement("tr");
-    ["Producto", "Nro. Lote (<=20)", "Fabricación", "Caducidad", "Cantidad", "Costo Unit."].forEach(function (h) {
+    ["Producto", "Nro. Lote (<=20)", "Fabricación", "Caducidad", "Cantidad", "Costo Unit.", "Dividir lotes"].forEach(function (h) {
       var th = document.createElement("th");
       th.textContent = h;
       htr.appendChild(th);
@@ -403,10 +424,36 @@
     var fabDefault = todayIso();
     var cadDefault = plusMonthsIso(18);
     var rowControls = [];
+    var expectedByProd = new Map();
+    (detalles || []).forEach(function (d) {
+      var idP = String(d.id_producto || "").trim();
+      expectedByProd.set(idP, (expectedByProd.get(idP) || 0) + Number(d.cde_cantidad || 0));
+    });
 
-    (detalles || []).forEach(function (d, idx) {
+    var sumHint = document.createElement("div");
+    sumHint.style.fontSize = "12px";
+    sumHint.style.margin = "8px 0 0 0";
+    sumHint.style.fontWeight = "600";
+
+    function updateSumHint() {
+      var actualByProd = new Map();
+      rowControls.forEach(function (rc) {
+        var q = Number.parseInt(rc.inpQty.value || "0", 10) || 0;
+        actualByProd.set(rc.id_producto, (actualByProd.get(rc.id_producto) || 0) + q);
+      });
+      var parts = [];
+      var allMatch = true;
+      expectedByProd.forEach(function (exp, idP) {
+        var act = actualByProd.get(idP) || 0;
+        if (act !== exp) allMatch = false;
+        parts.push((prodMap.get(idP) || idP) + ": " + act + "/" + exp + " uds");
+      });
+      sumHint.textContent = "Resumen por producto — " + parts.join(" | ");
+      sumHint.style.color = allMatch ? "#065F46" : "#92400E";
+    }
+
+    function appendLoteRow(idProd, lotNum, fabVal, cadVal, qtyVal, costVal, isClone, afterTr) {
       var tr = document.createElement("tr");
-      var idProd = String(d.id_producto || "").trim();
 
       var tdProd = document.createElement("td");
       tdProd.textContent = (prodMap.get(idProd) || idProd) + " (" + idProd + ")";
@@ -418,7 +465,7 @@
       inpLot.maxLength = 20;
       inpLot.required = true;
       inpLot.className = "campo-control";
-      inpLot.value = ("L-" + comNum + "-" + (idx + 1)).slice(0, 20);
+      inpLot.value = String(lotNum || "").slice(0, 20);
       tdLot.appendChild(inpLot);
       tr.appendChild(tdLot);
 
@@ -427,7 +474,7 @@
       inpFab.type = "date";
       inpFab.required = true;
       inpFab.className = "campo-control";
-      inpFab.value = fabDefault;
+      inpFab.value = fabVal;
       tdFab.appendChild(inpFab);
       tr.appendChild(tdFab);
 
@@ -436,7 +483,7 @@
       inpCad.type = "date";
       inpCad.required = true;
       inpCad.className = "campo-control";
-      inpCad.value = cadDefault;
+      inpCad.value = cadVal;
       tdCad.appendChild(inpCad);
       tr.appendChild(tdCad);
 
@@ -447,7 +494,8 @@
       inpQty.step = "1";
       inpQty.required = true;
       inpQty.className = "campo-control";
-      inpQty.value = String(d.cde_cantidad || 1);
+      inpQty.value = String(qtyVal);
+      inpQty.addEventListener("input", updateSumHint);
       tdQty.appendChild(inpQty);
       tr.appendChild(tdQty);
 
@@ -458,24 +506,83 @@
       inpCost.step = "0.01";
       inpCost.required = true;
       inpCost.className = "campo-control";
-      inpCost.value = Number(d.cde_costo_unit || 0).toFixed(2);
+      inpCost.value = Number(costVal || 0).toFixed(2);
       tdCost.appendChild(inpCost);
       tr.appendChild(tdCost);
 
-      rowControls.push({
+      var rc = {
         id_producto: idProd,
         inpLot: inpLot,
         inpFab: inpFab,
         inpCad: inpCad,
         inpQty: inpQty,
         inpCost: inpCost
+      };
+      rowControls.push(rc);
+
+      var tdAcc = document.createElement("td");
+      var wrapAcc = document.createElement("div");
+      wrapAcc.style.display = "flex";
+      wrapAcc.style.gap = "6px";
+
+      var btnSplit = document.createElement("button");
+      btnSplit.type = "button";
+      btnSplit.className = "btn-accion-sm";
+      btnSplit.textContent = "+ Dividir lote";
+      btnSplit.addEventListener("click", function () {
+        var curQty = Number.parseInt(inpQty.value || "0", 10) || 2;
+        var half1 = Math.max(1, Math.floor(curQty / 2));
+        var half2 = Math.max(1, curQty - half1);
+        inpQty.value = String(half1);
+        var suffix = rowControls.filter(function (r) { return r.id_producto === idProd; }).length + 1;
+        appendLoteRow(idProd, (inpLot.value.slice(0, 16) + "-" + suffix), fabVal, plusDaysIso(60), half2, inpCost.value, true, tr);
+        updateSumHint();
       });
-      tbody.appendChild(tr);
+      wrapAcc.appendChild(btnSplit);
+
+      if (isClone) {
+        var btnRem = document.createElement("button");
+        btnRem.type = "button";
+        btnRem.className = "btn-accion-sm peligro";
+        btnRem.textContent = "Quitar";
+        btnRem.addEventListener("click", function () {
+          var idxRc = rowControls.indexOf(rc);
+          if (idxRc !== -1) rowControls.splice(idxRc, 1);
+          tr.remove();
+          updateSumHint();
+        });
+        wrapAcc.appendChild(btnRem);
+      }
+
+      tdAcc.appendChild(wrapAcc);
+      tr.appendChild(tdAcc);
+
+      if (afterTr && afterTr.parentNode === tbody) {
+        tbody.insertBefore(tr, afterTr.nextSibling);
+      } else {
+        tbody.appendChild(tr);
+      }
+    }
+
+    (detalles || []).forEach(function (d, idx) {
+      var idProd = String(d.id_producto || "").trim();
+      appendLoteRow(
+        idProd,
+        "L-" + comNum + "-" + (idx + 1),
+        fabDefault,
+        cadDefault,
+        d.cde_cantidad || 1,
+        d.cde_costo_unit || 0,
+        false,
+        null
+      );
     });
 
     table.appendChild(tbody);
     wrap.appendChild(table);
     form.appendChild(wrap);
+    updateSumHint();
+    form.appendChild(sumHint);
 
     var btnRow = document.createElement("div");
     btnRow.style.display = "flex";
@@ -547,8 +654,9 @@
         MVC.InventoryModel.fetchProveedores(),
         MVC.InventoryModel.fetchSedes(),
         MVC.InventoryModel.fetchEmpleados(),
-        ensureProductsLoaded(),
-        MVC.InventoryModel.fetchCompras()
+        ensureProductsLoaded(true),
+        MVC.InventoryModel.fetchCompras(),
+        MVC.InventoryModel.fetchCiudades()
       ]);
 
       var proveedores = results[0];
@@ -556,6 +664,7 @@
       var empleados = results[2];
       var productos = results[3];
       var compras = results[4];
+      var ciudades = results[5] || [];
 
       cachedComprasState = {
         proveedores: proveedores,
@@ -563,6 +672,17 @@
         empleados: empleados,
         productos: productos
       };
+
+      var ciuSel = document.getElementById("quick-prov-ciudad");
+      if (ciuSel) {
+        clearEl(ciuSel);
+        ciudades.forEach(function (c) {
+          var opt = document.createElement("option");
+          opt.value = String(c.id_ciudad || "").trim();
+          opt.textContent = String(c.ciu_nombre || opt.value).trim();
+          ciuSel.appendChild(opt);
+        });
+      }
 
       var provMap = new Map();
       if (provSel) clearEl(provSel);
@@ -608,13 +728,74 @@
         if (btnAddLine) btnAddLine.addEventListener("click", addCompraLineRow);
 
         var btnNewProv = document.getElementById("compra-btn-nuevo-prov");
-        if (btnNewProv) {
+        var panelNewProv = document.getElementById("compra-panel-nuevo-prov");
+        if (btnNewProv && panelNewProv) {
           btnNewProv.addEventListener("click", function () {
-            if (global.DermakorMVC.AdminController && global.DermakorMVC.AdminController.switchTab) {
-              global.DermakorMVC.AdminController.switchTab("tablas");
+            panelNewProv.style.display = panelNewProv.style.display === "none" ? "block" : "none";
+          });
+        }
+
+        var btnNewProd = document.getElementById("compra-btn-nuevo-prod");
+        var panelNewProd = document.getElementById("compra-panel-nuevo-prod");
+        if (btnNewProd && panelNewProd) {
+          btnNewProd.addEventListener("click", function () {
+            panelNewProd.style.display = panelNewProd.style.display === "none" ? "block" : "none";
+          });
+        }
+
+        var formQuickProv = document.getElementById("form-compra-nuevo-prov");
+        if (formQuickProv) {
+          formQuickProv.addEventListener("submit", async function (ev) {
+            ev.preventDefault();
+            try {
+              var createdProv = await MVC.EntityModel.create("proveedores", {
+                id_ciudad: document.getElementById("quick-prov-ciudad")?.value || "CIU0000001",
+                prv_ruc: document.getElementById("quick-prov-ruc")?.value.trim(),
+                prv_razon_social: document.getElementById("quick-prov-razon")?.value.trim(),
+                prv_telefono: document.getElementById("quick-prov-tel")?.value.trim() || "0990000000",
+                prv_email: document.getElementById("quick-prov-email")?.value.trim()
+              });
+              var newIdProv = String(createdProv?.proveedor?.id_proveedor || "").trim();
+              if (panelNewProv) panelNewProv.style.display = "none";
+              formQuickProv.reset();
+              showStatus("Proveedor '" + (createdProv?.proveedor?.prv_razon_social || newIdProv) + "' registrado y seleccionado.", true);
+              await loadComprasTab();
+              if (provSel && newIdProv) provSel.value = newIdProv;
+            } catch (err) {
+              showStatus(err.message || "Error al crear proveedor rápido.", false);
             }
-            if (global.DermakorMVC.EntityController) {
-              global.DermakorMVC.EntityController.openNewForSlug("proveedores");
+          });
+        }
+
+        var formQuickProd = document.getElementById("form-compra-nuevo-prod");
+        if (formQuickProd) {
+          formQuickProd.addEventListener("submit", async function (ev) {
+            ev.preventDefault();
+            try {
+              var createdProd = await MVC.ProductModel.create({
+                nombre: document.getElementById("quick-prod-nombre")?.value.trim(),
+                marca: document.getElementById("quick-prod-marca")?.value.trim() || "Dermakor",
+                categoria: document.getElementById("quick-prod-categoria")?.value.trim() || "Cuidado facial",
+                precio: Number(document.getElementById("quick-prod-precio")?.value || 25),
+                stock: 0,
+                imagen: "images/01_exoface.webp"
+              });
+              var newIdProd = String(createdProd?.producto?.id_producto_db || "").trim();
+              if (panelNewProd) panelNewProd.style.display = "none";
+              formQuickProd.reset();
+              showStatus("Producto '" + (createdProd?.producto?.nombre || newIdProd) + "' creado con stock 0 listo para comprar.", true);
+              await loadComprasTab();
+              if (lineasContainer) {
+                clearEl(lineasContainer);
+                addCompraLineRow();
+                var firstSel = lineasContainer.querySelector(".compra-linea-prod");
+                if (firstSel && newIdProd) {
+                  firstSel.value = newIdProd;
+                  firstSel.dispatchEvent(new Event("change"));
+                }
+              }
+            } catch (err) {
+              showStatus(err.message || "Error al crear producto rápido.", false);
             }
           });
         }
