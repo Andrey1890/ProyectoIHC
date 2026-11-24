@@ -2,8 +2,8 @@
   "use strict";
 
   var DEFAULT_LOCAL_PORT = "4050";
-  // URL productiva de Vercel (se actualiza automaticamente tras el despliegue Vercel)
-  var DEFAULT_PROD_API_URL = global.DERMAKOR_PROD_API_URL || "";
+  // URL productiva de Vercel (Backend REST MVC separado en Root Directory = server)
+  var DEFAULT_PROD_API_URL = global.DERMAKOR_PROD_API_URL || "https://dermakorbackendapi.vercel.app";
 
   function resolveApiBaseUrl() {
     if (global.DERMAKOR_API_URL) {

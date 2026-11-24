@@ -8,8 +8,8 @@ var SUPABASE_CONFIG = {
 };
 
 var BACKEND_API_PORT = "4050";
-// URL productiva del backend en Vercel (configurada en el repositorio frontend)
-window.DERMAKOR_PROD_API_URL = window.DERMAKOR_PROD_API_URL || "";
+// URL productiva del backend REST MVC desplegado en Vercel (capa separada)
+window.DERMAKOR_PROD_API_URL = window.DERMAKOR_PROD_API_URL || "https://dermakorbackendapi.vercel.app";
 
 function resolverApiUrl(rutaRelativa) {
   if (typeof window !== "undefined" && window.DermakorMVC && window.DermakorMVC.ApiModel) {

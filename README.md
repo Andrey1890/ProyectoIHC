@@ -1,16 +1,35 @@
 # DERMAKOR — Plataforma Full Stack MVC (Reto 2)
 
-Plataforma e-commerce dermocosmética dividida en **dos carpetas principales (`frontend/` y `server/`)**, conectada a **Supabase PostgreSQL** mediante **Prisma ORM**, con autenticación **JWT**, encriptación de contraseñas con **`bcryptjs`**, autorización basada en roles (**RBAC: `admin` / `user`**), seguridad alineada a **OWASP Top 10**, flujo **CI/CD con GitHub Actions**, frontend publicado en **GitHub Pages** y backend listo para **Vercel (plan Hobby gratuito)**.
+Plataforma e-commerce dermocosmética con **separación estricta de capas y repositorios/despliegues** en dos carpetas independientes en la raíz (`frontend/` y `server/`), conectada a **Supabase PostgreSQL** mediante **Prisma ORM**, con autenticación **JWT**, encriptación **`bcryptjs`**, autorización basada en roles (**RBAC: `admin` / `user`**), seguridad alineada a **OWASP Top 10** y flujo **CI/CD con GitHub Actions**.
+
+### Despliegues en Producción (Planes Gratuitos)
+
+| Capa | Tecnología | Plataforma | URL Pública | Carpeta Fuente |
+| :--- | :--- | :--- | :--- | :--- |
+| **Capa 3 — Frontend MVC** | HTML5 + CSS3 + Vanilla JS (MVC) | **GitHub Pages** (CI/CD Actions) | `https://andrey1890.github.io/ProyectoIHC/` | `frontend/` |
+| **Capa 2 — Backend REST MVC** | Node.js + Express + Prisma Client | **Vercel** (Plan Hobby, Root `server`) | `https://dermakorbackendapi.vercel.app/` | `server/` |
+| **Capa 1 — Base de Datos** | PostgreSQL (`30` tablas relacionales) | **Supabase** (Pooler + Prisma ORM) | Conectada exclusivamente desde Vercel | `server/prisma/` |
 
 ---
 
 ## 1. Descripción General del Sistema
 
-**DERMAKOR** permite a clientes navegar por un catálogo de **90 productos dermatológicos** en formato `.webp` (9 categorías, Sede Quito), gestionar un carrito persistente (`localStorage` + `sessionStorage`), autenticarse con **JWT**, confirmar pedidos protegidos con cálculo oficial de precios, IVA (`15%`), facturación SRI y lotes FEFO en PostgreSQL, y administrar catálogo, pedidos y entidades desde un **Panel Administrativo exclusivo para el rol `admin`**.
+**DERMAKOR** permite a clientes navegar por un catálogo de **90 productos dermatológicos** en formato `.webp` (9 categorías, Sede Quito), gestionar un carrito persistente (`localStorage` + `sessionStorage`), autenticarse con **JWT**, confirmar pedidos protegidos con cálculo oficial de precios, IVA (`15%`), facturación SRI y lotes FEFO en PostgreSQL, y administrar catálogo, pedidos, arquitectura desacoplada y entidades desde un **Panel Administrativo exclusivo para el rol `admin`** (`admin.html`).
 
 ---
 
-## 2. Arquitectura MVC en Dos Carpetas (`frontend/` y `server/`)
+## 2. Arquitectura MVC Separada (`frontend/` y `server/`)
+
+La raíz del repositorio mantiene únicamente el flujo CI/CD (`.github/workflows/ci-cd.yml`), la documentación y las dos carpetas independientes:
+
+```text
+ProyectoIHC/
+├── .github/workflows/ci-cd.yml                        # Pipeline CI Backend + CD Frontend Pages
+├── frontend/                                          # Desplegado en GitHub Pages
+├── server/                                            # Desplegado en Vercel (Root Directory = server)
+├── README.md
+└── DOCUMENTACION_IMPLEMENTACION_RETO2_FULLSTACK_MVC.md
+```
 
 ### 2.1 Frontend MVC (`/frontend/`)
 ```text
@@ -133,4 +152,6 @@ Resultado verificado ejecutando `npm test` (`server/cliente/test-rest.js`) contr
 - **Carrito MVC persistente:** `[PASS] Reto2 Prueba 5 - Estructura MVC Frontend completa (models/views/controllers/assets)`.
 - **Confirmar pedido (`user`) y Mis Pedidos:** `[PASS] Reto2 Prueba 6 - User confirma pedido (POST /api/pedidos) + GET /mis-pedidos` (`201 Created`, precio validado en BD ignorando precio manipulado `0.01`, visible en `GET /api/pedidos/mis-pedidos`).
 - **Gestión de pedidos (`admin`):** `[PASS] Reto2 Prueba 7 - Gestion pedidos Admin (200 Admin, 403 User)` y `Cobertura MVC 30/30 Tablas + RBAC en /api/v1/usuarios (401/403/200 sin hash)`.
-- **Total suite automatizada:** **`ALL TESTS PASSED (21/21 verificaciones exitosas)`** y `0` errores de sintaxis en `111` archivos `.js`.
+- **Entorno productivo verificado en la nube:**
+  - Frontend publicado vía GitHub Actions en **`https://andrey1890.github.io/ProyectoIHC/`** (`HTTP 200 OK`).
+  - Backend REST MVC en Vercel **`https://dermakorbackendapi.vercel.app/`** (`HTTP 200 OK` en `/`, `/api/status` con `30` tablas y `90` productos, y `/api/productos` leyendo Supabase vía Prisma).

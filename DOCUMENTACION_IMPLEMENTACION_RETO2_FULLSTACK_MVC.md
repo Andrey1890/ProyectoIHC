@@ -1,16 +1,16 @@
 # Documentación Técnica de Implementación — Reto 2 Plataforma Full Stack MVC (DERMAKOR)
 
-- **Repositorio GitHub (Frontend + CI/CD):** `https://github.com/Andrey1890/ProyectoIHC`
-- **Base de Datos Relacional (Capa 1):** Supabase PostgreSQL + Prisma ORM (`30` tablas)
-- **Backend API REST (Capa 2):** Node.js + Express MVC desplegable en Vercel (Plan Hobby gratuito)
-- **Frontend MVC (Capa 3):** Vanilla JS MVC + HTML5 Semántico WCAG 2.2 AA desplegable en GitHub Pages
-- **Fecha de generación:** `2026-11-23`
+- **Repositorio GitHub (Estructura Separada + CI/CD):** `https://github.com/Andrey1890/ProyectoIHC`
+- **Capa 3 — Frontend MVC (GitHub Pages):** `https://andrey1890.github.io/ProyectoIHC/` (publicado desde `frontend/`)
+- **Capa 2 — Backend API REST MVC (Vercel Hobby):** `https://dermakorbackendapi.vercel.app/` (desplegado desde `server/`, Root Directory = `server`)
+- **Capa 1 — Base de Datos Relacional:** Supabase PostgreSQL + Prisma ORM (`30` tablas, `90` productos verificados en `/api/status`)
+- **Fecha de actualización:** `2026-11-23`
 
 ---
 
-## 1. Organización en Dos Carpetas Principales
+## 1. Organización Separada en Dos Carpetas Principales
 
-Para cumplir la separación de despliegues (**GitHub Pages para Frontend** y **Vercel para Backend**) y la estructura MVC solicitada por el Reto 2, el proyecto se consolidó en dos carpetas autocontenidas:
+Para que la separación entre cliente y servidor sea totalmente visible y auditable en GitHub, la raíz de `ProyectoIHC` contiene exclusivamente `.github/`, `.gitignore`, `README.md`, este documento y las dos carpetas autocontenidas (**sin archivos duplicados ni acoplados en la raíz**):
 
 1. **`frontend/`**:
    - `assets/`: copia organizada de `css/styles.css`, los `182` activos `.webp` estandarizados con fondo blanco `#FFFFFF` (`91` bases + `91` variantes responsive) y `data/productos.json` (`90` productos).
@@ -59,18 +59,22 @@ Para cumplir la separación de despliegues (**GitHub Pages para Frontend** y **V
 
 ---
 
-## 4. Flujo CI/CD con GitHub Actions y Despliegue Gratuito
+## 4. Flujo CI/CD con GitHub Actions y Despliegue Gratuito en Producción
 
 Se creó [.github/workflows/ci-cd.yml](.github/workflows/ci-cd.yml) con dos trabajos encadenados:
 1. **`ci-fullstack-mvc`**: verifica la integridad estructural de `frontend/` y `server/`, instala dependencias en `server/` (`npm ci`), valida el esquema Prisma (`npx prisma validate`), genera el cliente (`npx prisma generate`) y audita sintaxis (`node --check`) en todos los `.js` de backend y frontend MVC.
-2. **`cd-github-pages`**: empaqueta `./frontend` (`actions/upload-pages-artifact@v3`) y lo publica en GitHub Pages (`actions/deploy-pages@v4`).
+2. **`cd-github-pages`**: empaqueta `./frontend` (`actions/upload-pages-artifact@v3`) y lo publica en GitHub Pages (`actions/deploy-pages@v4`) en `https://andrey1890.github.io/ProyectoIHC/`.
 
-Para Vercel (plan gratuito Hobby), se configuraron `vercel.json`, `api/index.js` y `postinstall`/`vercel-build` generando Prisma Client para `rhel-openssl-3.0.x`.
+Para Vercel (plan gratuito Hobby, proyecto `dermakorbackendapi` con **Root Directory = `server`**), se configuraron `vercel.json`, `api/index.js`, `binaryTargets = ["native", "rhel-openssl-3.0.x"]` en Prisma y 16 variables de entorno conectadas a Supabase PostgreSQL:
+- `GET https://dermakorbackendapi.vercel.app/` -> JSON de identificación (`"capa": "Capa 2 - Backend REST MVC (Desacoplado en Vercel)"`).
+- `GET https://dermakorbackendapi.vercel.app/api/status` -> `ok: true`, `orm: "prisma"`, `total_tablas_mvc: 30`, `total_productos: 90`.
+- `GET https://dermakorbackendapi.vercel.app/api/productos` -> catálogo completo (`90` productos) leído desde Supabase.
+- `frontend/admin.html` incluye el panel visual **Arquitectura Full Stack Separada** que consulta `/api/status` e informa en tiempo real la separación entre Capa 3 (GitHub Pages), Capa 2 (Vercel) y Capa 1 (Supabase + Prisma).
 
 ---
 
-## 5. Resultados de Verificación Local
+## 5. Resultados de Verificación Local y Entregables
 
-- **Validación sintáctica:** `111` archivos `.js` verificados (`0` errores).
-- **Suite automatizada (`npm test`):** **`ALL TESTS PASSED (21/21 verificaciones exitosas)`**, cubriendo las `7` pruebas mínimas obligatorias del Reto 2 (Login Admin JWT, Crear/Editar/Eliminar producto Admin, Bloqueo `403` a User, Catálogo 90 productos WebP, Estructura MVC Frontend, Confirmar Pedido autenticado con precio oficial BD + `/mis-pedidos`, y Gestión de Pedidos Admin) además de `30/30` modelos Prisma sin SQL crudo.
-- **Entregable comprimido:** `C:\Users\Andre\.gemini\antigravity\scratch\Reto2_Morejon_Andres.zip` (incluye `frontend/`, `server/` con `prisma/schema.prisma`, `prisma/migrations/`, `prisma/seed.js`, `.env.example`, sin `.env` ni `node_modules`).
+- **Validación sintáctica:** todos los archivos `.js` de Backend MVC (`server/src/`) y Frontend MVC (`frontend/models/`, `views/`, `controllers/`) verificados sin errores mediante `node --check`.
+- **Suite automatizada (`npm test`):** ejecutada contra Express MVC + Supabase en vivo cubriendo las `7` pruebas mínimas obligatorias del Reto 2 (Login Admin JWT, Crear/Editar/Eliminar producto Admin, Bloqueo `403` a User, Catálogo 90 productos WebP, Estructura MVC Frontend, Confirmar Pedido autenticado con precio oficial BD + `/mis-pedidos`, y Gestión de Pedidos Admin) además de `30/30` modelos Prisma sin SQL crudo.
+- **Entregable comprimido:** `C:\Users\Andre\.gemini\antigravity\scratch\Reto2_Morejon_Andres.zip` (incluye únicamente `frontend/`, `server/`, `.github/`, `README.md` y documentación, con `0` archivos `.env` y `0` carpetas `node_modules`).
