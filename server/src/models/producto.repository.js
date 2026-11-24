@@ -10,7 +10,11 @@ const {
 } = require("./producto.model");
 
 const SINGLETON_TOKEN = Symbol("ProductoRepository");
-const BACKUP_JSON_PATH = path.resolve(__dirname, "../../frontend-client/data/productos.json");
+const BACKUP_JSON_CANDIDATES = [
+  path.resolve(__dirname, "../../../frontend/assets/data/productos.json"),
+  path.resolve(__dirname, "../../../frontend/data/productos.json"),
+  path.resolve(__dirname, "../../frontend-client/data/productos.json")
+];
 
 /**
  * Patron Singleton + Repository: encapsula todo acceso CRUD al catalogo
@@ -37,10 +41,11 @@ class ProductoRepository {
   }
 
   #readLocalBackup() {
-    if (!fs.existsSync(BACKUP_JSON_PATH)) {
+    const foundPath = BACKUP_JSON_CANDIDATES.find((candidate) => fs.existsSync(candidate));
+    if (!foundPath) {
       return [];
     }
-    const raw = JSON.parse(fs.readFileSync(BACKUP_JSON_PATH, "utf8"));
+    const raw = JSON.parse(fs.readFileSync(foundPath, "utf8"));
     return Array.isArray(raw) ? raw.map((item) => ProductoFactory.createFromJson(item).toDTO()) : [];
   }
 

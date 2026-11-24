@@ -3,6 +3,38 @@ const { PrismaClient } = require("@prisma/client");
 const ENV = require("./env.config");
 
 const SINGLETON_TOKEN = Symbol("SupabaseDatabaseSingleton");
+
+function buildServerlessSafeDbUrl(rawUrl) {
+  const input = String(rawUrl || "").trim();
+  if (!input) return input;
+  try {
+    const parsed = new URL(input);
+    parsed.searchParams.set("connection_limit", "1");
+    if (!parsed.searchParams.has("pool_timeout")) {
+      parsed.searchParams.set("pool_timeout", "20");
+    }
+    return parsed.toString();
+  } catch (_err) {
+    let out = input;
+    if (!/connection_limit=/i.test(out)) {
+      out += (out.includes("?") ? "&" : "?") + "connection_limit=1";
+    }
+    if (!/pool_timeout=/i.test(out)) {
+      out += (out.includes("?") ? "&" : "?") + "pool_timeout=20";
+    }
+    return out;
+  }
+}
+
+function isPoolOrConnectionError(err) {
+  if (!err) return false;
+  const code = String(err.code || "").trim().toUpperCase();
+  if (["P1001", "P1002", "P1008", "P1017", "P2024"].includes(code)) {
+    return true;
+  }
+  const msg = String(err.message || "");
+  return /EMAXCONNSESSION|max clients reached|Can't reach database server|Timed out fetching a new connection|ConnectionReset|Server has closed the connection/i.test(msg);
+}
 const ALLOWED_ID_TARGETS = new Set([
   "AjustesInventario.id_ajuste",
   "Carritos.id_carrito",
@@ -280,7 +312,7 @@ class SupabaseDatabaseSingleton {
     this.#instanceId = `supabase-prisma-${Date.now()}`;
     this.#basePrisma = new PrismaClient({
       datasources: {
-        db: { url: ENV.DATABASE_URL }
+        db: { url: buildServerlessSafeDbUrl(ENV.DATABASE_URL) }
       }
     });
 
@@ -290,7 +322,20 @@ class SupabaseDatabaseSingleton {
         $allModels: {
           async $allOperations({ model, operation, args, query }) {
             if (await self.isPgAvailable()) {
-              return query(args);
+              try {
+                return await query(args);
+              } catch (err) {
+                if (!isPoolOrConnectionError(err)) {
+                  throw err;
+                }
+                self.markPgUnavailable();
+                await self.#basePrisma.$disconnect().catch(() => {});
+                if (ENV.SUPABASE.anonKey) {
+                  return self.#executePrismaViaPostgrest({ model, operation, args });
+                }
+                await new Promise((r) => setTimeout(r, 500));
+                return query(args);
+              }
             }
             return self.#executePrismaViaPostgrest({ model, operation, args });
           }
@@ -304,9 +349,14 @@ class SupabaseDatabaseSingleton {
    * @returns {SupabaseDatabaseSingleton}
    */
   static getInstance() {
+    if (globalThis.__dermakorSupabaseSingleton) {
+      SupabaseDatabaseSingleton.#instance = globalThis.__dermakorSupabaseSingleton;
+      return globalThis.__dermakorSupabaseSingleton;
+    }
     if (!SupabaseDatabaseSingleton.#instance) {
       SupabaseDatabaseSingleton.#instance = new SupabaseDatabaseSingleton(SINGLETON_TOKEN);
     }
+    globalThis.__dermakorSupabaseSingleton = SupabaseDatabaseSingleton.#instance;
     return SupabaseDatabaseSingleton.#instance;
   }
 
@@ -354,12 +404,33 @@ class SupabaseDatabaseSingleton {
     return reachable;
   }
 
+  markPgUnavailable() {
+    this.#pgAvailable = false;
+    this.#pgCheckedAt = Date.now();
+  }
+
   async withTransaction(work) {
     if (await this.isPgAvailable()) {
-      return this.#basePrisma.$transaction(
-        async (tx) => work(tx),
-        { maxWait: 15000, timeout: 30000 }
-      );
+      try {
+        return await this.#basePrisma.$transaction(
+          async (tx) => work(tx),
+          { maxWait: 15000, timeout: 30000 }
+        );
+      } catch (err) {
+        if (!isPoolOrConnectionError(err)) {
+          throw err;
+        }
+        this.markPgUnavailable();
+        await this.#basePrisma.$disconnect().catch(() => {});
+        if (ENV.SUPABASE.anonKey) {
+          return work(this.#prisma);
+        }
+        await new Promise((r) => setTimeout(r, 500));
+        return this.#basePrisma.$transaction(
+          async (tx) => work(tx),
+          { maxWait: 15000, timeout: 30000 }
+        );
+      }
     }
     return work(this.#prisma);
   }
