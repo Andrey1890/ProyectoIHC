@@ -2,5 +2,14 @@
 Thumbs.db
 *.log
 node_modules/
+server/node_modules/
+.env
+.env.*
+!.env.example
+!server/.env.example
+.vercel/
 .vscode/
 .idea/
+__pycache__/
+*.pyc
+Reto2_*.zip

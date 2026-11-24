@@ -1,0 +1,41 @@
+{
+  "name": "dermakor-server2",
+  "version": "2.0.0",
+  "description": "Duplicado de DERMAKOR en arquitectura de 3 capas: Supabase PostgreSQL, Backend REST MVC (Factory, Singleton, Chain of Responsibility) y Frontend desacoplado.",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "start:client": "node cliente/serve-client.js",
+    "dev": "node --watch src/server.js",
+    "prisma:generate": "npx prisma generate",
+    "prisma:seed": "node prisma/seed.js",
+    "postinstall": "prisma generate",
+    "vercel-build": "prisma generate",
+    "test": "node cliente/test-rest.js"
+  },
+  "keywords": [
+    "dermakor",
+    "rest",
+    "mvc",
+    "supabase",
+    "postgresql",
+    "singleton",
+    "factory",
+    "chain-of-responsibility"
+  ],
+  "author": "Andres Morejon",
+  "license": "ISC",
+  "dependencies": {
+    "@prisma/client": "^6.19.3",
+    "bcryptjs": "^3.0.3",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.3.0",
+    "jsonwebtoken": "^9.0.3",
+    "pg": "^8.13.3"
+  },
+  "devDependencies": {
+    "prisma": "^6.19.3"
+  }
+}

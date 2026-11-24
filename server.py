@@ -12,7 +12,7 @@ SUPABASE_PORT = 5432
 SUPABASE_DB = "postgres"
 SUPABASE_USER = "postgres.jdsqipqdcuyegjrpvgny"
 SUPABASE_REST_URL = "https://jdsqipqdcuyegjrpvgny.supabase.co/rest/v1/"
-SUPABASE_PASSWORD = os.environ.get("SUPABASE_PASSWORD", "Pichicopito_42").strip()
+SUPABASE_PASSWORD = os.environ.get("SUPABASE_PASSWORD", "").strip()
 
 DB_DSN = f"postgresql://{SUPABASE_USER}:{SUPABASE_PASSWORD}@{SUPABASE_HOST}:{SUPABASE_PORT}/{SUPABASE_DB}"
 WEB_ROOT = os.path.dirname(os.path.abspath(__file__))
@@ -41,8 +41,20 @@ def next_id(cur, table, col, prefix):
 
 
 class DermakorRequestHandler(SimpleHTTPRequestHandler):
+    extensions_map = {
+        **SimpleHTTPRequestHandler.extensions_map,
+        ".webp": "image/webp",
+        ".avif": "image/avif",
+    }
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, directory=WEB_ROOT, **kwargs)
+
+    def end_headers(self):
+        parsed_path = urllib.parse.urlparse(self.path).path
+        if parsed_path.startswith(("/images/", "/css/", "/js/")):
+            self.send_header("Cache-Control", "public, max-age=86400")
+        super().end_headers()
 
     def log_message(self, format, *args):
         pass
@@ -142,6 +154,17 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                     )
                     rows = cur.fetchall()
 
+            local_img_map = {}
+            json_path = os.path.join(WEB_ROOT, "data", "productos.json")
+            if os.path.exists(json_path):
+                try:
+                    with open(json_path, "r", encoding="utf-8") as jf:
+                        for item in json.load(jf):
+                            if item.get("id"):
+                                local_img_map[item["id"]] = item.get("imagen", "")
+                except Exception:
+                    local_img_map = {}
+
             productos_out = []
             for r in rows:
                 id_p = r["id_producto"].strip()
@@ -156,8 +179,12 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                     except Exception:
                         meta = {}
 
+                slug = meta.get("slug") or id_p.lower()
+                db_img = meta.get("imagen") if meta.get("imagen") is not None else (r["imagen_db"] or "").strip()
+                resolved_img = local_img_map[slug] if slug in local_img_map else (db_img if db_img.lower().endswith(".webp") else "")
+
                 prod_obj = {
-                    "id": meta.get("slug") or id_p.lower(),
+                    "id": slug,
                     "id_producto_db": id_p,
                     "nombre": (r["pro_nombre"] or "").strip(),
                     "marca": meta.get("marca", "Dermclar"),
@@ -168,7 +195,7 @@ class DermakorRequestHandler(SimpleHTTPRequestHandler):
                     "precio": float(r["pro_precio"]),
                     "precioProfesional": float(meta.get("precioProfesional", r["pro_precio"])),
                     "stock": int(r["stock_actual"]),
-                    "imagen": meta.get("imagen") if meta.get("imagen") is not None else (r["imagen_db"] or "").strip(),
+                    "imagen": resolved_img,
                     "destacadoHome": bool(meta.get("destacadoHome", False)),
                     "descripcion": clean_desc,
                     "principiosActivos": meta.get("principiosActivos", ["Activos liposomados Dermclar"]),

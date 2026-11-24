@@ -229,7 +229,7 @@
 
       <div class="modal-grid-principal">
         <div class="modal-imagen-col" id="modal-img-box">
-          <img id="modal-img" src="" alt="Producto" />
+          <img id="modal-img" src="data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7" width="800" height="600" decoding="async" alt="Producto" />
         </div>
         <div class="modal-info-col">
           <div style="display: flex; gap: 8px; margin-bottom: 8px; align-items: center;">
@@ -341,7 +341,20 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="js/productos.js"></script>
-  <script src="js/app.js"></script>
+  <script defer src="models/api.model.js"></script>
+  <script defer src="models/auth.model.js"></script>
+  <script defer src="models/product.model.js"></script>
+  <script defer src="models/cart.model.js"></script>
+  <script defer src="models/order.model.js"></script>
+  <script defer src="views/product.view.js"></script>
+  <script defer src="views/cart.view.js"></script>
+  <script defer src="views/auth.view.js"></script>
+  <script defer src="views/admin.view.js"></script>
+  <script defer src="controllers/auth.controller.js"></script>
+  <script defer src="controllers/cart.controller.js"></script>
+  <script defer src="controllers/admin.controller.js"></script>
+  <script defer src="controllers/app.controller.js"></script>
+  <script defer src="js/productos.js"></script>
+  <script defer src="js/app.js"></script>
 </body>
 </html>

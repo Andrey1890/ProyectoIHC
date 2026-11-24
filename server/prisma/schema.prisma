@@ -1,0 +1,442 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model AjusteDetalle {
+  id_ajuste         String            @db.Char(10)
+  id_lote           String            @db.Char(10)
+  ade_cantidad      Int
+  ade_observacion   String            @db.VarChar(100)
+  AjustesInventario AjustesInventario @relation(fields: [id_ajuste], references: [id_ajuste])
+  Lotes             Lotes             @relation(fields: [id_lote], references: [id_lote])
+
+  @@id([id_ajuste, id_lote])
+  @@map("AjusteDetalle")
+}
+
+model AjustesInventario {
+  id_ajuste       String          @id @db.Char(10)
+  id_sede         String          @db.Char(10)
+  id_empleado     String          @db.Char(10)
+  aju_numero      String          @db.Char(15)
+  aju_tipo        String          @db.Char(10)
+  aju_motivo      String          @db.Char(15)
+  aju_fecha       DateTime        @default(now()) @db.Timestamp(6)
+  aju_observacion String          @db.VarChar(150)
+  Sedes           Sedes           @relation(fields: [id_sede], references: [id_sede])
+  Empleados       Empleados       @relation(fields: [id_empleado], references: [id_empleado])
+  AjusteDetalle   AjusteDetalle[]
+
+  @@map("AjustesInventario")
+}
+
+model CarritoDetalle {
+  id_carrito   String    @db.Char(10)
+  id_producto  String    @db.Char(10)
+  cad_cantidad Int
+  Carritos     Carritos  @relation(fields: [id_carrito], references: [id_carrito])
+  Productos    Productos @relation(fields: [id_producto], references: [id_producto])
+
+  @@id([id_carrito, id_producto])
+  @@map("CarritoDetalle")
+}
+
+model Carritos {
+  id_carrito     String           @id @db.Char(10)
+  id_cliente     String           @db.Char(10)
+  car_fecha      DateTime         @default(now()) @db.Timestamp(6)
+  car_estado     String           @db.Char(10)
+  Clientes       Clientes         @relation(fields: [id_cliente], references: [id_cliente])
+  CarritoDetalle CarritoDetalle[]
+
+  @@map("Carritos")
+}
+
+model Categorias {
+  id_categoria    String      @id @db.Char(10)
+  cat_nombre      String      @db.VarChar(50)
+  cat_descripcion String      @db.VarChar(150)
+  cat_estado      String      @db.Char(10)
+  Productos       Productos[]
+
+  @@map("Categorias")
+}
+
+model Ciudades {
+  id_ciudad   String        @id @db.Char(10)
+  id_pais     String        @db.Char(10)
+  ciu_nombre  String        @db.VarChar(60)
+  Paises      Paises        @relation(fields: [id_pais], references: [id_pais])
+  Clientes    Clientes[]
+  Pedidos     Pedidos[]
+  Proveedores Proveedores[]
+  Sedes       Sedes[]
+
+  @@map("Ciudades")
+}
+
+model Clientes {
+  id_cliente    String     @id @db.Char(10)
+  id_usuario    String     @db.Char(10)
+  id_ciudad     String     @db.Char(10)
+  cli_ci_ruc    String     @db.Char(13)
+  cli_nombres   String     @db.VarChar(60)
+  cli_apellidos String     @db.VarChar(60)
+  cli_telefono  String     @db.Char(15)
+  cli_direccion String     @db.VarChar(120)
+  Usuarios      Usuarios   @relation(fields: [id_usuario], references: [id_usuario])
+  Ciudades      Ciudades   @relation(fields: [id_ciudad], references: [id_ciudad])
+  Carritos      Carritos[]
+  Pedidos       Pedidos[]
+
+  @@map("Clientes")
+}
+
+model CompraDetalle {
+  id_compra      String    @db.Char(10)
+  id_producto    String    @db.Char(10)
+  cde_cantidad   Int
+  cde_costo_unit Decimal   @db.Decimal(10, 2)
+  cde_subtotal   Decimal   @db.Decimal(10, 2)
+  Compras        Compras   @relation(fields: [id_compra], references: [id_compra])
+  Productos      Productos @relation(fields: [id_producto], references: [id_producto])
+
+  @@id([id_compra, id_producto])
+  @@map("CompraDetalle")
+}
+
+model Compras {
+  id_compra      String           @id @db.Char(10)
+  id_proveedor   String           @db.Char(10)
+  id_sede        String           @db.Char(10)
+  com_numero     String           @db.Char(15)
+  com_fecha      DateTime         @default(now()) @db.Timestamp(6)
+  com_total      Decimal          @db.Decimal(10, 2)
+  com_estado     String           @db.Char(12)
+  Proveedores    Proveedores      @relation(fields: [id_proveedor], references: [id_proveedor])
+  Sedes          Sedes            @relation(fields: [id_sede], references: [id_sede])
+  CompraDetalle  CompraDetalle[]
+  OrdenesEntrada OrdenesEntrada[]
+
+  @@map("Compras")
+}
+
+model Departamentos {
+  id_departamento String      @id @db.Char(10)
+  dep_nombre      String      @db.VarChar(50)
+  dep_telefono    String      @db.Char(15)
+  dep_estado      String      @db.Char(10)
+  Empleados       Empleados[]
+
+  @@map("Departamentos")
+}
+
+model Descuentos {
+  id_descuento     String    @id @db.Char(10)
+  des_codigo       String    @db.Char(15)
+  des_nombre       String    @db.VarChar(50)
+  des_tipo         String    @db.Char(12)
+  des_valor        Decimal   @db.Decimal(10, 2)
+  des_fecha_inicio DateTime  @db.Timestamp(6)
+  des_fecha_fin    DateTime  @db.Timestamp(6)
+  des_uso_maximo   Int
+  des_uso_actual   Int       @default(0)
+  des_estado       String    @db.Char(10)
+  Pedidos          Pedidos[]
+
+  @@map("Descuentos")
+}
+
+model Empleados {
+  id_empleado       String              @id @db.Char(10)
+  id_usuario        String              @db.Char(10)
+  id_departamento   String              @db.Char(10)
+  id_sede           String              @db.Char(10)
+  emp_ci            String              @db.Char(10)
+  emp_nombres       String              @db.VarChar(60)
+  emp_apellidos     String              @db.VarChar(60)
+  emp_cargo         String              @db.VarChar(50)
+  emp_sueldo        Decimal             @db.Decimal(10, 2)
+  Usuarios          Usuarios            @relation(fields: [id_usuario], references: [id_usuario])
+  Departamentos     Departamentos       @relation(fields: [id_departamento], references: [id_departamento])
+  Sedes             Sedes               @relation(fields: [id_sede], references: [id_sede])
+  AjustesInventario AjustesInventario[]
+  OrdenesEntrada    OrdenesEntrada[]
+  OrdenesSalida     OrdenesSalida[]
+
+  @@map("Empleados")
+}
+
+model Envios {
+  id_envio              String        @id @db.Char(10)
+  id_orden_salida       String        @db.Char(10)
+  env_direccion_entrega String        @db.VarChar(150)
+  env_transportista     String        @db.VarChar(50)
+  env_numero_guia       String        @db.Char(20)
+  env_fecha_envio       DateTime      @default(now()) @db.Timestamp(6)
+  env_estado            String        @db.Char(12)
+  OrdenesSalida         OrdenesSalida @relation(fields: [id_orden_salida], references: [id_orden_salida])
+
+  @@map("Envios")
+}
+
+model Facturas {
+  id_factura           String   @id @db.Char(10)
+  id_pedido            String   @db.Char(10)
+  fac_numero           String   @db.Char(17)
+  fac_autorizacion_sri String   @db.Char(49)
+  fac_fecha_emision    DateTime @default(now()) @db.Timestamp(6)
+  fac_total            Decimal  @db.Decimal(10, 2)
+  fac_estado           String   @db.Char(10)
+  Pedidos              Pedidos  @relation(fields: [id_pedido], references: [id_pedido])
+
+  @@map("Facturas")
+}
+
+model LOG {
+  id_usuario        String   @db.Char(10)
+  log_accion        String   @db.Char(10)
+  log_tabla         String   @db.VarChar(30)
+  log_ip            String   @db.Char(45)
+  log_fecha         DateTime @default(now()) @db.Timestamp(6)
+  log_datos_antes   String   @db.Text
+  log_datos_despues String   @db.Text
+
+  @@id([id_usuario, log_fecha])
+  @@map("LOG")
+}
+
+model Lotes {
+  id_lote               String                @id @db.Char(10)
+  id_producto           String                @db.Char(10)
+  id_sede               String                @db.Char(10)
+  lot_numero            String                @db.Char(20)
+  lot_fecha_fabricacion DateTime              @db.Date
+  lot_fecha_caducidad   DateTime              @db.Date
+  lot_stock_actual      Int
+  lot_estado            String                @db.Char(12)
+  Productos             Productos             @relation(fields: [id_producto], references: [id_producto])
+  Sedes                 Sedes                 @relation(fields: [id_sede], references: [id_sede])
+  AjusteDetalle         AjusteDetalle[]
+  OrdenEntradaDetalle   OrdenEntradaDetalle[]
+  OrdenSalidaDetalle    OrdenSalidaDetalle[]
+
+  @@map("Lotes")
+}
+
+model OrdenEntradaDetalle {
+  id_orden_entrada      String         @db.Char(10)
+  id_lote               String         @db.Char(10)
+  oed_cantidad_recibida Int
+  oed_costo_unit        Decimal        @db.Decimal(10, 2)
+  oed_subtotal          Decimal        @db.Decimal(10, 2)
+  OrdenesEntrada        OrdenesEntrada @relation(fields: [id_orden_entrada], references: [id_orden_entrada])
+  Lotes                 Lotes          @relation(fields: [id_lote], references: [id_lote])
+
+  @@id([id_orden_entrada, id_lote])
+  @@map("OrdenEntradaDetalle")
+}
+
+model OrdenSalidaDetalle {
+  id_orden_salida         String        @db.Char(10)
+  id_lote                 String        @db.Char(10)
+  osd_cantidad_despachada Int
+  osd_precio_unit         Decimal       @db.Decimal(10, 2)
+  osd_subtotal            Decimal       @db.Decimal(10, 2)
+  OrdenesSalida           OrdenesSalida @relation(fields: [id_orden_salida], references: [id_orden_salida])
+  Lotes                   Lotes         @relation(fields: [id_lote], references: [id_lote])
+
+  @@id([id_orden_salida, id_lote])
+  @@map("OrdenSalidaDetalle")
+}
+
+model OrdenesEntrada {
+  id_orden_entrada    String                @id @db.Char(10)
+  id_compra           String                @db.Char(10)
+  id_sede             String                @db.Char(10)
+  id_empleado         String                @db.Char(10)
+  oen_numero          String                @db.Char(15)
+  oen_fecha           DateTime              @default(now()) @db.Timestamp(6)
+  oen_observacion     String                @db.VarChar(150)
+  oen_estado          String                @db.Char(12)
+  Compras             Compras               @relation(fields: [id_compra], references: [id_compra])
+  Sedes               Sedes                 @relation(fields: [id_sede], references: [id_sede])
+  Empleados           Empleados             @relation(fields: [id_empleado], references: [id_empleado])
+  OrdenEntradaDetalle OrdenEntradaDetalle[]
+
+  @@map("OrdenesEntrada")
+}
+
+model OrdenesSalida {
+  id_orden_salida    String               @id @db.Char(10)
+  id_pedido          String               @db.Char(10)
+  id_sede            String               @db.Char(10)
+  id_empleado        String               @db.Char(10)
+  osa_numero         String               @db.Char(15)
+  osa_fecha          DateTime             @default(now()) @db.Timestamp(6)
+  osa_observacion    String               @db.VarChar(150)
+  osa_estado         String               @db.Char(12)
+  Pedidos            Pedidos              @relation(fields: [id_pedido], references: [id_pedido])
+  Sedes              Sedes                @relation(fields: [id_sede], references: [id_sede])
+  Empleados          Empleados            @relation(fields: [id_empleado], references: [id_empleado])
+  Envios             Envios[]
+  OrdenSalidaDetalle OrdenSalidaDetalle[]
+
+  @@map("OrdenesSalida")
+}
+
+model Pagos {
+  id_pago        String   @id @db.Char(10)
+  id_pedido      String   @db.Char(10)
+  pag_metodo     String   @db.Char(15)
+  pag_monto      Decimal  @db.Decimal(10, 2)
+  pag_fecha      DateTime @default(now()) @db.Timestamp(6)
+  pag_referencia String   @db.VarChar(80)
+  pag_estado     String   @db.Char(10)
+  Pedidos        Pedidos  @relation(fields: [id_pedido], references: [id_pedido])
+
+  @@map("Pagos")
+}
+
+model Paises {
+  id_pais    String     @id @db.Char(10)
+  pai_codigo String     @db.Char(3)
+  pai_nombre String     @db.VarChar(60)
+  Ciudades   Ciudades[]
+
+  @@map("Paises")
+}
+
+model PedidoDetalle {
+  id_pedido       String    @db.Char(10)
+  id_producto     String    @db.Char(10)
+  pde_cantidad    Int
+  pde_precio_unit Decimal   @db.Decimal(10, 2)
+  pde_subtotal    Decimal   @db.Decimal(10, 2)
+  Pedidos         Pedidos   @relation(fields: [id_pedido], references: [id_pedido])
+  Productos       Productos @relation(fields: [id_producto], references: [id_producto])
+
+  @@id([id_pedido, id_producto])
+  @@map("PedidoDetalle")
+}
+
+model Pedidos {
+  id_pedido             String          @id @db.Char(10)
+  id_cliente            String          @db.Char(10)
+  id_sede               String          @db.Char(10)
+  id_ciudad             String          @db.Char(10)
+  id_descuento          String?         @db.Char(10)
+  ped_numero            String          @db.Char(15)
+  ped_direccion_entrega String          @db.VarChar(150)
+  ped_latitud           Decimal         @db.Decimal(10, 8)
+  ped_longitud          Decimal         @db.Decimal(11, 8)
+  ped_fecha             DateTime        @default(now()) @db.Timestamp(6)
+  ped_subtotal          Decimal         @db.Decimal(10, 2)
+  ped_descuento         Decimal         @default(0) @db.Decimal(10, 2)
+  ped_iva               Decimal         @db.Decimal(10, 2)
+  ped_total             Decimal         @db.Decimal(10, 2)
+  ped_estado            String          @db.Char(12)
+  Clientes              Clientes        @relation(fields: [id_cliente], references: [id_cliente])
+  Sedes                 Sedes           @relation(fields: [id_sede], references: [id_sede])
+  Ciudades              Ciudades        @relation(fields: [id_ciudad], references: [id_ciudad])
+  Descuentos            Descuentos?     @relation(fields: [id_descuento], references: [id_descuento])
+  Facturas              Facturas[]
+  OrdenesSalida         OrdenesSalida[]
+  Pagos                 Pagos[]
+  PedidoDetalle         PedidoDetalle[]
+
+  @@map("Pedidos")
+}
+
+model ProductoImagenes {
+  id_imagen      String    @id @db.Char(10)
+  id_producto    String    @db.Char(10)
+  img_url        String    @db.VarChar(255)
+  img_orden      Int       @default(1)
+  img_es_portada String    @default("0") @db.Char(1)
+  Productos      Productos @relation(fields: [id_producto], references: [id_producto])
+
+  @@map("ProductoImagenes")
+}
+
+model Productos {
+  id_producto      String             @id @db.Char(10)
+  id_categoria     String             @db.Char(10)
+  pro_codigo       String             @db.Char(15)
+  pro_nombre       String             @db.VarChar(100)
+  pro_descripcion  String             @db.Text
+  pro_precio       Decimal            @db.Decimal(10, 2)
+  pro_estado       String             @db.Char(10)
+  Categorias       Categorias         @relation(fields: [id_categoria], references: [id_categoria])
+  CarritoDetalle   CarritoDetalle[]
+  CompraDetalle    CompraDetalle[]
+  Lotes            Lotes[]
+  PedidoDetalle    PedidoDetalle[]
+  ProductoImagenes ProductoImagenes[]
+
+  @@map("Productos")
+}
+
+model Proveedores {
+  id_proveedor     String    @id @db.Char(10)
+  id_ciudad        String    @db.Char(10)
+  prv_ruc          String    @db.Char(13)
+  prv_razon_social String    @db.VarChar(100)
+  prv_telefono     String    @db.Char(15)
+  prv_email        String    @db.VarChar(100)
+  Ciudades         Ciudades  @relation(fields: [id_ciudad], references: [id_ciudad])
+  Compras          Compras[]
+
+  @@map("Proveedores")
+}
+
+model Roles {
+  id_rol          String     @id @db.Char(10)
+  rol_nombre      String     @db.VarChar(30)
+  rol_descripcion String     @db.VarChar(100)
+  rol_estado      String     @db.Char(10)
+  Usuarios        Usuarios[]
+
+  @@map("Roles")
+}
+
+model Sedes {
+  id_sede           String              @id @db.Char(10)
+  id_ciudad         String              @db.Char(10)
+  sed_nombre        String              @db.VarChar(60)
+  sed_direccion     String              @db.VarChar(120)
+  sed_telefono      String              @db.Char(15)
+  sed_tipo          String              @db.Char(12)
+  sed_latitud       Decimal             @db.Decimal(10, 8)
+  sed_longitud      Decimal             @db.Decimal(11, 8)
+  Ciudades          Ciudades            @relation(fields: [id_ciudad], references: [id_ciudad])
+  AjustesInventario AjustesInventario[]
+  Compras           Compras[]
+  Empleados         Empleados[]
+  Lotes             Lotes[]
+  OrdenesEntrada    OrdenesEntrada[]
+  OrdenesSalida     OrdenesSalida[]
+  Pedidos           Pedidos[]
+
+  @@map("Sedes")
+}
+
+model Usuarios {
+  id_usuario     String      @id @db.Char(10)
+  id_rol         String      @db.Char(10)
+  usu_nombre     String      @db.VarChar(50)
+  usu_email      String      @db.VarChar(100)
+  usu_clave_hash String      @db.Char(60)
+  usu_estado     String      @db.Char(10)
+  Roles          Roles       @relation(fields: [id_rol], references: [id_rol])
+  Clientes       Clientes[]
+  Empleados      Empleados[]
+
+  @@map("Usuarios")
+}

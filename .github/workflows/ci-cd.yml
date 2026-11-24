@@ -1,0 +1,110 @@
+name: CI/CD Full Stack MVC - DERMAKOR
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: "pages"
+  cancel-in-progress: false
+
+jobs:
+  ci-fullstack-mvc:
+    name: CI Backend Prisma/MVC + Verificacion Frontend MVC
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: "postgresql://user:pass@localhost:5432/postgres?sslmode=require"
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Verificar estructura obligatoria de 2 carpetas MVC (frontend/ y server/)
+        run: |
+          for f in \
+            "frontend/index.html" \
+            "frontend/admin.html" \
+            "frontend/assets/css/styles.css" \
+            "frontend/models/api.model.js" \
+            "frontend/models/auth.model.js" \
+            "frontend/models/product.model.js" \
+            "frontend/models/cart.model.js" \
+            "frontend/models/order.model.js" \
+            "frontend/views/product.view.js" \
+            "frontend/views/cart.view.js" \
+            "frontend/views/auth.view.js" \
+            "frontend/views/admin.view.js" \
+            "frontend/controllers/auth.controller.js" \
+            "frontend/controllers/cart.controller.js" \
+            "frontend/controllers/admin.controller.js" \
+            "frontend/controllers/app.controller.js" \
+            "server/package.json" \
+            "server/prisma/schema.prisma" \
+            "server/prisma/seed.js" \
+            "server/prisma/migrations/0001_init_reto2_mvc/migration.sql" \
+            "server/controllers/index.js" \
+            "server/middleware/index.js" \
+            "server/models/index.js" \
+            "server/routes/index.js"; do
+            if [ ! -f "$f" ]; then
+              echo "Falta archivo MVC requerido: $f"
+              exit 1
+            fi
+          done
+          echo "Estructura Full Stack MVC verificada correctamente."
+
+      - name: Instalar dependencias del backend (server/)
+        working-directory: ./server
+        run: npm ci
+
+      - name: Validar esquema Prisma y generar Prisma Client
+        working-directory: ./server
+        env:
+          DATABASE_URL: "postgresql://user:pass@localhost:5432/postgres?sslmode=require"
+        run: |
+          npx prisma validate
+          npx prisma generate
+
+      - name: Verificar sintaxis JavaScript (Backend MVC + Frontend MVC)
+        run: |
+          find server/src frontend/models frontend/views frontend/controllers -name "*.js" -print0 | xargs -0 -n1 node --check
+
+  cd-github-pages:
+    name: CD Frontend Estático hacia GitHub Pages
+    needs: ci-fullstack-mvc
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repositorio
+        uses: actions/checkout@v4
+
+      - name: Configurar GitHub Pages
+        uses: actions/configure-pages@v5
+        continue-on-error: true
+
+      - name: Empaquetar carpeta ./frontend como artefacto Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: "./frontend"
+
+      - name: Desplegar Frontend a GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
+        continue-on-error: true

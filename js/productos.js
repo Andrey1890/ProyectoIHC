@@ -1,5 +1,5 @@
-// Catálogo sincronizado con PostgreSQL (Supabase) - Stock controlado por producto desde tabla Lotes
-var LISTA_PRODUCTOS = [
+// Catálogo sincronizado con PostgreSQL (Supabase) - 90 productos con imágenes WebP optimizadas
+var PRODUCTOS_RESPALDO = [
   {
     "id": "exoface-casa",
     "nombre": "ExoFace",
@@ -11,7 +11,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Gotero 30 ml",
     "precio": 74.0,
     "precioProfesional": 62.0,
-    "imagen": "images/01_exoface.png",
+    "imagen": "images/01_exoface.webp",
     "destacadoHome": true,
     "esExosoma": true,
     "principiosActivos": [
@@ -44,7 +44,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Gotero 30 ml",
     "precio": 58.0,
     "precioProfesional": 48.0,
-    "imagen": "images/02_exolumine.png",
+    "imagen": "images/02_exolumine.webp",
     "destacadoHome": false,
     "esExosoma": true,
     "principiosActivos": [
@@ -76,7 +76,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Gotero 30 ml",
     "precio": 58.0,
     "precioProfesional": 48.0,
-    "imagen": "images/03_exoblemish.png",
+    "imagen": "images/03_exoblemish.webp",
     "destacadoHome": false,
     "esExosoma": true,
     "principiosActivos": [
@@ -107,7 +107,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Gotero 30 ml",
     "precio": 56.0,
     "precioProfesional": 46.0,
-    "imagen": "images/04_exohair.png",
+    "imagen": "images/04_exohair.webp",
     "destacadoHome": false,
     "esExosoma": true,
     "principiosActivos": [
@@ -138,7 +138,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco airless 30 ml",
     "precio": 62.0,
     "precioProfesional": 52.7,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exoneck_tensor_cuello_y_escote.webp",
     "destacadoHome": false,
     "descripcion": "Sérum de exosomas reafirmante cervical. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -164,7 +164,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco gotero 15 ml",
     "precio": 54.0,
     "precioProfesional": 45.9,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exoeyes_contorno_ocular_avanzado.webp",
     "destacadoHome": false,
     "descripcion": "Concentrado periocular con exosomas y péptidos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -190,7 +190,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 50 g",
     "precio": 68.0,
     "precioProfesional": 57.8,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exorepair_crema_nocturna_celular.webp",
     "destacadoHome": false,
     "descripcion": "Regenerador intensivo nocturno con exosomas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -216,7 +216,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales x 5 ml",
     "precio": 115.0,
     "precioProfesional": 97.75,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exovial_cabina_regeneracion_total.webp",
     "destacadoHome": false,
     "descripcion": "Viales estériles de exosomas concentrados. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -242,7 +242,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 30 ml",
     "precio": 64.0,
     "precioProfesional": 54.4,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exobooster_post_laser_calmante.webp",
     "destacadoHome": false,
     "descripcion": "Fluido reparador dérmico con exosomas puros. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -268,7 +268,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 50 ml",
     "precio": 39.0,
     "precioProfesional": 33.15,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_exohands_rejuvenecimiento_manos.webp",
     "destacadoHome": false,
     "descripcion": "Emulsión despigmentante y regeneradora con exosomas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en exosomas.",
     "principiosActivos": [
@@ -295,7 +295,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 50 ml",
     "precio": 42.0,
     "precioProfesional": 35.0,
-    "imagen": "",
+    "imagen": "images/prod_aqua_piel_3ah.webp",
     "destacadoHome": true,
     "esExosoma": false,
     "principiosActivos": [
@@ -322,7 +322,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 50 ml",
     "precio": 44.0,
     "precioProfesional": 37.4,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_hydragel_acido_hialuronico_puro_2.webp",
     "destacadoHome": false,
     "descripcion": "Gel biomimético de hidratación multicapa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -348,7 +348,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 50 g",
     "precio": 46.0,
     "precioProfesional": 39.1,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_aquacream_barrera_ceramidas.webp",
     "destacadoHome": false,
     "descripcion": "Crema restauradora del manto hidrolipídico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -374,7 +374,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 15 ml",
     "precio": 22.0,
     "precioProfesional": 18.7,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_hydralips_balsamo_hialuronico.webp",
     "destacadoHome": false,
     "descripcion": "Hidratante reparador labial clínico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -400,7 +400,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Gotero 30 ml",
     "precio": 48.0,
     "precioProfesional": 40.8,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_serum_b5_hialuronico_ultra.webp",
     "destacadoHome": false,
     "descripcion": "Concentrado calmante e hidratante profundo. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -426,7 +426,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 50 ml",
     "precio": 38.0,
     "precioProfesional": 32.3,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_emulsion_hidratante_piel_grasa.webp",
     "destacadoHome": false,
     "descripcion": "Hidratación oil-free matificante 24h. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -452,7 +452,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales x 10 ml",
     "precio": 82.0,
     "precioProfesional": 69.7,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_viales_hydramesotherapy_ha.webp",
     "destacadoHome": false,
     "descripcion": "Ácido hialurónico no reticulado para cabina. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -478,7 +478,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Spray 120 ml",
     "precio": 28.0,
     "precioProfesional": 23.8,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_bruma_termal_calmante_azuleno.webp",
     "destacadoHome": false,
     "descripcion": "Loción hidro-calmante para piel reactiva. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -504,7 +504,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 50 g",
     "precio": 49.0,
     "precioProfesional": 41.65,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_crema_nutritiva_peptidos_y_colageno.webp",
     "destacadoHome": false,
     "descripcion": "Hidratación estructural para piel seca. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -530,7 +530,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Envase clínico 50 ml",
     "precio": 40.0,
     "precioProfesional": 34.0,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_dermclar_hidratacion_formula_10.webp",
     "destacadoHome": false,
     "descripcion": "Tratamiento especializado de hidratación. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en hidratación.",
     "principiosActivos": [
@@ -557,7 +557,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 260 ml",
     "precio": 27.0,
     "precioProfesional": 22.0,
-    "imagen": "",
+    "imagen": "images/prod_agua_micelar_sensible.webp",
     "destacadoHome": true,
     "esExosoma": false,
     "principiosActivos": [
@@ -585,7 +585,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 250 ml",
     "precio": 40.0,
     "precioProfesional": 33.0,
-    "imagen": "",
+    "imagen": "images/prod_luminescence_cleanser.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -612,7 +612,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 150 ml",
     "precio": 29.0,
     "precioProfesional": 24.65,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_gel_limpiador_purificante_aha_bha.webp",
     "destacadoHome": false,
     "descripcion": "Limpieza profunda para piel mixta a grasa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -638,7 +638,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 200 ml",
     "precio": 28.0,
     "precioProfesional": 23.8,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_leche_limpiadora_calmante_manzanilla.webp",
     "destacadoHome": false,
     "descripcion": "Desmaquillante suave para piel sensible. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -664,7 +664,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 150 ml",
     "precio": 26.0,
     "precioProfesional": 22.1,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_tonico_equilibrante_ph_niacinamida.webp",
     "destacadoHome": false,
     "descripcion": "Loción tónica cerradora de poros. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -690,7 +690,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 120 ml",
     "precio": 34.0,
     "precioProfesional": 28.9,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_aceite_desmaquillante_dermo_lipidico.webp",
     "destacadoHome": false,
     "descripcion": "Limpiador oleoso emulsionable sin residuos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -716,7 +716,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 100 g",
     "precio": 35.0,
     "precioProfesional": 29.75,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_exfoliante_enzimatico_papaya_y_avena.webp",
     "destacadoHome": false,
     "descripcion": "Renovador celular suave sin gránulos abrasivos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -742,7 +742,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 250 ml",
     "precio": 32.0,
     "precioProfesional": 27.2,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_solucion_desengransante_pre_peeling.webp",
     "destacadoHome": false,
     "descripcion": "Loción preparadora clínica de cabina. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -768,7 +768,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 150 ml",
     "precio": 27.0,
     "precioProfesional": 22.95,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_agua_micelar_bifasica_ojos_y_labios.webp",
     "destacadoHome": false,
     "descripcion": "Desmaquillante de alta tolerancia oftalmológica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -794,7 +794,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 160 ml",
     "precio": 31.0,
     "precioProfesional": 26.35,
-    "imagen": "images/03_hydrabrume.png",
+    "imagen": "images/prod_espuma_limpiadora_acido_mandelico.webp",
     "destacadoHome": false,
     "descripcion": "Higiene diaria renovadora y antibacteriana. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en limpieza.",
     "principiosActivos": [
@@ -821,7 +821,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 50 g",
     "precio": 48.0,
     "precioProfesional": 40.0,
-    "imagen": "",
+    "imagen": "images/prod_dd_cream_color.webp",
     "destacadoHome": true,
     "esExosoma": false,
     "principiosActivos": [
@@ -848,7 +848,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 60 g",
     "precio": 38.0,
     "precioProfesional": 32.3,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_sunblock_gel_invisible_spf_50.webp",
     "destacadoHome": false,
     "descripcion": "Fotoprotector toque seco para piel grasa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -874,7 +874,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 50 ml",
     "precio": 42.0,
     "precioProfesional": 35.7,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_solar_fluid_mineral_pediatrico_spf_50.webp",
     "destacadoHome": false,
     "descripcion": "Pantalla 100% mineral para piel intolerante. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -900,7 +900,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Estuche 12 g",
     "precio": 45.0,
     "precioProfesional": 38.25,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_compacto_solar_dermclar_spf_50_tono_claro.webp",
     "destacadoHome": false,
     "descripcion": "Maquillaje dermatológico fotoprotector. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -926,7 +926,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Estuche 12 g",
     "precio": 45.0,
     "precioProfesional": 38.25,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_compacto_solar_dermclar_spf_50_tono_medio.webp",
     "destacadoHome": false,
     "descripcion": "Cobertura correctora con filtros UV/IR. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -952,7 +952,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Aerosol 75 ml",
     "precio": 39.0,
     "precioProfesional": 33.15,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_bruma_solar_reaplicacion_facial_spf_50.webp",
     "destacadoHome": false,
     "descripcion": "Spray fotoprotector invisible sobre maquillaje. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -978,7 +978,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 200 ml",
     "precio": 48.0,
     "precioProfesional": 40.8,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_solar_corporal_familiar_spf_50_resistente.webp",
     "destacadoHome": false,
     "descripcion": "Loción fotoprotectora resistente al agua. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -1004,7 +1004,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Stick 15 g",
     "precio": 32.0,
     "precioProfesional": 27.2,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_stick_solar_zonas_sensibles_spf_50.webp",
     "destacadoHome": false,
     "descripcion": "Barra fotoprotectora para manchas y cicatrices. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -1030,7 +1030,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 150 ml",
     "precio": 30.0,
     "precioProfesional": 25.5,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_emulsion_post_solar_reparadora_adn.webp",
     "destacadoHome": false,
     "descripcion": "Loción descongestiva con Aloe y Pantenol. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -1056,7 +1056,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 50 ml",
     "precio": 46.0,
     "precioProfesional": 39.1,
-    "imagen": "images/04_solar_dd_cream.png",
+    "imagen": "images/prod_fluido_solar_antimanchas_acido_tranexamico.webp",
     "destacadoHome": false,
     "descripcion": "Fotoprotección despigmentante diaria SPF 50+. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en protección solar.",
     "principiosActivos": [
@@ -1083,7 +1083,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 30 ml",
     "precio": 41.0,
     "precioProfesional": 34.0,
-    "imagen": "",
+    "imagen": "images/prod_derm_face_serum.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1111,7 +1111,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 15 ml",
     "precio": 48.0,
     "precioProfesional": 40.0,
-    "imagen": "",
+    "imagen": "images/prod_contorno_ojos_frio.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1139,7 +1139,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 15 ml",
     "precio": 40.0,
     "precioProfesional": 32.0,
-    "imagen": "",
+    "imagen": "images/prod_proteoglycans_serum.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1167,7 +1167,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 78.0,
     "precioProfesional": 78.0,
-    "imagen": "images/05_dermclar_plasmavit.png",
+    "imagen": "images/05_dermclar_plasmavit.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1194,7 +1194,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 85.0,
     "precioProfesional": 85.0,
-    "imagen": "images/09_dermclar_hair.png",
+    "imagen": "images/09_dermclar_hair.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1223,7 +1223,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 94.0,
     "precioProfesional": 94.0,
-    "imagen": "images/10_dermclar_face.png",
+    "imagen": "images/10_dermclar_face.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1252,7 +1252,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 5ml",
     "precio": 105.0,
     "precioProfesional": 105.0,
-    "imagen": "images/11_dermclar_face_v.png",
+    "imagen": "images/11_dermclar_face_v.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1281,7 +1281,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 5ml",
     "precio": 110.0,
     "precioProfesional": 110.0,
-    "imagen": "images/12_dermclar_face_ob.png",
+    "imagen": "images/12_dermclar_face_ob.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1310,7 +1310,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Kit Clínico Completo",
     "precio": 150.0,
     "precioProfesional": 150.0,
-    "imagen": "images/16_metodo_3r.png",
+    "imagen": "images/16_metodo_3r.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1339,7 +1339,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Kit Clínico Capilar",
     "precio": 79.0,
     "precioProfesional": 79.0,
-    "imagen": "images/17_metodo_hair.png",
+    "imagen": "images/17_metodo_hair.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1367,7 +1367,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 79.0,
     "precioProfesional": 79.0,
-    "imagen": "images/08_dermclar_firm.png",
+    "imagen": "images/08_dermclar_firm.webp",
     "destacadoHome": true,
     "esExosoma": false,
     "principiosActivos": [
@@ -1396,7 +1396,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 98.0,
     "precioProfesional": 98.0,
-    "imagen": "images/06_dermclar_obes.png",
+    "imagen": "images/06_dermclar_obes.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1424,7 +1424,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 5 viales X 10ml",
     "precio": 70.0,
     "precioProfesional": 70.0,
-    "imagen": "images/07_dermclar_celu.png",
+    "imagen": "images/07_dermclar_celu.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1453,7 +1453,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 10 ampollas X 5ml",
     "precio": 95.0,
     "precioProfesional": 95.0,
-    "imagen": "images/13_dermclar_bump_up.png",
+    "imagen": "images/13_dermclar_bump_up.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1482,7 +1482,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 10 ampollas X 5ml",
     "precio": 87.0,
     "precioProfesional": 87.0,
-    "imagen": "images/14_dermclar_ice_up.png",
+    "imagen": "images/14_dermclar_ice_up.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1510,7 +1510,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja 10 ampollas X 5ml",
     "precio": 65.0,
     "precioProfesional": 65.0,
-    "imagen": "images/15_dermclar_golden_up.png",
+    "imagen": "images/15_dermclar_golden_up.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1538,7 +1538,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Kit Clínico Completo",
     "precio": 95.0,
     "precioProfesional": 95.0,
-    "imagen": "images/18_metodo_obooster.png",
+    "imagen": "images/18_metodo_obooster.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1567,7 +1567,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 500 g",
     "precio": 45.0,
     "precioProfesional": 38.25,
-    "imagen": "images/06_dermclar_obes.png",
+    "imagen": "images/prod_gel_criogenico_reafirmante_corporal.webp",
     "destacadoHome": false,
     "descripcion": "Efecto frío tonificante para flacidez. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal.",
     "principiosActivos": [
@@ -1593,7 +1593,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Frasco 250 ml",
     "precio": 42.0,
     "precioProfesional": 35.7,
-    "imagen": "images/06_dermclar_obes.png",
+    "imagen": "images/prod_crema_anticelulitica_cafeina_y_centella.webp",
     "destacadoHome": false,
     "descripcion": "Emulsión reductora de piel de naranja. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal.",
     "principiosActivos": [
@@ -1619,7 +1619,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 200 ml",
     "precio": 38.0,
     "precioProfesional": 32.3,
-    "imagen": "images/06_dermclar_obes.png",
+    "imagen": "images/prod_crema_prevencion_estrias_rosa_mosqueta.webp",
     "destacadoHome": false,
     "descripcion": "Elasticidad dérmica intensiva corporal. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en corporal.",
     "principiosActivos": [
@@ -1646,7 +1646,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad individual en acero médico",
     "precio": 25.0,
     "precioProfesional": 25.0,
-    "imagen": "",
+    "imagen": "images/prod_copa_sueca_mini.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1672,7 +1672,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 48.0,
     "precioProfesional": 40.8,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_copa_sueca_metaloterapia_corporal.webp",
     "destacadoHome": false,
     "descripcion": "Succión y vacumterapia manual ergonómica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1698,7 +1698,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 52.0,
     "precioProfesional": 44.2,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_tabla_moldeadora_corporal_metal.webp",
     "destacadoHome": false,
     "descripcion": "Perfilado y drenaje linfático de cintura. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1724,7 +1724,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 49.0,
     "precioProfesional": 41.65,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_rodillo_estriado_activador_circulatorio.webp",
     "destacadoHome": false,
     "descripcion": "Hiperemia controlada y preparación adiposa. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1750,7 +1750,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 46.0,
     "precioProfesional": 39.1,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_hongo_reductor_metaloterapia_corporal.webp",
     "destacadoHome": false,
     "descripcion": "Combate celulitis compacta y adiposidad. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1776,7 +1776,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 64.0,
     "precioProfesional": 54.4,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_cinturon_masajeador_articulado_metal.webp",
     "destacadoHome": false,
     "descripcion": "Masaje simétrico en espalda, muslos y glúteos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1802,7 +1802,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 35.0,
     "precioProfesional": 29.75,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_copa_facial_lift_contorno_ocular.webp",
     "destacadoHome": false,
     "descripcion": "Drenaje periocular y elevación de pómulos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1828,7 +1828,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad",
     "precio": 36.0,
     "precioProfesional": 30.6,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_espatula_escultora_mandibular_metal.webp",
     "destacadoHome": false,
     "descripcion": "Definición del óvalo facial y papada. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1854,7 +1854,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 2 unidades",
     "precio": 44.0,
     "precioProfesional": 37.4,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_esferas_criogenicas_faciales_par.webp",
     "destacadoHome": false,
     "descripcion": "Crioterapia reafirmante y descongestiva. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1880,7 +1880,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Envase clínico 50 ml",
     "precio": 40.0,
     "precioProfesional": 34.0,
-    "imagen": "images/11_kit_metaloterapia_facial.png",
+    "imagen": "images/prod_medical_skin_metaloterapia_formula_10.webp",
     "destacadoHome": false,
     "descripcion": "Tratamiento especializado de metaloterapia. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en metaloterapia.",
     "principiosActivos": [
@@ -1907,7 +1907,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Sobre 250 g",
     "precio": 19.0,
     "precioProfesional": 19.0,
-    "imagen": "",
+    "imagen": "images/prod_mascarilla_colageno.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -1934,7 +1934,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Sobre 100 g",
     "precio": 26.0,
     "precioProfesional": 22.1,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_hidroplastica_oro_24k.webp",
     "destacadoHome": false,
     "descripcion": "Nutrición luminosa y efecto tensor inmediato. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -1960,7 +1960,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Sobre 100 g",
     "precio": 24.0,
     "precioProfesional": 20.4,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_alginato_carbon_activado.webp",
     "destacadoHome": false,
     "descripcion": "Detoxificante profunda para piel acneica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -1986,7 +1986,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 200 g",
     "precio": 34.0,
     "precioProfesional": 28.9,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_calmante_azuleno_y_avena.webp",
     "destacadoHome": false,
     "descripcion": "Descongestión post-peeling o micropunción. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2012,7 +2012,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 200 g",
     "precio": 36.0,
     "precioProfesional": 30.6,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_vitamina_c_iluminadora.webp",
     "destacadoHome": false,
     "descripcion": "Antioxidante intensiva para pieles apagadas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2038,7 +2038,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 5 velos",
     "precio": 42.0,
     "precioProfesional": 35.7,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_velo_de_colageno_nativo_hidrogel.webp",
     "destacadoHome": false,
     "descripcion": "Lámina facial bio-activa reestructurante. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2064,7 +2064,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 150 g",
     "precio": 28.0,
     "precioProfesional": 23.8,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_arcilla_blanca_seborreguladora.webp",
     "destacadoHome": false,
     "descripcion": "Control de brillo y cierre de poros dilatados. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2090,7 +2090,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Pote 60 g",
     "precio": 35.0,
     "precioProfesional": 29.75,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_nocturna_acido_hialuronico.webp",
     "destacadoHome": false,
     "descripcion": "Sleeping mask de recuperación hídrica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2116,7 +2116,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Tubo 100 g",
     "precio": 32.0,
     "precioProfesional": 27.2,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_mascarilla_enzimatica_renovadora.webp",
     "destacadoHome": false,
     "descripcion": "Micro-exfoliación biológica iluminadora. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2142,7 +2142,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Envase clínico 50 ml",
     "precio": 40.0,
     "precioProfesional": 34.0,
-    "imagen": "images/02_exoface_serum.png",
+    "imagen": "images/prod_medical_skin_mascarillas_formula_10.webp",
     "destacadoHome": false,
     "descripcion": "Tratamiento especializado de mascarillas. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en mascarillas.",
     "principiosActivos": [
@@ -2169,7 +2169,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja de 100 unidades",
     "precio": 5.0,
     "precioProfesional": 5.0,
-    "imagen": "",
+    "imagen": "images/prod_guantes_nitrilo.webp",
     "destacadoHome": false,
     "esExosoma": false,
     "principiosActivos": [
@@ -2195,7 +2195,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 20 unidades",
     "precio": 65.0,
     "precioProfesional": 55.25,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_canulas_flexibles_dermatologicas_25g_x_50mm.webp",
     "destacadoHome": false,
     "descripcion": "Microcánulas de punta roma atraumática. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2221,7 +2221,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 100 unidades",
     "precio": 28.0,
     "precioProfesional": 23.8,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_jeringas_luer_lock_precision_3_ml.webp",
     "destacadoHome": false,
     "descripcion": "Jeringas estériles sin espacio muerto. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2247,7 +2247,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 10 unidades",
     "precio": 35.0,
     "precioProfesional": 29.75,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_cartuchos_nanopore_dermapen_36_pines.webp",
     "destacadoHome": false,
     "descripcion": "Repuestos estériles para micropunción eléctrica. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2273,7 +2273,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 10 unidades",
     "precio": 35.0,
     "precioProfesional": 29.75,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_cartuchos_nanopore_dermapen_12_pines.webp",
     "destacadoHome": false,
     "descripcion": "Inducción de colágeno cicatrizal y estrías. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2299,7 +2299,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Kit maletín",
     "precio": 145.0,
     "precioProfesional": 123.25,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_dispositivo_dermapen_inalambrico_pro.webp",
     "destacadoHome": false,
     "descripcion": "Equipo médico de micropunción regulable. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2325,7 +2325,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Unidad estéril",
     "precio": 22.0,
     "precioProfesional": 18.7,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_rodillo_dermaroller_titanio_0_5_mm.webp",
     "destacadoHome": false,
     "descripcion": "Terapia de inducción percutánea de activos. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2351,7 +2351,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Paquete x 200 uds",
     "precio": 14.0,
     "precioProfesional": 11.9,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_gasas_no_tejidas_esteriles_cabina.webp",
     "destacadoHome": false,
     "descripcion": "Compresas suaves sin pelusa uso clínico. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2377,7 +2377,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Caja x 100 uds",
     "precio": 16.0,
     "precioProfesional": 13.6,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_guantes_nitrilo_quirurgico_sin_polvo.webp",
     "destacadoHome": false,
     "descripcion": "Protección clínica hipoalergénica talla M. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [
@@ -2403,7 +2403,7 @@ var LISTA_PRODUCTOS = [
     "presentacion": "Paquete x 3 uds",
     "precio": 15.0,
     "precioProfesional": 12.75,
-    "imagen": "images/13_agujas_mesoterapia.png",
+    "imagen": "images/prod_banda_elastica_clinica_sujecion_facial.webp",
     "destacadoHome": false,
     "descripcion": "Vincha ajustable lavable para cabina estética. Desarrollado bajo estándares dermatológicos para resultados visibles y seguros en insumos.",
     "principiosActivos": [

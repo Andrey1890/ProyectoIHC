@@ -2,13 +2,27 @@
 // 1. CONFIGURACION SUPABASE POSTGRESQL + ESTADO GLOBAL DE LA APLICACION
 // --------------------------------------------------------------------------
 var SUPABASE_CONFIG = {
-  restUrl: "https://jdsqipqdcuyegjrpvgny.supabase.co/rest/v1",
-  poolerHost: "aws-1-us-west-2.pooler.supabase.com",
-  poolerPort: 5432,
-  database: "postgres",
-  dbUser: "postgres.jdsqipqdcuyegjrpvgny",
-  anonKey: "sb_publishable_T2q-SOGB3En3hu7KuvJelg_xldr0z5g"
+  // Arquitectura 3 capas: el cliente web consume unicamente la API REST del Backend Node MVC
+  restUrl: "/api",
+  anonKey: ""
 };
+
+var BACKEND_API_PORT = "4050";
+// URL productiva del backend en Vercel (configurada en el repositorio frontend)
+window.DERMAKOR_PROD_API_URL = window.DERMAKOR_PROD_API_URL || "";
+
+function resolverApiUrl(rutaRelativa) {
+  if (typeof window !== "undefined" && window.DermakorMVC && window.DermakorMVC.ApiModel) {
+    return window.DermakorMVC.ApiModel.buildUrl(rutaRelativa);
+  }
+  if (typeof window !== "undefined" && window.location && window.location.protocol.indexOf("http") === 0) {
+    var puertoActual = String(window.location.port || "");
+    if (puertoActual && puertoActual !== BACKEND_API_PORT) {
+      return window.location.protocol + "//" + window.location.hostname + ":" + BACKEND_API_PORT + rutaRelativa;
+    }
+  }
+  return rutaRelativa;
+}
 
 var LISTA_PRODUCTOS = [];
 var carrito = [];
@@ -17,6 +31,74 @@ var idProductoModalActual = null;
 var paginaActualCatalogo = 1;
 var productosPorPagina = 8;
 var listaFiltradaActual = [];
+var MAPA_IMAGENES_LOCALES = null;
+
+function obtenerMapaImagenesLocales() {
+  if (MAPA_IMAGENES_LOCALES !== null) {
+    return MAPA_IMAGENES_LOCALES;
+  }
+  MAPA_IMAGENES_LOCALES = {};
+  if (typeof PRODUCTOS_RESPALDO !== "undefined" && Array.isArray(PRODUCTOS_RESPALDO)) {
+    for (var i = 0; i < PRODUCTOS_RESPALDO.length; i++) {
+      var item = PRODUCTOS_RESPALDO[i];
+      if (item && item.id) {
+        MAPA_IMAGENES_LOCALES[item.id] = item.imagen || "";
+      }
+    }
+  }
+  return MAPA_IMAGENES_LOCALES;
+}
+
+function resolverImagenProducto(slug, imagenCandidata) {
+  var mapa = obtenerMapaImagenesLocales();
+  if (slug && Object.prototype.hasOwnProperty.call(mapa, slug)) {
+    return mapa[slug];
+  }
+  var img = (imagenCandidata || "").trim();
+  if (/\.webp$/i.test(img)) {
+    return img;
+  }
+  return "";
+}
+
+function generarSrcsetWebp(imgUrl) {
+  if (!imgUrl || !/\.webp$/i.test(imgUrl) || /-400\.webp$/i.test(imgUrl)) {
+    return "";
+  }
+  var base = imgUrl.slice(0, -5);
+  return base + "-400.webp 400w, " + imgUrl + " 800w";
+}
+
+function obtenerSrcMiniWebp(imgUrl) {
+  if (!imgUrl || !/\.webp$/i.test(imgUrl) || /-400\.webp$/i.test(imgUrl)) {
+    return imgUrl;
+  }
+  return imgUrl.slice(0, -5) + "-400.webp";
+}
+
+function construirHtmlImgResponsiva(imgUrl, altText, opciones) {
+  var opts = opciones || {};
+  var sizes = opts.sizes || "(max-width: 600px) 92vw, 280px";
+  var width = opts.width || 400;
+  var height = opts.height || 300;
+  var cls = opts.className ? ' class="' + opts.className + '"' : "";
+  var style = opts.style ? ' style="' + opts.style + '"' : "";
+  var lazyAttr = opts.lcp ? ' fetchpriority="high"' : ' loading="lazy"';
+  var srcset = generarSrcsetWebp(imgUrl);
+  var src = opts.usarMini ? obtenerSrcMiniWebp(imgUrl) : imgUrl;
+  var srcsetAttr = srcset ? ' srcset="' + srcset + '" sizes="' + sizes + '"' : "";
+
+  return (
+    "<img src=\"" + src + "\"" +
+    srcsetAttr +
+    cls +
+    style +
+    ' width="' + width + '" height="' + height + '"' +
+    lazyAttr +
+    ' decoding="async"' +
+    ' alt="' + altText + '" />'
+  );
+}
 
 // Consulta el stock real e individual de cada producto desde su registro sincronizado con la tabla Lotes
 function obtenerStockProducto(idProducto) {
@@ -112,6 +194,7 @@ function cargarEstadoPersistente() {
         if (carrito[c].cantidad > stockItem) {
           carrito[c].cantidad = Math.max(1, stockItem);
         }
+        carrito[c].imagen = resolverImagenProducto(carrito[c].id, carrito[c].imagen);
       }
     } catch (e) {
       carrito = [];
@@ -145,6 +228,10 @@ function cargarEstadoPersistente() {
 }
 
 function guardarCarritoPersistente() {
+  if (window.DermakorMVC && window.DermakorMVC.CartModel) {
+    window.DermakorMVC.CartModel.saveItems(carrito);
+    return;
+  }
   localStorage.setItem("dermakor_carrito", JSON.stringify(carrito));
 }
 
@@ -161,6 +248,9 @@ function guardarEnvioPersistente() {
 
 function verificarEstadoConexionDB() {
   var textoBadge = document.getElementById("texto-estado-db");
+  if (!textoBadge) {
+    return;
+  }
   if (SUPABASE_CONFIG.anonKey) {
     fetch(SUPABASE_CONFIG.restUrl + "/Productos?select=id_producto&limit=1", {
       headers: {
@@ -183,7 +273,7 @@ function verificarEstadoConexionDB() {
     return;
   }
 
-  fetch("/api/status")
+  fetch(resolverApiUrl("/api/status"))
     .then(function (r) {
       if (!r.ok) throw new Error("Sin API");
       return r.json();
@@ -200,7 +290,35 @@ function verificarEstadoConexionDB() {
     });
 }
 
+var CACHE_CATALOGO_KEY = "dermakor_catalogo_cache_v1";
+var CACHE_CATALOGO_TTL_MS = 60000;
+
+function leerCatalogoEnCache() {
+  try {
+    var raw = sessionStorage.getItem(CACHE_CATALOGO_KEY);
+    if (!raw) return null;
+    var parsed = JSON.parse(raw);
+    if (parsed && Array.isArray(parsed.items) && parsed.items.length > 0 && (Date.now() - parsed.ts) < CACHE_CATALOGO_TTL_MS) {
+      return parsed.items;
+    }
+  } catch (e) {}
+  return null;
+}
+
+function guardarCatalogoEnCache(items) {
+  try {
+    sessionStorage.setItem(CACHE_CATALOGO_KEY, JSON.stringify({ ts: Date.now(), items: items }));
+  } catch (e) {}
+}
+
 function cargarProductosDesdeServidor() {
+  var cacheado = leerCatalogoEnCache();
+  if (cacheado) {
+    LISTA_PRODUCTOS = cacheado;
+    inicializarVistasConProductos();
+    return;
+  }
+
   // 1. Si tenemos Supabase REST activo (GitHub Pages o navegador directo)
   if (SUPABASE_CONFIG.anonKey) {
     cargarProductosDesdeSupabaseREST();
@@ -208,7 +326,7 @@ function cargarProductosDesdeServidor() {
   }
 
   // 2. Si se corre backend local server.py
-  fetch("/api/productos")
+  fetch(resolverApiUrl("/api/productos"))
     .then(function (respuesta) {
       if (!respuesta.ok) {
         throw new Error("API PostgreSQL no disponible, usando JSON");
@@ -216,8 +334,11 @@ function cargarProductosDesdeServidor() {
       return respuesta.json();
     })
     .then(function (datosDb) {
-      if (Array.isArray(datosDb) && datosDb.length > 0) {
-        LISTA_PRODUCTOS = datosDb;
+      var listaExtraida = Array.isArray(datosDb)
+        ? datosDb
+        : (datosDb && Array.isArray(datosDb.data) ? datosDb.data : []);
+      if (listaExtraida.length > 0) {
+        LISTA_PRODUCTOS = listaExtraida;
         inicializarVistasConProductos();
       } else {
         throw new Error("Respuesta vacía");
@@ -296,8 +417,11 @@ function cargarProductosDesdeSupabaseREST() {
 
         var catNombre = r.Categorias && r.Categorias.cat_nombre ? r.Categorias.cat_nombre.trim() : "Cuidado facial";
 
+        var slugProd = meta.slug || id_p.toLowerCase();
+        var imagenRaw = meta.imagen !== undefined ? meta.imagen : imagenDb;
+
         var prodObj = {
-          id: meta.slug || id_p.toLowerCase(),
+          id: slugProd,
           id_producto_db: id_p,
           nombre: (r.pro_nombre || "").trim(),
           marca: meta.marca || "Dermclar",
@@ -308,7 +432,7 @@ function cargarProductosDesdeSupabaseREST() {
           precio: parseFloat(r.pro_precio) || 0,
           precioProfesional: typeof meta.precioProfesional === "number" ? meta.precioProfesional : (parseFloat(r.pro_precio) || 0),
           stock: stockTotal,
-          imagen: meta.imagen !== undefined ? meta.imagen : (imagenDb || "assets/img/" + id_p.toLowerCase() + ".jpg"),
+          imagen: resolverImagenProducto(slugProd, imagenRaw),
           destacadoHome: !!meta.destacadoHome,
           descripcion: clean_desc,
           principiosActivos: meta.principiosActivos || ["Activos liposomados Dermclar"],
@@ -320,10 +444,7 @@ function cargarProductosDesdeSupabaseREST() {
       }
 
       LISTA_PRODUCTOS = productosMapeados;
-      var textoBadge = document.getElementById("texto-estado-db");
-      if (textoBadge) {
-        // textoBadge en produccion silencioso
-      }
+      guardarCatalogoEnCache(LISTA_PRODUCTOS);
       inicializarVistasConProductos();
     })
     .catch(function (err) {
@@ -341,6 +462,11 @@ function cargarProductosDesdeJSON() {
       return respuesta.json();
     })
     .then(function (datosJson) {
+      if (Array.isArray(datosJson)) {
+        for (var i = 0; i < datosJson.length; i++) {
+          datosJson[i].imagen = resolverImagenProducto(datosJson[i].id, datosJson[i].imagen);
+        }
+      }
       LISTA_PRODUCTOS = datosJson;
       var textoBadge = document.getElementById("texto-estado-db");
       if (textoBadge) {
@@ -419,6 +545,10 @@ function inicializarVistasConProductos() {
 // 3. GESTION DE SESION Y CUENTA DE CLIENTE (CONECTADA A POSTGRESQL)
 // --------------------------------------------------------------------------
 function actualizarWidgetUsuarioHeader() {
+  if (window.DermakorMVC && window.DermakorMVC.AuthController) {
+    window.DermakorMVC.AuthController.syncHeader();
+    return;
+  }
   var contenedorWidget = document.getElementById("widget-usuario-header");
   if (!contenedorWidget) {
     return;
@@ -443,6 +573,11 @@ function abrirModalAuth() {
   if (modal) {
     modal.classList.add("abierto");
     document.body.style.overflow = "hidden";
+    if (window.DermakorMVC && window.DermakorMVC.AuthController) {
+      window.DermakorMVC.AuthController.init();
+    }
+    var correoInput = document.getElementById("login-correo");
+    if (correoInput) correoInput.focus();
   }
 }
 
@@ -471,85 +606,52 @@ function cambiarTabAuth(tipoTab) {
     formReg.style.display = "block";
     formLogin.style.display = "none";
   }
+  if (window.DermakorMVC && window.DermakorMVC.AuthView) {
+    window.DermakorMVC.AuthView.showAuthFeedback("", false);
+  }
 }
 
-function procesarLogin(evento) {
+async function procesarLogin(evento) {
   evento.preventDefault();
   var correo = document.getElementById("login-correo").value.trim().toLowerCase();
   var clave = document.getElementById("login-clave").value.trim();
 
   if (!correo || !clave) {
-    alert("Por favor completa tu correo y contraseña.");
+    if (window.DermakorMVC && window.DermakorMVC.AuthView) {
+      window.DermakorMVC.AuthView.showAuthFeedback("Por favor completa tu correo y contraseña.", false);
+    }
     return;
   }
 
-  // 1. Supabase REST directo en vivo
-  if (SUPABASE_CONFIG.anonKey) {
-    var urlAuth = SUPABASE_CONFIG.restUrl + "/Usuarios?select=id_usuario,usu_nombre,usu_email,Clientes(id_cliente,cli_ci_ruc,cli_nombres,cli_apellidos,cli_telefono,cli_direccion)&usu_email=ilike." + encodeURIComponent(correo);
-
-    fetch(urlAuth, {
-      headers: {
-        "apikey": SUPABASE_CONFIG.anonKey,
-        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-        "Accept": "application/json"
-      }
-    })
-      .then(function (r) {
-        if (!r.ok) throw new Error("HTTP error " + r.status);
-        return r.json();
-      })
-      .then(function (usuarios) {
-        if (Array.isArray(usuarios) && usuarios.length > 0) {
-          var u = usuarios[0];
-          var c = u.Clientes || {};
-          var nomCompleto = (u.usu_nombre || "").trim();
-          if (!nomCompleto && c.cli_nombres) {
-            nomCompleto = (c.cli_nombres.trim() + " " + (c.cli_apellidos || "").trim()).trim();
-          }
-
-          usuarioActual = {
-            id_cliente: (c.id_cliente || "CLI0000001").trim(),
-            id_usuario: (u.id_usuario || "USU0000001").trim(),
-            nombre: nomCompleto || "Cliente Registrado",
-            cedulaRuc: (c.cli_ci_ruc || "1718293849").trim(),
-            correo: (u.usu_email || correo).trim(),
-            telefono: (c.cli_telefono || "0996096996").trim(),
-            direccion: (c.cli_direccion || "Av. República E1-136 y Atahualpa").trim(),
-            ciudad: "Quito",
-            provincia: "Pichincha",
-            codigoPostal: "170102"
-          };
-          finalizarInicioSesion();
-        } else {
-          loginFallbackLocal(correo);
-        }
-      })
-      .catch(function () {
-        loginFallbackLocal(correo);
-      });
-    return;
-  }
-
-  // 2. Fallback backend local server.py
-  fetch("/api/login", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ correo: correo, clave: clave })
-  })
-    .then(function (r) {
-      return r.json();
-    })
-    .then(function (res) {
-      if (res && res.ok && res.usuario) {
-        usuarioActual = res.usuario;
-      } else {
-        throw new Error("Usando registro de clientes");
-      }
+  if (window.DermakorMVC && window.DermakorMVC.AuthController) {
+    var result = await window.DermakorMVC.AuthController.handleLoginSubmit(correo, clave);
+    if (result && result.ok && result.res && result.res.usuario) {
+      usuarioActual = result.res.usuario;
       finalizarInicioSesion();
-    })
-    .catch(function () {
-      loginFallbackLocal(correo);
+      if (document.body.getAttribute("data-pagina") === "admin") {
+        window.location.reload();
+      }
+    }
+    return;
+  }
+
+  // Fallback directo fetch /api/auth/login
+  try {
+    var r = await fetch(resolverApiUrl("/api/auth/login"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ correo: correo, clave: clave })
     });
+    var res = await r.json();
+    if (!r.ok || !res.ok || !res.usuario) {
+      throw new Error((res && res.error) || "Credenciales inválidas.");
+    }
+    if (res.token) localStorage.setItem("dermakor_jwt_token", res.token);
+    usuarioActual = res.usuario;
+    finalizarInicioSesion();
+  } catch (err) {
+    alert(err.message || "Error al iniciar sesión.");
+  }
 }
 
 function loginFallbackLocal(correo) {
@@ -611,7 +713,7 @@ function finalizarInicioSesion() {
   }
 }
 
-function procesarRegistro(evento) {
+async function procesarRegistro(evento) {
   evento.preventDefault();
 
   var nombre = document.getElementById("reg-nombre").value.trim();
@@ -625,18 +727,14 @@ function procesarRegistro(evento) {
   var codigoPostal = document.getElementById("reg-codigopostal").value.trim() || "170102";
   var clave = document.getElementById("reg-clave").value.trim();
 
-  if (!nombre || !cedula || !correo || !telefono || !direccion || !ciudad || !provincia) {
-    alert("Por favor completa todos los campos requeridos para la emisión de tu factura.");
+  if (!nombre || !cedula || !correo || !telefono || !direccion || !ciudad || !provincia || !clave) {
+    if (window.DermakorMVC && window.DermakorMVC.AuthView) {
+      window.DermakorMVC.AuthView.showAuthFeedback("Por favor completa todos los campos requeridos (incluyendo contraseña).", false);
+    }
     return;
   }
 
-  var idRand = Math.floor(1000000 + Math.random() * 8999999);
-  var nuevoIdUsuario = "USU" + idRand;
-  var nuevoIdCliente = "CLI" + idRand;
-
   var nuevoUsuario = {
-    id_cliente: nuevoIdCliente,
-    id_usuario: nuevoIdUsuario,
     nombre: nombre,
     cedulaRuc: cedula,
     correo: correo,
@@ -649,102 +747,42 @@ function procesarRegistro(evento) {
     clave: clave
   };
 
-  try {
-    var cuentas = JSON.parse(localStorage.getItem("dermakor_cuentas_clientes") || "[]");
-    var existeIdx = -1;
-    for (var k = 0; k < cuentas.length; k++) {
-      if (cuentas[k].correo.toLowerCase() === nuevoUsuario.correo.toLowerCase()) {
-        existeIdx = k;
-        break;
-      }
+  if (window.DermakorMVC && window.DermakorMVC.AuthController) {
+    var out = await window.DermakorMVC.AuthController.handleRegisterSubmit(nuevoUsuario);
+    if (out && out.ok && out.res && out.res.usuario) {
+      usuarioActual = out.res.usuario;
+      finalizarInicioSesion();
     }
-    if (existeIdx >= 0) {
-      cuentas[existeIdx] = nuevoUsuario;
-    } else {
-      cuentas.push(nuevoUsuario);
-    }
-    localStorage.setItem("dermakor_cuentas_clientes", JSON.stringify(cuentas));
-  } catch (e) {}
-
-  // Si Supabase REST está disponible, insertar directamente en PostgreSQL
-  if (SUPABASE_CONFIG.anonKey) {
-    fetch(SUPABASE_CONFIG.restUrl + "/Usuarios", {
-      method: "POST",
-      headers: {
-        "apikey": SUPABASE_CONFIG.anonKey,
-        "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
-      },
-      body: JSON.stringify({
-        id_usuario: nuevoIdUsuario,
-        id_rol: "ROL0000003",
-        usu_nombre: nombre,
-        usu_email: correo,
-        usu_clave_hash: "hash_pbkdf2_2026",
-        usu_estado: "ACTIVO"
-      })
-    })
-      .then(function () {
-        var partes = nombre.split(" ");
-        var nomSolo = partes[0];
-        var apeSolo = partes.slice(1).join(" ") || "Dermakor";
-
-        return fetch(SUPABASE_CONFIG.restUrl + "/Clientes", {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_CONFIG.anonKey,
-            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify({
-            id_cliente: nuevoIdCliente,
-            id_usuario: nuevoIdUsuario,
-            id_ciudad: "CIU0000001",
-            cli_ci_ruc: cedula,
-            cli_nombres: nomSolo,
-            cli_apellidos: apeSolo,
-            cli_telefono: telefono,
-            cli_direccion: direccion + (referencia ? " (" + referencia + ")" : "")
-          })
-        });
-      })
-      .then(function () {
-        usuarioActual = nuevoUsuario;
-        finalizarInicioSesion();
-      })
-      .catch(function () {
-        usuarioActual = nuevoUsuario;
-        finalizarInicioSesion();
-      });
     return;
   }
 
-  fetch("/api/registro", {
+  fetch(resolverApiUrl("/api/auth/register"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(nuevoUsuario)
   })
-    .then(function (r) {
-      return r.json();
-    })
+    .then(function (r) { return r.json(); })
     .then(function (res) {
       if (res && res.ok && res.usuario) {
+        if (res.token) localStorage.setItem("dermakor_jwt_token", res.token);
         usuarioActual = res.usuario;
+        finalizarInicioSesion();
       } else {
-        usuarioActual = nuevoUsuario;
+        alert((res && res.error) || "Error al registrar usuario.");
       }
-      finalizarInicioSesion();
     })
-    .catch(function () {
-      usuarioActual = nuevoUsuario;
-      finalizarInicioSesion();
+    .catch(function (err) {
+      alert(err.message || "Error de red al registrar usuario.");
     });
 }
 
 function cerrarSesion() {
+  if (window.DermakorMVC && window.DermakorMVC.AuthController) {
+    window.DermakorMVC.AuthController.handleLogout();
+    return;
+  }
   usuarioActual = null;
+  localStorage.removeItem("dermakor_jwt_token");
   localStorage.removeItem("dermakor_usuario_sesion");
   actualizarWidgetUsuarioHeader();
   mostrarToastNotificacion("Has cerrado sesión.");
@@ -882,7 +920,11 @@ function renderizarExosomasHome() {
       itemDiv.setAttribute("role", "link");
       itemDiv.setAttribute("aria-label", "Ver ficha de " + producto.nombre + " - " + producto.presentacion);
       itemDiv.innerHTML =
-        '<img src="' + producto.imagen + '" alt="Envase clínico de ' + producto.nombre + ' (' + producto.presentacion + ')" />' +
+        construirHtmlImgResponsiva(
+          producto.imagen,
+          "Envase clínico de " + producto.nombre + " (" + producto.presentacion + ")",
+          { usarMini: true, sizes: "(max-width: 768px) 45vw, 180px", width: 400, height: 300 }
+        ) +
         '<h3 style="font-size: 14px; font-weight: 700; color: #0F172A; margin-bottom: 2px;">' + producto.nombre + '</h3>' +
         '<p>' + producto.presentacion + '</p>' +
         '<div class="precio-mini">PVP $' + producto.precio.toFixed(2) + '</div>';
@@ -970,7 +1012,11 @@ function crearElementoTarjetaProducto(prod) {
   if (prod.imagen && prod.imagen !== "") {
     bloqueImagenHtml =
       '<div class="tarjeta-producto-imagen">' +
-      '  <img src="' + prod.imagen + '" alt="Envase clínico de ' + prod.nombre + ' (' + prod.presentacion + ')" loading="lazy" />' +
+      construirHtmlImgResponsiva(
+        prod.imagen,
+        "Envase clínico de " + prod.nombre + " (" + prod.presentacion + ")",
+        { usarMini: true, sizes: "(max-width: 600px) 92vw, (max-width: 1024px) 45vw, 270px", width: 400, height: 300 }
+      ) +
       '</div>';
   } else {
     bloqueImagenHtml =
@@ -1129,11 +1175,20 @@ function renderizarDatosEnFichaProducto(prod) {
     if (prod.imagen && prod.imagen !== "") {
       imgElem.style.display = "block";
       imgElem.src = prod.imagen;
+      var srcsetFicha = generarSrcsetWebp(prod.imagen);
+      if (srcsetFicha) {
+        imgElem.setAttribute("srcset", srcsetFicha);
+        imgElem.setAttribute("sizes", "(max-width: 768px) 94vw, 480px");
+      } else {
+        imgElem.removeAttribute("srcset");
+        imgElem.removeAttribute("sizes");
+      }
       imgElem.alt = prod.nombre;
       var ph = boxImg.querySelector(".placeholder-vacio");
       if (ph) ph.remove();
     } else {
       imgElem.style.display = "none";
+      imgElem.removeAttribute("srcset");
       if (!boxImg.querySelector(".placeholder-vacio")) {
         var pDiv = document.createElement("div");
         pDiv.className = "placeholder-vacio";
@@ -1295,15 +1350,17 @@ function configurarEventosFiltros() {
 
   var precioMin = document.getElementById("filtro-precio-min");
   var precioMax = document.getElementById("filtro-precio-max");
+  var timerPrecio = null;
+  function dispararFiltroPrecioConDebounce() {
+    if (timerPrecio) clearTimeout(timerPrecio);
+    timerPrecio = setTimeout(function () {
+      paginaActualCatalogo = 1;
+      filtrarCatalogo();
+    }, 180);
+  }
   if (precioMin && precioMax) {
-    precioMin.addEventListener("input", function () {
-      paginaActualCatalogo = 1;
-      filtrarCatalogo();
-    });
-    precioMax.addEventListener("input", function () {
-      paginaActualCatalogo = 1;
-      filtrarCatalogo();
-    });
+    precioMin.addEventListener("input", dispararFiltroPrecioConDebounce);
+    precioMax.addEventListener("input", dispararFiltroPrecioConDebounce);
   }
 
   var selectorOrden = document.getElementById("selector-orden-catalogo");
@@ -1468,12 +1525,21 @@ function abrirModalDetalle(idProducto) {
   if (prod.imagen && prod.imagen !== "") {
     imgElem.style.display = "block";
     imgElem.src = prod.imagen;
+    var srcsetModal = generarSrcsetWebp(prod.imagen);
+    if (srcsetModal) {
+      imgElem.setAttribute("srcset", srcsetModal);
+      imgElem.setAttribute("sizes", "(max-width: 768px) 90vw, 420px");
+    } else {
+      imgElem.removeAttribute("srcset");
+      imgElem.removeAttribute("sizes");
+    }
     imgElem.alt = prod.nombre;
     if (boxImg.querySelector(".placeholder-vacio")) {
       boxImg.querySelector(".placeholder-vacio").remove();
     }
   } else {
     imgElem.style.display = "none";
+    imgElem.removeAttribute("srcset");
     if (!boxImg.querySelector(".placeholder-vacio")) {
       var pDiv = document.createElement("div");
       pDiv.className = "placeholder-vacio";
@@ -1610,7 +1676,11 @@ function renderizarExplorarModal(categoriaActual, idActual) {
       col.style.padding = "10px";
 
       var fotoHtml = p.imagen
-        ? '<img src="' + p.imagen + '" alt="Envase clínico de ' + p.nombre + ' (' + p.presentacion + ')" style="height: 100px; margin: 0 auto 8px auto; object-fit: contain;" />'
+        ? construirHtmlImgResponsiva(
+            p.imagen,
+            "Envase clínico de " + p.nombre + " (" + p.presentacion + ")",
+            { usarMini: true, sizes: "(max-width: 768px) 90vw, 240px", width: 400, height: 300, style: "height: 100px; width: auto; margin: 0 auto 8px auto; object-fit: contain;" }
+          )
         : '<div style="height: 100px; display: flex; align-items: center; justify-content: center; background: #F1F5F9; border-radius: 6px; margin-bottom: 8px; color: #475569;" aria-hidden="true">📷</div>';
 
       col.innerHTML =
@@ -1804,7 +1874,7 @@ function aplicarCuponDescuento() {
     return;
   }
 
-  fetch("/api/cupon?codigo=" + encodeURIComponent(codigo))
+  fetch(resolverApiUrl("/api/cupon?codigo=" + encodeURIComponent(codigo)))
     .then(function (r) {
       return r.json();
     })
@@ -1893,7 +1963,11 @@ function renderizarCarrito() {
 
     var tipoTextoItem = item.tipoUso === "profesional" ? "Profesional" : "Uso en casa";
     var imgTag = item.imagen
-      ? '<img src="' + item.imagen + '" class="item-carrito-img" alt="Envase clínico de ' + item.nombre + ' (' + item.presentacion + ')" />'
+      ? construirHtmlImgResponsiva(
+          item.imagen,
+          "Envase clínico de " + item.nombre + " (" + item.presentacion + ")",
+          { usarMini: true, className: "item-carrito-img", sizes: "70px", width: 70, height: 70 }
+        )
       : '<div class="item-carrito-img" style="display:flex;align-items:center;justify-content:center;background:#F1F5F9;color:#475569;" aria-hidden="true">📷</div>';
 
     var fila = document.createElement("div");
@@ -2281,7 +2355,12 @@ function iniciarProcesoFacturacion() {
     return;
   }
 
-  if (!usuarioActual) {
+  var hasJwt = window.DermakorMVC && window.DermakorMVC.AuthModel
+    ? window.DermakorMVC.AuthModel.isAuthenticated()
+    : Boolean(usuarioActual && localStorage.getItem("dermakor_jwt_token"));
+
+  if (!hasJwt) {
+    mostrarToastNotificacion("Debes iniciar sesión antes de confirmar tu compra.");
     abrirModalAuth();
     return;
   }
@@ -2462,164 +2541,66 @@ function procesarPagoFinal(evento) {
     }
   };
 
-  // 1. Si Supabase REST está disponible (GitHub Pages / Online)
-  if (SUPABASE_CONFIG.anonKey) {
-    var idRand = Math.floor(1000000 + Math.random() * 8999999);
-    var idPedidoSupabase = "PED" + idRand;
-    var idFacturaSupabase = "FAC" + idRand;
-    var pedNumero = ("ORD-" + idRand).slice(0, 15);
-    var secFactura = "001-002-00000" + Math.floor(1000 + Math.random() * 8999);
-    var hoySri = ("0" + new Date().getDate()).slice(-2) + ("0" + (new Date().getMonth() + 1)).slice(-2) + new Date().getFullYear();
-    var claveSri = (hoySri + "0117924649390012001002" + ("000000000" + idRand).slice(-9) + "1234567819999999").slice(0, 49);
-    var guiaEnvio = "GUI-2026-" + Math.floor(100000 + Math.random() * 899999);
-
-    var clienteDb = usuarioActual || {
-      id_cliente: "CLI0000001",
-      nombre: "María Fernández",
-      cedulaRuc: "1718293849",
-      correo: "cliente@example.com",
-      telefono: "0996096996",
-      direccion: "Av. República E1-136 y Atahualpa",
-      ciudad: "Quito",
-      provincia: "Pichincha"
-    };
-
-    var idClienteFinal = clienteDb.id_cliente || "CLI0000001";
-    var idDescuentoFinal = cuponActual && cuponActual.id_descuento ? cuponActual.id_descuento : null;
-
-    // A. Decrementar stock en tabla Lotes de Supabase para cada producto
-    var promesasStock = carrito.map(function (item) {
-      var idProdDb = item.id_producto_db || "PRD0000001";
-      return fetch(SUPABASE_CONFIG.restUrl + "/Lotes?id_producto=eq." + idProdDb + "&order=lot_fecha_caducidad.asc&limit=1", {
-        headers: {
-          "apikey": SUPABASE_CONFIG.anonKey,
-          "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-          "Accept": "application/json"
-        }
-      })
-        .then(function (r) { return r.json(); })
-        .then(function (lotes) {
-          if (Array.isArray(lotes) && lotes.length > 0) {
-            var lote = lotes[0];
-            var nuevoStock = Math.max(0, (lote.lot_stock_actual || 0) - item.cantidad);
-            return fetch(SUPABASE_CONFIG.restUrl + "/Lotes?id_lote=eq." + lote.id_lote.trim(), {
-              method: "PATCH",
-              headers: {
-                "apikey": SUPABASE_CONFIG.anonKey,
-                "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-                "Content-Type": "application/json"
-              },
-              body: JSON.stringify({ lot_stock_actual: nuevoStock })
-            });
-          }
-        })
-        .catch(function (err) {
-          console.warn("Aviso actualizando lote en Supabase:", err);
-        });
-    });
-
-    // B. Insertar Pedido, PedidoDetalle y Factura en PostgreSQL Supabase
-    Promise.all(promesasStock)
-      .then(function () {
-        var pedBody = {
-          id_pedido: idPedidoSupabase,
-          id_cliente: idClienteFinal,
-          id_sede: "SED0000001",
-          id_ciudad: "CIU0000001",
-          id_descuento: idDescuentoFinal,
-          ped_numero: pedNumero,
-          ped_direccion_entrega: ((clienteDb.direccion || "Av. Republica") + ", " + (clienteDb.ciudad || "Quito")).slice(0, 150),
-          ped_latitud: -0.1865,
-          ped_longitud: -78.4841,
-          ped_subtotal: subtotal,
-          ped_descuento: descuento,
-          ped_iva: iva,
-          ped_total: total,
-          ped_estado: "PAGADO"
-        };
-
-        return fetch(SUPABASE_CONFIG.restUrl + "/Pedidos", {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_CONFIG.anonKey,
-            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-            "Content-Type": "application/json",
-            "Prefer": "return=representation"
-          },
-          body: JSON.stringify(pedBody)
-        });
-      })
-      .then(function (resPed) {
-        var promesasDetalle = carrito.map(function (item) {
-          var detBody = {
-            id_pedido: idPedidoSupabase,
-            id_producto: item.id_producto_db || "PRD0000001",
-            pde_cantidad: item.cantidad,
-            pde_precio_unit: item.precio,
-            pde_subtotal: Math.round(item.precio * item.cantidad * 100) / 100
-          };
-          return fetch(SUPABASE_CONFIG.restUrl + "/PedidoDetalle", {
-            method: "POST",
-            headers: {
-              "apikey": SUPABASE_CONFIG.anonKey,
-              "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify(detBody)
-          }).catch(function (e) { console.warn("Aviso detalle:", e); });
-        });
-
-        var facBody = {
-          id_factura: idFacturaSupabase,
-          id_pedido: idPedidoSupabase,
-          fac_numero: secFactura,
-          fac_autorizacion_sri: claveSri,
-          fac_total: total,
-          fac_estado: "EMITIDA"
-        };
-        var promFac = fetch(SUPABASE_CONFIG.restUrl + "/Facturas", {
-          method: "POST",
-          headers: {
-            "apikey": SUPABASE_CONFIG.anonKey,
-            "Authorization": "Bearer " + SUPABASE_CONFIG.anonKey,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify(facBody)
-        }).catch(function (e) { console.warn("Aviso factura:", e); });
-
-        return Promise.all(promesasDetalle.concat([promFac]));
-      })
-      .then(function () {
-        concluirCompraExito(payloadCheckout, {
-          ok: true,
-          id_pedido: idPedidoSupabase,
-          fac_numero: secFactura,
-          fac_autorizacion_sri: claveSri,
-          guia_tracking: guiaEnvio
-        });
-      })
-      .catch(function (err) {
-        console.warn("Fallo general checkout Supabase, procediendo con respaldo:", err);
-        concluirCompraExito(payloadCheckout, null);
-      });
-
+  // Login obligatorio con JWT para confirmar pedido
+  var tokenJwt = (window.DermakorMVC && window.DermakorMVC.AuthModel)
+    ? window.DermakorMVC.AuthModel.getToken()
+    : (localStorage.getItem("dermakor_jwt_token") || "");
+  if (!tokenJwt || !usuarioActual) {
+    if (btnConfirmar) {
+      btnConfirmar.disabled = false;
+      btnConfirmar.innerHTML = 'Confirmar y Pagar Factura (<span class="checkout-total-val">$' + total.toFixed(2) + '</span>)';
+    }
+    if (window.DermakorMVC && window.DermakorMVC.CartController) {
+      window.DermakorMVC.CartController.requireAuthForCheckout();
+    } else {
+      abrirModalAuth();
+    }
     return;
   }
 
-  // 2. Si se corre backend local Python server.py
-  fetch("/api/checkout", {
+  // Enviar pedido autenticado a Backend REST MVC (POST /api/pedidos)
+  if (window.DermakorMVC && window.DermakorMVC.CartController) {
+    window.DermakorMVC.CartController.submitOrder(payloadCheckout)
+      .then(function (res) {
+        concluirCompraExito(payloadCheckout, res);
+      })
+      .catch(function (err) {
+        if (btnConfirmar) {
+          btnConfirmar.disabled = false;
+          btnConfirmar.innerHTML = 'Confirmar y Pagar Factura (<span class="checkout-total-val">$' + total.toFixed(2) + '</span>)';
+        }
+        window.DermakorMVC.CartView.showAlert(
+          "alerta-error-pago",
+          err.message || "Error al confirmar el pedido en el servidor.",
+          "error"
+        );
+      });
+    return;
+  }
+
+  fetch(resolverApiUrl("/api/pedidos"), {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": "Bearer " + tokenJwt
+    },
     body: JSON.stringify(payloadCheckout)
   })
     .then(function (r) {
-      return r.json();
+      return r.json().then(function (body) { return { status: r.status, ok: r.ok, body: body }; });
     })
     .then(function (res) {
-      concluirCompraExito(payloadCheckout, res && res.ok ? res : null);
+      if (!res.ok || !res.body || !res.body.ok) {
+        throw new Error((res.body && res.body.error) || "Error HTTP " + res.status);
+      }
+      concluirCompraExito(payloadCheckout, res.body);
     })
-    .catch(function () {
-      concluirCompraExito(payloadCheckout, null);
+    .catch(function (err) {
+      if (btnConfirmar) {
+        btnConfirmar.disabled = false;
+        btnConfirmar.innerHTML = 'Confirmar y Pagar Factura (<span class="checkout-total-val">$' + total.toFixed(2) + '</span>)';
+      }
+      alert(err.message || "No se pudo confirmar el pedido.");
     });
 }
 
@@ -2639,6 +2620,9 @@ function concluirCompraExito(payloadCheckout, resDb) {
   cuponActual = null;
   guardarCarritoPersistente();
   localStorage.removeItem("dermakor_cupon");
+  try {
+    sessionStorage.removeItem(CACHE_CATALOGO_KEY);
+  } catch (e) {}
   window.location.href = "factura.html";
 }
 
@@ -2861,15 +2845,24 @@ function cargarPedidosDesdeDB() {
     return;
   }
 
-  // 2. Python server.py local
-  fetch("/api/pedidos")
+  // 2. Backend REST MVC con token JWT (Admin: todos; User: mis-pedidos)
+  var token = window.DermakorMVC && window.DermakorMVC.AuthModel ? window.DermakorMVC.AuthModel.getToken() : "";
+  if (!token) {
+    fallbackPedidosLocal();
+    return;
+  }
+  var endpoint = (window.DermakorMVC && window.DermakorMVC.AuthModel.isAdmin()) ? "/api/pedidos" : "/api/pedidos/mis-pedidos";
+  fetch(resolverApiUrl(endpoint), {
+    headers: { "Authorization": "Bearer " + token }
+  })
     .then(function (r) {
-      if (!r.ok) throw new Error("Usando respaldo Supabase");
+      if (!r.ok) throw new Error("HTTP " + r.status);
       return r.json();
     })
-    .then(function (data) {
-      if (Array.isArray(data) && data.length > 0) {
-        renderFilasPedidos(data);
+    .then(function (res) {
+      var list = Array.isArray(res) ? res : ((res && (res.pedidos || res.data)) || []);
+      if (Array.isArray(list) && list.length > 0) {
+        renderFilasPedidos(list);
       } else {
         throw new Error("Sin datos");
       }
@@ -2939,7 +2932,7 @@ function cargarSedesDesdeDB() {
   }
 
   // 2. Python server.py local
-  fetch("/api/sedes")
+  fetch(resolverApiUrl("/api/sedes"))
     .then(function (r) {
       if (!r.ok) throw new Error("Usando respaldo sedes");
       return r.json();
