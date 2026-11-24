@@ -6,9 +6,54 @@ Plataforma e-commerce dermocosmética con **separación estricta de capas y repo
 
 | Capa | Tecnología | Plataforma | URL Pública | Carpeta Fuente |
 | :--- | :--- | :--- | :--- | :--- |
-| **Capa 3 — Frontend MVC** | HTML5 + CSS3 + Vanilla JS (MVC) | **GitHub Pages** (CI/CD Actions) | `https://andrey1890.github.io/ProyectoIHC/` | `frontend/` |
-| **Capa 2 — Backend REST MVC** | Node.js + Express + Prisma Client | **Vercel** (Plan Hobby, Root `server`) | `https://dermakorbackendapi.vercel.app/` | `server/` |
-| **Capa 1 — Base de Datos** | PostgreSQL (`30` tablas relacionales) | **Supabase** (Pooler + Prisma ORM) | Conectada exclusivamente desde Vercel | `server/prisma/` |
+| **Capa 3 — Frontend MVC** | HTML5 + CSS3 + Vanilla JS (MVC) | **GitHub Pages** (CI/CD Actions) | [https://andrey1890.github.io/ProyectoIHC/](https://andrey1890.github.io/ProyectoIHC/) | `frontend/` |
+| **Capa 2 — Backend REST MVC** | Node.js + Express + Prisma Client | **Vercel** (Plan Hobby, Root `server`) | [https://dermakorbackendapi.vercel.app/](https://dermakorbackendapi.vercel.app/) | `server/` |
+| **Capa 1 — Base de Datos** | PostgreSQL (`30` tablas relacionales) | **Supabase** (Pooler + Prisma ORM) | Conectada exclusivamente desde Vercel (`/api/status`) | `server/prisma/` |
+
+---
+
+## Enlaces Directos para Probar Todo (GitHub, Vercel y Base de Datos)
+
+### 1. GitHub (Código Fuente, CI/CD y Frontend en GitHub Pages)
+- **Repositorio GitHub:** https://github.com/Andrey1890/ProyectoIHC
+- **Pipeline CI/CD (GitHub Actions):** https://github.com/Andrey1890/ProyectoIHC/actions
+- **Tienda Principal (Frontend MVC):** https://andrey1890.github.io/ProyectoIHC/
+- **Catálogo Completo (`90` productos WebP):** https://andrey1890.github.io/ProyectoIHC/catalogo.html
+- **Panel Admin y Visor en Vivo de las `30` Tablas de BD:** https://andrey1890.github.io/ProyectoIHC/admin.html
+- **Carrito de Compras:** https://andrey1890.github.io/ProyectoIHC/carrito.html
+
+### 2. Vercel (Backend REST API MVC — Capa 2)
+- **Raíz del Backend (info de arquitectura y endpoints):** https://dermakorbackendapi.vercel.app/
+- **Healthcheck y Verificación de BD (`30` tablas / `90` productos):** https://dermakorbackendapi.vercel.app/api/status
+
+### 3. Base de Datos Supabase PostgreSQL + Prisma ORM (Pruebas en Vivo)
+
+**A. Consultas públicas directas en el navegador (`GET` sin token):**
+- **Productos (`Productos` + `Categorias` + `Lotes`):** https://dermakorbackendapi.vercel.app/api/productos
+- **Categorías (`Categorias`):** https://dermakorbackendapi.vercel.app/api/v1/categorias
+- **Sedes (`Sedes`):** https://dermakorbackendapi.vercel.app/api/sedes
+- **Lotes de inventario (`Lotes`):** https://dermakorbackendapi.vercel.app/api/v1/lotes
+- **Imágenes de productos (`ProductoImagenes`):** https://dermakorbackendapi.vercel.app/api/v1/producto-imagenes
+- **Países (`Paises`):** https://dermakorbackendapi.vercel.app/api/v1/paises
+- **Ciudades (`Ciudades`):** https://dermakorbackendapi.vercel.app/api/v1/ciudades
+
+**B. Tablas administrativas protegidas por JWT + RBAC (`admin`):**
+*(Si se abren directamente en el navegador sin token devuelven `401 Unauthorized` verificando seguridad OWASP; para explorarlas con sesión activa usar [admin.html](https://andrey1890.github.io/ProyectoIHC/admin.html) o enviar `Authorization: Bearer <token>`)*
+- **Pedidos:** https://dermakorbackendapi.vercel.app/api/pedidos
+- **Usuarios (sin `usu_clave_hash`):** https://dermakorbackendapi.vercel.app/api/v1/usuarios
+- **Clientes:** https://dermakorbackendapi.vercel.app/api/v1/clientes
+- **Facturas:** https://dermakorbackendapi.vercel.app/api/v1/facturas
+- **Pagos:** https://dermakorbackendapi.vercel.app/api/v1/pagos
+- **Roles:** https://dermakorbackendapi.vercel.app/api/v1/roles
+- **Descuentos:** https://dermakorbackendapi.vercel.app/api/v1/descuentos
+- **Envíos:** https://dermakorbackendapi.vercel.app/api/v1/envios
+- **Otras entidades (`/api/v1/<entidad>`):** `empleados`, `departamentos`, `proveedores`, `compras`, `compra-detalle`, `ordenes-entrada`, `orden-entrada-detalle`, `ordenes-salida`, `orden-salida-detalle`, `ajustes-inventario`, `ajuste-detalle`, `pedido-detalle`, `carritos`, `carrito-detalle`, `logs`.
+
+**C. Esquema de Base de Datos y Credenciales de Prueba:**
+- **Esquema Prisma (`30` tablas):** https://github.com/Andrey1890/ProyectoIHC/blob/main/server/prisma/schema.prisma
+- **Migración SQL inicial:** https://github.com/Andrey1890/ProyectoIHC/blob/main/server/prisma/migrations/0001_init_reto2_mvc/migration.sql
+- **Usuario Administrador (`admin`):** `admin@dermakor.com` / `Admin123!`
+- **Usuario Cliente (`user`):** `cliente@example.com` / `Cliente123!`
 
 ---
 
