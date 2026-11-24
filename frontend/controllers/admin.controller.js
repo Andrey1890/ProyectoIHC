@@ -132,7 +132,7 @@
         onApprove: async function (o) {
           try {
             await MVC.OrderModel.aprobarOrder(o.id_pedido);
-            showStatus("Pedido " + (o.ped_numero || o.id_pedido) + " APROBADO: el stock reservado pasó a venta definitiva.", true);
+            showStatus("Pedido " + (o.ped_numero || o.id_pedido) + " APROBADO (PAGADO): el stock reservado pasó a venta definitiva.", true);
             await loadAllOrdersTab();
           } catch (err) {
             showStatus(err.message || "Error al aprobar el pedido.", false);

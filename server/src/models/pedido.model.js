@@ -332,7 +332,7 @@ class PedidoRepository {
   async createCheckoutTransaction({ cliente, items, cupon = null, envio = {}, estadoInicial = "PAGADO" }) {
     const estadoUpper = String(estadoInicial || "PAGADO").trim().toUpperCase();
     const isPendiente = estadoUpper === "PENDIENTE";
-    const pedEstado = isPendiente ? "PENDIENTE" : (estadoUpper === "APROBADO" ? "APROBADO" : "PAGADO");
+    const pedEstado = isPendiente ? "PENDIENTE" : "PAGADO";
     const osaEstado = isPendiente ? "RESERVADO" : "DESPACHADO";
     const pagEstado = isPendiente ? "PENDIENTE" : "APROBADO";
     const facEstado = isPendiente ? "PENDIENTE" : "EMITIDA";
@@ -625,7 +625,7 @@ class PedidoRepository {
     await this.#db.withTransaction(async (tx) => {
       await tx.pedidos.update({
         where: { id_pedido: idPedido },
-        data: { ped_estado: "APROBADO" }
+        data: { ped_estado: "PAGADO" }
       });
 
       const [ordenes, pagos, facturas, envios] = await Promise.all([
