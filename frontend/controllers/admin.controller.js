@@ -154,9 +154,12 @@
         if (tab === "productos") loadProductsTab();
         if (tab === "pedidos-admin") loadAllOrdersTab();
         if (tab === "mis-pedidos") loadMyOrdersTab();
-        if (tab === "tablas") {
-          var sel = document.getElementById("select-entidad-bd");
-          loadEntityTab(sel ? sel.value : "categorias");
+        if (tab === "kardex" && MVC.InventoryController) MVC.InventoryController.loadKardexTab();
+        if (tab === "lotes" && MVC.InventoryController) MVC.InventoryController.loadLotesTab();
+        if (tab === "compras" && MVC.InventoryController) MVC.InventoryController.loadComprasTab();
+        if (tab === "ajustes" && MVC.InventoryController) MVC.InventoryController.loadAjustesTab();
+        if (tab === "tablas" && MVC.EntityController) {
+          MVC.EntityController.load();
         }
       });
     });
@@ -192,13 +195,6 @@
     var cancelBtn = document.getElementById("admin-prod-cancel");
     if (cancelBtn) cancelBtn.addEventListener("click", resetProductForm);
 
-    var selEnt = document.getElementById("select-entidad-bd");
-    if (selEnt) {
-      selEnt.addEventListener("change", function () {
-        loadEntityTab(selEnt.value);
-      });
-    }
-
     if (window.location.hash === "#mis-pedidos" || !isAdmin) {
       switchTab("mis-pedidos");
       await loadMyOrdersTab();
@@ -211,6 +207,7 @@
   global.DermakorMVC = global.DermakorMVC || {};
   global.DermakorMVC.AdminController = {
     init: init,
+    switchTab: switchTab,
     loadProductsTab: loadProductsTab,
     loadAllOrdersTab: loadAllOrdersTab,
     loadMyOrdersTab: loadMyOrdersTab

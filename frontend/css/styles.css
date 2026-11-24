@@ -2231,3 +2231,144 @@ textarea:focus-visible,
   background: #FEF2F2;
 }
 
+.admin-resumen-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.admin-resumen-card {
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.admin-resumen-card.vencido {
+  border-color: #FECACA;
+  background: #FEF2F2;
+}
+
+.admin-resumen-card.por-vencer {
+  border-color: #FDE68A;
+  background: #FFFBEB;
+}
+
+.admin-resumen-card.vigente {
+  border-color: #A7F3D0;
+  background: #ECFDF5;
+}
+
+.admin-resumen-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #475569;
+}
+
+.admin-resumen-value {
+  font-size: 20px;
+  font-weight: 800;
+  color: #0F172A;
+}
+
+.badge-semaforo {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 9px;
+  border-radius: 999px;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+}
+
+.badge-semaforo.vencido {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+  border: 1px solid #FCA5A5;
+}
+
+.badge-semaforo.por-vencer {
+  background-color: #FEF3C7;
+  color: #92400E;
+  border: 1px solid #FCD34D;
+}
+
+.badge-semaforo.vigente {
+  background-color: #D1FAE5;
+  color: #065F46;
+  border: 1px solid #6EE7B7;
+}
+
+.kardex-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 8px;
+  border-radius: 6px;
+  text-transform: uppercase;
+}
+
+.kardex-entrada {
+  background-color: #D1FAE5;
+  color: #065F46;
+}
+
+.kardex-salida {
+  background-color: #FEE2E2;
+  color: #B91C1C;
+}
+
+.kardex-ajuste {
+  background-color: #FEF3C7;
+  color: #92400E;
+}
+
+.kardex-inicial {
+  background-color: #E2E8F0;
+  color: #334155;
+}
+
+.kardex-num-pos {
+  color: #065F46;
+  font-weight: 700;
+}
+
+.kardex-num-neg {
+  color: #B91C1C;
+  font-weight: 700;
+}
+
+.linea-dinamica-row {
+  display: grid;
+  grid-template-columns: 2fr 100px 120px auto auto;
+  gap: 10px;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 720px) {
+  .linea-dinamica-row {
+    grid-template-columns: 1fr;
+  }
+}
+
+.admin-banner-links {
+  display: none;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 12px 16px;
+  margin-bottom: 14px;
+  border-radius: 10px;
+  background: #ECFDF5;
+  border: 1px solid #6EE7B7;
+  color: #065F46;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+

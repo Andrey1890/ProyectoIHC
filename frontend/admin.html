@@ -78,8 +78,12 @@
       <section id="admin-main-panel" style="display: none;">
         <div class="admin-tabs-bar" role="tablist" aria-label="Secciones de administración y pedidos">
           <button type="button" class="admin-tab-btn" data-tab="productos" data-admin-only="true">📦 Productos (CRUD Admin)</button>
+          <button type="button" class="admin-tab-btn" data-tab="kardex" data-admin-only="true">📊 Kárdex</button>
+          <button type="button" class="admin-tab-btn" data-tab="lotes" data-admin-only="true">🏷️ Lotes y Caducidades</button>
+          <button type="button" class="admin-tab-btn" data-tab="compras" data-admin-only="true">🚚 Compras a Proveedores</button>
+          <button type="button" class="admin-tab-btn" data-tab="ajustes" data-admin-only="true">⚖️ Ajustes de Inventario</button>
           <button type="button" class="admin-tab-btn" data-tab="pedidos-admin" data-admin-only="true">🧾 Todos los Pedidos (Admin)</button>
-          <button type="button" class="admin-tab-btn" data-tab="tablas" data-admin-only="true">🗄️ Entidades BD (30 Tablas)</button>
+          <button type="button" class="admin-tab-btn" data-tab="tablas" data-admin-only="true">🗄️ CRUD Tablas BD</button>
           <button type="button" class="admin-tab-btn" data-tab="mis-pedidos">🛍️ Mis Pedidos</button>
         </div>
 
@@ -138,6 +142,205 @@
           </div>
         </div>
 
+        <!-- TAB: KÁRDEX POR PRODUCTO / LOTE (ADMIN) -->
+        <div class="admin-tab-panel" data-panel="kardex" data-admin-only="true" style="display:none;">
+          <div class="caja-formulario" style="margin-bottom: 16px;">
+            <h2 class="subtitulo-formulario">Kárdex de Movimientos de Inventario</h2>
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="kardex-prod-select">Producto *</label>
+                <select id="kardex-prod-select" class="campo-control"></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="kardex-lote-select">Filtrar por lote (opcional)</label>
+                <select id="kardex-lote-select" class="campo-control"></select>
+              </div>
+              <div class="campo-grupo" style="display:flex; align-items:flex-end;">
+                <button type="button" id="kardex-btn-consultar" class="boton-primario">Consultar Kárdex</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="kardex-resumen-cards" class="admin-resumen-grid"></div>
+
+          <div class="tabla-admin-wrap">
+            <table class="tabla-admin" aria-label="Tabla de movimientos Kárdex">
+              <thead>
+                <tr>
+                  <th>Fecha</th>
+                  <th>Tipo</th>
+                  <th>Documento</th>
+                  <th>Lote</th>
+                  <th>Entrada</th>
+                  <th>Salida</th>
+                  <th>Costo / Precio</th>
+                  <th>Saldo</th>
+                  <th>Detalle</th>
+                </tr>
+              </thead>
+              <tbody id="kardex-movimientos-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: LOTES Y CADUCIDADES (FEFO) -->
+        <div class="admin-tab-panel" data-panel="lotes" data-admin-only="true" style="display:none;">
+          <div class="caja-formulario" style="margin-bottom: 16px;">
+            <h2 class="subtitulo-formulario">Control de Lotes y Fechas de Caducidad (Orden FEFO)</h2>
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="lotes-semaforo-filter">Filtrar por semáforo de vencimiento</label>
+                <select id="lotes-semaforo-filter" class="campo-control">
+                  <option value="">Todos los lotes</option>
+                  <option value="VENCIDO">Vencidos (&lt; 0 días)</option>
+                  <option value="POR_VENCER">Por vencer (&lt;= 90 días)</option>
+                  <option value="VIGENTE">Vigentes (&gt; 90 días)</option>
+                </select>
+              </div>
+              <div class="campo-grupo" style="display:flex; align-items:flex-end;">
+                <button type="button" id="lotes-btn-refrescar" class="boton-secundario">Actualizar Lotes</button>
+              </div>
+            </div>
+          </div>
+
+          <div id="lotes-resumen-cards" class="admin-resumen-grid"></div>
+
+          <div class="tabla-admin-wrap">
+            <table class="tabla-admin" aria-label="Listado de lotes y caducidades">
+              <thead>
+                <tr>
+                  <th>Lote</th>
+                  <th>Producto</th>
+                  <th>Sede</th>
+                  <th>Fabricación</th>
+                  <th>Caducidad</th>
+                  <th>Días</th>
+                  <th>Stock</th>
+                  <th>Estado</th>
+                  <th>Semáforo</th>
+                </tr>
+              </thead>
+              <tbody id="lotes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: COMPRAS A PROVEEDORES Y RECEPCIÓN (ORDEN DE ENTRADA) -->
+        <div class="admin-tab-panel" data-panel="compras" data-admin-only="true" style="display:none;">
+          <form id="form-compra-nueva" class="caja-formulario" style="margin-bottom: 20px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:10px; margin-bottom:12px;">
+              <h2 class="subtitulo-formulario" style="margin:0;">Nueva Orden de Compra a Proveedor</h2>
+              <button type="button" id="compra-btn-nuevo-prov" class="btn-accion-sm">+ Nuevo proveedor</button>
+            </div>
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="compra-prov-select">Proveedor *</label>
+                <select id="compra-prov-select" class="campo-control" required></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="compra-sede-select">Sede de destino *</label>
+                <select id="compra-sede-select" class="campo-control" required></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="compra-numero-input">Nro. Orden (opcional)</label>
+                <input type="text" id="compra-numero-input" class="campo-control" maxlength="15" placeholder="Automático (COM-2026-xxxx)" />
+              </div>
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="display:block; font-size:13px; color:#334155; margin-bottom:8px;">Detalle de productos (Producto | Cantidad | Costo Unit. | Subtotal):</strong>
+              <div id="compra-lineas-container"></div>
+              <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:12px; margin-top:10px;">
+                <button type="button" id="compra-btn-add-linea" class="btn-accion-sm">+ Agregar línea</button>
+                <div style="font-size:15px; font-weight:800; color:#0F172A;">Total estimado: <span id="compra-total-preview">$0.00</span></div>
+              </div>
+            </div>
+
+            <button type="submit" class="boton-primario">Registrar Orden de Compra (PENDIENTE)</button>
+          </form>
+
+          <div id="compra-post-recepcion-banner" class="admin-banner-links"></div>
+
+          <div id="compra-recepcion-container" style="display:none; margin-bottom: 18px;"></div>
+          <div id="compra-detalle-box" class="caja-formulario" style="display:none; margin-bottom: 18px;"></div>
+
+          <div class="tabla-admin-wrap">
+            <table class="tabla-admin" aria-label="Listado de compras a proveedores">
+              <thead>
+                <tr>
+                  <th>Compra</th>
+                  <th>Proveedor</th>
+                  <th>Sede</th>
+                  <th>Fecha</th>
+                  <th>Total</th>
+                  <th>Estado</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="compras-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- TAB: AJUSTES DE INVENTARIO -->
+        <div class="admin-tab-panel" data-panel="ajustes" data-admin-only="true" style="display:none;">
+          <form id="form-ajuste-nuevo" class="caja-formulario" style="margin-bottom: 20px;">
+            <h2 class="subtitulo-formulario">Registrar Ajuste de Inventario (Ingreso / Egreso por Lote)</h2>
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="ajuste-sede-select">Sede *</label>
+                <select id="ajuste-sede-select" class="campo-control" required></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="ajuste-emp-select">Empleado responsable *</label>
+                <select id="ajuste-emp-select" class="campo-control" required></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="ajuste-tipo-select">Tipo de movimiento *</label>
+                <select id="ajuste-tipo-select" class="campo-control" required>
+                  <option value="EGRESO">EGRESO (- Stock)</option>
+                  <option value="INGRESO">INGRESO (+ Stock)</option>
+                </select>
+              </div>
+            </div>
+            <div class="fila-formulario">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="ajuste-motivo-input">Motivo (máx. 15 caracteres) *</label>
+                <input type="text" id="ajuste-motivo-input" class="campo-control" maxlength="15" value="CONTEO_FISICO" required placeholder="CADUCADO, MERMA, CONTEO_FISICO..." />
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="ajuste-obs-input">Observación *</label>
+                <input type="text" id="ajuste-obs-input" class="campo-control" maxlength="150" required placeholder="Motivo detallado del ajuste en bodega" />
+              </div>
+            </div>
+
+            <div style="margin: 12px 0;">
+              <strong style="display:block; font-size:13px; color:#334155; margin-bottom:8px;">Lotes afectados (Lote | Cantidad):</strong>
+              <div id="ajuste-lineas-container"></div>
+              <button type="button" id="ajuste-btn-add-linea" class="btn-accion-sm" style="margin-top:6px;">+ Agregar línea</button>
+            </div>
+
+            <button type="submit" class="boton-primario">Aplicar Ajuste de Inventario</button>
+          </form>
+
+          <div class="tabla-admin-wrap">
+            <table class="tabla-admin" aria-label="Historial de ajustes de inventario">
+              <thead>
+                <tr>
+                  <th>Ajuste</th>
+                  <th>Fecha</th>
+                  <th>Sede</th>
+                  <th>Empleado</th>
+                  <th>Tipo</th>
+                  <th>Motivo</th>
+                  <th>Observación</th>
+                </tr>
+              </thead>
+              <tbody id="ajustes-tbody"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- TAB 2: TODOS LOS PEDIDOS (ADMIN) -->
         <div class="admin-tab-panel" data-panel="pedidos-admin" data-admin-only="true" style="display:none;">
           <div class="tabla-admin-wrap">
@@ -157,45 +360,29 @@
           </div>
         </div>
 
-        <!-- TAB 3: VISOR DE 30 ENTIDADES BD (ADMIN) -->
+        <!-- TAB 3: CRUD TABLAS BD (30 MODELOS PRISMA) -->
         <div class="admin-tab-panel" data-panel="tablas" data-admin-only="true" style="display:none;">
           <div class="caja-formulario" style="margin-bottom: 16px;">
-            <label class="campo-etiqueta" for="select-entidad-bd">Seleccionar tabla / entidad de Supabase (30 modelos Prisma):</label>
-            <select id="select-entidad-bd" class="campo-control" style="max-width: 360px;">
-              <option value="productos">Productos</option>
-              <option value="categorias">Categorias</option>
-              <option value="lotes">Lotes</option>
-              <option value="pedidos">Pedidos</option>
-              <option value="pedido-detalle">PedidoDetalle</option>
-              <option value="clientes">Clientes</option>
-              <option value="usuarios">Usuarios</option>
-              <option value="roles">Roles</option>
-              <option value="facturas">Facturas</option>
-              <option value="pagos">Pagos</option>
-              <option value="envios">Envios</option>
-              <option value="sedes">Sedes</option>
-              <option value="descuentos">Descuentos</option>
-              <option value="carritos">Carritos</option>
-              <option value="carrito-detalle">CarritoDetalle</option>
-              <option value="paises">Paises</option>
-              <option value="ciudades">Ciudades</option>
-              <option value="departamentos">Departamentos</option>
-              <option value="empleados">Empleados</option>
-              <option value="proveedores">Proveedores</option>
-              <option value="compras">Compras</option>
-              <option value="compra-detalle">CompraDetalle</option>
-              <option value="ordenes-entrada">OrdenesEntrada</option>
-              <option value="orden-entrada-detalle">OrdenEntradaDetalle</option>
-              <option value="ordenes-salida">OrdenesSalida</option>
-              <option value="orden-salida-detalle">OrdenSalidaDetalle</option>
-              <option value="ajustes-inventario">AjustesInventario</option>
-              <option value="ajuste-detalle">AjusteDetalle</option>
-              <option value="producto-imagenes">ProductoImagenes</option>
-              <option value="logs">LOG</option>
-            </select>
+            <div class="fila-formulario tres">
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="select-entidad-bd">Tabla / Entidad Supabase (30 modelos Prisma):</label>
+                <select id="select-entidad-bd" class="campo-control"></select>
+              </div>
+              <div class="campo-grupo">
+                <label class="campo-etiqueta" for="crud-search-input">Buscar en tabla:</label>
+                <input type="search" id="crud-search-input" class="campo-control" placeholder="Filtrar por texto, ID o código..." />
+              </div>
+              <div class="campo-grupo" style="display:flex; align-items:flex-end;">
+                <button type="button" id="crud-btn-nuevo" class="boton-primario">+ Nuevo registro</button>
+              </div>
+            </div>
+            <p id="crud-readonly-note" style="display:none; margin:10px 0 0 0; font-size:13px; font-weight:600; color:#92400E;"></p>
           </div>
+
+          <div id="crud-form-container" style="display:none;"></div>
+
           <div class="tabla-admin-wrap">
-            <table class="tabla-admin" aria-label="Visor tabular de entidades Supabase">
+            <table class="tabla-admin" aria-label="Visor CRUD de entidades Supabase">
               <thead id="admin-entidad-thead"></thead>
               <tbody id="admin-entidad-tbody"></tbody>
             </table>
@@ -310,12 +497,18 @@
   <script defer src="models/product.model.js"></script>
   <script defer src="models/cart.model.js"></script>
   <script defer src="models/order.model.js"></script>
+  <script defer src="models/inventory.model.js"></script>
+  <script defer src="models/entity.model.js"></script>
   <script defer src="views/product.view.js"></script>
   <script defer src="views/cart.view.js"></script>
   <script defer src="views/auth.view.js"></script>
   <script defer src="views/admin.view.js"></script>
+  <script defer src="views/inventory.view.js"></script>
+  <script defer src="views/entity.view.js"></script>
   <script defer src="controllers/auth.controller.js"></script>
   <script defer src="controllers/cart.controller.js"></script>
+  <script defer src="controllers/inventory.controller.js"></script>
+  <script defer src="controllers/entity.controller.js"></script>
   <script defer src="controllers/admin.controller.js"></script>
   <script defer src="controllers/app.controller.js"></script>
   <script defer src="js/productos.js"></script>

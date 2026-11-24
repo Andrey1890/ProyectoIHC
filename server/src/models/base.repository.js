@@ -1,5 +1,7 @@
 const { getSupabaseSingleton } = require("../config/supabase.singleton");
 const { HttpAppError } = require("../middlewares/error.middleware");
+const { BY_TABLE } = require("../config/entity.metadata");
+const { hashPasswordBcrypt } = require("../middlewares/hash.middleware");
 
 function toPrimitiveValue(val) {
   if (typeof val === "string") {
@@ -178,13 +180,84 @@ class BaseTableRepository {
     return this.mapRowToModel(row).toDTO();
   }
 
+  #coerceData(rawData = {}, { isCreate = false } = {}) {
+    const meta = BY_TABLE[this.tableName];
+    const fieldMap = new Map(
+      Array.isArray(meta?.fields) ? meta.fields.map((f) => [f.name, f]) : []
+    );
+    const result = {};
+
+    for (const [col, rawVal] of Object.entries(rawData || {})) {
+      if (rawVal === undefined) {
+        continue;
+      }
+      const field = fieldMap.get(col);
+      if (!field) {
+        result[col] = rawVal;
+        continue;
+      }
+
+      const isEmptyStr = typeof rawVal === "string" && rawVal.trim() === "";
+      if (rawVal === null || isEmptyStr) {
+        if (field.optional && !field.hasDefault) {
+          result[col] = null;
+        }
+        // Si es requerido o tiene default (incl. usu_clave_hash vacio al editar), se omite
+        continue;
+      }
+
+      if (field.type === "Int") {
+        const parsed = Number.parseInt(String(rawVal).trim(), 10);
+        if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+          throw new HttpAppError(400, `Valor invalido para ${col}`, "VALIDATION_TYPE");
+        }
+        result[col] = parsed;
+        continue;
+      }
+
+      if (field.type === "Decimal") {
+        const parsed = Number(rawVal);
+        if (!Number.isFinite(parsed) || Number.isNaN(parsed)) {
+          throw new HttpAppError(400, `Valor invalido para ${col}`, "VALIDATION_TYPE");
+        }
+        result[col] = parsed;
+        continue;
+      }
+
+      if (field.type === "DateTime") {
+        const str = String(rawVal).trim();
+        const iso = field.kind === "date" && str.length === 10 ? `${str}T00:00:00.000Z` : str;
+        const dt = new Date(iso);
+        if (Number.isNaN(dt.getTime())) {
+          throw new HttpAppError(400, `Valor invalido para ${col}`, "VALIDATION_TYPE");
+        }
+        result[col] = dt;
+        continue;
+      }
+
+      let strVal = String(rawVal).trim();
+      if (this.tableName === "Usuarios" && col === "usu_clave_hash" && !/^\$2[aby]\$/.test(strVal)) {
+        strVal = hashPasswordBcrypt(strVal);
+      }
+      result[col] = strVal;
+    }
+
+    if (isCreate && this.tableName === "Usuarios" && !result.usu_clave_hash) {
+      throw new HttpAppError(400, "Contrasena requerida para crear usuario.", "VALIDATION_PASSWORD_REQUIRED");
+    }
+
+    return result;
+  }
+
   async create(payload = {}) {
-    const data = {};
+    const rawData = {};
     for (const col of this.columns) {
       if (payload[col] !== undefined) {
-        data[col] = payload[col];
+        rawData[col] = payload[col];
       }
     }
+
+    const data = this.#coerceData(rawData, { isCreate: true });
 
     if (this.prefix && this.pkColumns.length === 1 && !data[this.pkColumns[0]]) {
       data[this.pkColumns[0]] = await this.#db.nextId(
@@ -212,13 +285,15 @@ class BaseTableRepository {
   async update(idValue, patch = {}) {
     const pkValues = this.#parseCompositeKey(idValue);
     const pkSet = new Set(this.pkColumns);
-    const updates = {};
+    const rawUpdates = {};
 
     for (const col of this.columns) {
       if (!pkSet.has(col) && patch[col] !== undefined) {
-        updates[col] = patch[col];
+        rawUpdates[col] = patch[col];
       }
     }
+
+    const updates = this.#coerceData(rawUpdates, { isCreate: false });
 
     if (Object.keys(updates).length === 0) {
       throw new HttpAppError(

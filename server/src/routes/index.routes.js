@@ -1,6 +1,7 @@
 const express = require("express");
 const { getSupabaseSingleton } = require("../config/supabase.singleton");
 const { ModelFactory } = require("../models/model.factory");
+const { ENTITIES } = require("../config/entity.metadata");
 const { loggerMiddleware } = require("../middlewares/logger.middleware");
 const { sanitizeMiddleware } = require("../middlewares/sanitize.middleware");
 const { paginationMiddleware } = require("../middlewares/pagination.middleware");
@@ -17,6 +18,7 @@ const authRoutes = require("./auth.routes");
 const pedidoRoutes = require("./pedido.routes");
 const cuponRoutes = require("./cupon.routes");
 const sedeRoutes = require("./sede.routes");
+const inventarioRoutes = require("./inventario.routes");
 
 const ajusteDetalleController = require("../controllers/ajusteDetalle.controller");
 const ajusteInventarioController = require("../controllers/ajusteInventario.controller");
@@ -83,10 +85,33 @@ router.get("/status", async (_req, res, next) => {
   }
 });
 
+// Metadatos dinamicos de las 30 tablas Prisma para el CRUD del Panel Admin
+router.get(
+  "/meta/entidades",
+  [loggerMiddleware, authenticateJwt, authorizeRoles("admin")],
+  (_req, res) => {
+    const entidades = ENTITIES.map((entity) => {
+      let prefix = null;
+      try {
+        const repo = ModelFactory.getRepository(entity.slug);
+        prefix = repo?.prefix || null;
+      } catch (_err) {
+        prefix = null;
+      }
+      return {
+        ...entity,
+        prefix
+      };
+    });
+    return res.status(200).json({ ok: true, total: entidades.length, entidades });
+  }
+);
+
 // Rutas especializadas
 router.use("/productos", productoRoutes);
 router.use("/sedes", sedeRoutes);
 router.use("/pedidos", pedidoRoutes);
+router.use("/inventario", inventarioRoutes);
 router.use("/cupon", cuponRoutes);
 router.use("/cupones", cuponRoutes);
 router.post(

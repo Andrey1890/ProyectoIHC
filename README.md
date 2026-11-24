@@ -168,6 +168,22 @@ npm run start:client   # Sirve frontend/ en http://localhost:4051 consumiendo ht
 | **Pedidos** | `GET` | `/api/pedidos` | **JWT (`admin`)** | Lista todos los pedidos del sistema para administración (403 a `user`). |
 | **Sistema / Tablas** | `GET` | `/api/status` y `/api/v1/<entidad>` | Público (`status`) / **JWT (`admin`)** | Estado del sistema y visor CRUD sobre las 30 tablas Prisma. |
 
+### Panel Admin: Kárdex, Lotes, Compras, Ajustes y CRUD
+
+El panel [admin.html](https://andrey1890.github.io/ProyectoIHC/admin.html) incorpora gestión operativa completa protegida con **JWT (`admin`)**:
+
+- **Kárdex y Lotes FEFO:**
+  - `GET /api/v1/inventario/kardex?id_producto=&id_lote=&id_sede=`: movimientos cronológicos (`ENTRADA`, `SALIDA`, `AJUSTE_INGRESO`, `AJUSTE_EGRESO`) con `saldo_inicial` y saldo acumulado.
+  - `GET /api/v1/inventario/lotes?estado=VENCIDO|POR_VENCER|VIGENTE&id_producto=`: lotes ordenados por caducidad ascendente (FEFO) y semáforo de vencimiento.
+  - `GET /api/v1/inventario/resumen`: resumen de stock total, lotes y próxima caducidad por producto.
+- **Compras a Proveedores y Ajustes de Inventario:**
+  - `POST /api/v1/inventario/compras`: crea orden de compra en estado `PENDIENTE` (`Compras` + `CompraDetalle`).
+  - `POST /api/v1/inventario/compras/:id/recepcion`: genera `OrdenesEntrada`, crea los nuevos `Lotes` con fechas de fabricación/caducidad, registra `OrdenEntradaDetalle` y marca la compra `RECIBIDA`.
+  - `POST /api/v1/inventario/compras/:id/anular`: anula compras en estado `PENDIENTE`.
+  - `POST /api/v1/inventario/ajustes`: registra `AjustesInventario` + `AjusteDetalle` (`INGRESO`/`EGRESO`) y actualiza `lot_stock_actual` (rechaza con `409` si el egreso supera el stock).
+- **CRUD Completo de Tablas:**
+  - `GET /api/v1/meta/entidades`: metadatos de las 30 tablas Prisma (PKs, tipos, longitudes máximas, claves foráneas) para formularios dinámicos en **CRUD Tablas BD**.
+
 ---
 
 ## 5. Seguridad Aplicada (Mitigación de Riesgos OWASP Top 10)
