@@ -97,7 +97,6 @@ jobs:
 
       - name: Configurar GitHub Pages
         uses: actions/configure-pages@v5
-        continue-on-error: true
 
       - name: Empaquetar carpeta ./frontend como artefacto Pages
         uses: actions/upload-pages-artifact@v3
@@ -107,4 +106,3 @@ jobs:
       - name: Desplegar Frontend a GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
-        continue-on-error: true

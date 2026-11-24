@@ -46,6 +46,27 @@
       <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Gestión de Pedidos y Administración</h1>
       <p style="color: #475569; font-size: 14px; margin-bottom: 20px;">Control protegido mediante JWT y autorización por roles (<code>admin</code> / <code>user</code>).</p>
 
+      <section id="arquitectura-desacoplada-panel" aria-label="Estado de arquitectura desacoplada" style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
+        <h2 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 10px 0;">Arquitectura Full Stack Separada (3 Capas Independientes)</h2>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 13px; color: #334155;">
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 3 — Frontend MVC</strong>
+            <span style="display: block;">Alojamiento: GitHub Pages</span>
+            <code id="arch-frontend-origin" style="font-size: 12px; color: #1E40AF; word-break: break-all;">Cargando...</code>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 2 — Backend REST MVC</strong>
+            <span style="display: block;">Alojamiento: Vercel Serverless</span>
+            <code id="arch-backend-url" style="font-size: 12px; color: #1E40AF; word-break: break-all;">Cargando...</code>
+          </div>
+          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 1 — Datos (Supabase + Prisma)</strong>
+            <span style="display: block;">ORM: Prisma sin SQL expuesto</span>
+            <span id="arch-db-status" style="font-weight: 600; color: #047857;">Verificando conexión...</span>
+          </div>
+        </div>
+      </section>
+
       <div id="admin-status-alert" class="alerta-mensaje" role="alert" aria-live="polite" style="display: none;"></div>
 
       <section id="admin-auth-guard" class="caja-formulario" style="display: none;">

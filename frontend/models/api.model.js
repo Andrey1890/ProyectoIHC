@@ -28,8 +28,9 @@
         return "";
       }
 
-      if (DEFAULT_PROD_API_URL) {
-        return String(DEFAULT_PROD_API_URL).replace(/\/+$/, "");
+      var prodBase = global.DERMAKOR_PROD_API_URL || DEFAULT_PROD_API_URL;
+      if (prodBase) {
+        return String(prodBase).replace(/\/+$/, "");
       }
     }
     return "";

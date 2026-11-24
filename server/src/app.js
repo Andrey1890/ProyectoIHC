@@ -15,6 +15,10 @@ const {
 } = require("./middlewares/error.middleware");
 
 function resolveFrontendDir() {
+  // En Vercel el servidor REST opera 100% desacoplado del frontend en GitHub Pages
+  if (process.env.VERCEL === "1") {
+    return null;
+  }
   const candidates = [
     path.resolve(__dirname, "../frontend"),
     path.resolve(__dirname, "../frontend-client"),
@@ -76,6 +80,12 @@ function createApp() {
       res.status(200).json({
         ok: true,
         service: "DERMAKOR API REST MVC (Prisma + Supabase)",
+        capa: "Capa 2 - Backend REST MVC (Desacoplado en Vercel)",
+        arquitectura: {
+          capa1_bd: "Supabase PostgreSQL + Prisma ORM (30 tablas)",
+          capa2_backend: "Node.js + Express MVC (Vercel Serverless)",
+          capa3_frontend: "HTML5 + Vanilla JS MVC (GitHub Pages: https://andrey1890.github.io/ProyectoIHC/)"
+        },
         endpoints: [
           "/api/status",
           "/api/auth/register",

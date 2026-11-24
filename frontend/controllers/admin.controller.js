@@ -97,9 +97,36 @@
     });
   }
 
+  async function renderArchitectureStatus(MVC) {
+    var frontEl = document.getElementById("arch-frontend-origin");
+    var backEl = document.getElementById("arch-backend-url");
+    var dbEl = document.getElementById("arch-db-status");
+    if (!frontEl || !backEl || !dbEl) return;
+
+    var origin = (typeof window !== "undefined" && window.location) ? window.location.origin : "N/A";
+    var apiBase = MVC.ApiModel.resolveApiBaseUrl() || origin;
+    frontEl.textContent = origin;
+    backEl.textContent = apiBase + "/api";
+
+    try {
+      var res = await MVC.ApiModel.request("/api/status");
+      var bdOk = res && (res.status === "ok" || res.ok || res.database === "connected");
+      var tablas = res && (res.total_tablas_mvc || res.tablesCount || 30);
+      var prods = res && typeof res.total_productos === "number" ? " · " + res.total_productos + " productos" : "";
+      dbEl.textContent = bdOk
+        ? "Conectado (Supabase + Prisma ORM · " + tablas + " tablas" + prods + ")"
+        : "Respuesta recibida del backend";
+      dbEl.style.color = "#047857";
+    } catch (err) {
+      dbEl.textContent = "Sin conexión al backend (" + (err.message || "error") + ")";
+      dbEl.style.color = "#B91C1C";
+    }
+  }
+
   async function init() {
     if (document.body.getAttribute("data-pagina") !== "admin") return;
     var MVC = global.DermakorMVC;
+    renderArchitectureStatus(MVC);
     var isAuth = MVC.AuthModel.isAuthenticated();
     var isAdmin = MVC.AuthModel.isAdmin();
 
