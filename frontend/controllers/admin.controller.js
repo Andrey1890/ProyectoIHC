@@ -22,8 +22,14 @@
           document.getElementById("admin-prod-categoria").value = prod.categoria || "Cuidado facial";
           document.getElementById("admin-prod-precio").value = Number(prod.precio || 0);
           document.getElementById("admin-prod-stock").value = Number(prod.stock || 25);
-          document.getElementById("admin-prod-imagen").value = prod.imagen || "images/01_exoface.webp";
-          document.getElementById("admin-prod-submit").textContent = "Guardar Cambios Producto";
+          var imgVal = prod.imagen || "images/01_exoface.webp";
+          document.getElementById("admin-prod-imagen").value = imgVal;
+          var prevImg = document.getElementById("admin-prod-img-preview");
+          if (prevImg) {
+            prevImg.src = imgVal;
+            prevImg.alt = "Vista previa de " + (prod.nombre || "producto");
+          }
+          document.getElementById("admin-prod-submit").textContent = "Guardar cambios del producto";
           document.getElementById("admin-prod-cancel").style.display = "inline-flex";
           document.getElementById("admin-prod-nombre").focus();
         },
@@ -190,8 +196,13 @@
     editingId = "";
     var form = document.getElementById("form-admin-producto");
     if (form) form.reset();
+    var prevImg = document.getElementById("admin-prod-img-preview");
+    if (prevImg) {
+      prevImg.src = "images/01_exoface-400.webp";
+      prevImg.alt = "Vista previa de fotografía del producto en edición";
+    }
     var sub = document.getElementById("admin-prod-submit");
-    if (sub) sub.textContent = "Crear Producto (POST)";
+    if (sub) sub.textContent = "Guardar nuevo producto";
     var can = document.getElementById("admin-prod-cancel");
     if (can) can.style.display = "none";
   }
@@ -203,12 +214,18 @@
     document.querySelectorAll(".admin-tab-panel").forEach(function (panel) {
       panel.style.display = panel.getAttribute("data-panel") === tabName ? "block" : "none";
     });
+    document.querySelectorAll(".admin-guia-paso").forEach(function (stepBtn) {
+      var target = stepBtn.getAttribute("data-go-tab");
+      var isMatch = target === tabName || (tabName === "lotes" && target === "kardex");
+      stepBtn.classList.toggle("activo", isMatch);
+    });
   }
 
   async function renderArchitectureStatus(MVC) {
     var frontEl = document.getElementById("arch-frontend-origin");
     var backEl = document.getElementById("arch-backend-url");
     var dbEl = document.getElementById("arch-db-status");
+    var pillEl = document.getElementById("arch-service-pill");
     if (!frontEl || !backEl || !dbEl) return;
 
     var origin = (typeof window !== "undefined" && window.location) ? window.location.origin : "N/A";
@@ -222,12 +239,20 @@
       var tablas = res && (res.total_tablas_mvc || res.tablesCount || 30);
       var prods = res && typeof res.total_productos === "number" ? " · " + res.total_productos + " productos" : "";
       dbEl.textContent = bdOk
-        ? "Conectado (Supabase + Prisma ORM · " + tablas + " tablas" + prods + ")"
-        : "Respuesta recibida del backend";
+        ? "Conectado (" + tablas + " módulos activos" + prods + ")"
+        : "Servicio operativo";
       dbEl.style.color = "#047857";
+      if (pillEl) {
+        pillEl.textContent = "En línea";
+        pillEl.style.color = "#047857";
+      }
     } catch (err) {
-      dbEl.textContent = "Sin conexión al backend (" + (err.message || "error") + ")";
+      dbEl.textContent = "Sin conexión al servicio (" + (err.message || "error") + ")";
       dbEl.style.color = "#B91C1C";
+      if (pillEl) {
+        pillEl.textContent = "Sin conexión";
+        pillEl.style.color = "#B91C1C";
+      }
     }
   }
 
@@ -250,10 +275,27 @@
     if (unauthBox) unauthBox.style.display = "none";
     if (mainPanel) mainPanel.style.display = "block";
 
-    // Mostrar pestañas exclusivas admin solo cuando role === admin
+    // Mostrar pestañas exclusivas admin solo cuando es administrador
     document.querySelectorAll("[data-admin-only='true']").forEach(function (el) {
       el.style.display = isAdmin ? "" : "none";
     });
+
+    if (!isAdmin) {
+      var titleEl = document.getElementById("admin-page-title");
+      var subEl = document.getElementById("admin-page-subtitle");
+      if (titleEl) titleEl.textContent = "Mis Pedidos";
+      if (subEl) subEl.textContent = "Consulta el historial y estado de tus compras en DERMAKOR.";
+    }
+
+    var inpImg = document.getElementById("admin-prod-imagen");
+    if (inpImg) {
+      inpImg.addEventListener("input", function () {
+        var prevImg = document.getElementById("admin-prod-img-preview");
+        if (prevImg && inpImg.value.trim()) {
+          prevImg.src = inpImg.value.trim();
+        }
+      });
+    }
 
     document.querySelectorAll(".admin-tab-btn").forEach(function (btn) {
       btn.addEventListener("click", function () {
@@ -299,10 +341,10 @@
         try {
           if (editingId) {
             await MVC.ProductModel.update(editingId, payload);
-            showStatus("Producto actualizado correctamente en Supabase.", true);
+            showStatus("Los cambios del producto se guardaron correctamente.", true);
           } else {
             await MVC.ProductModel.create(payload);
-            showStatus("Producto creado correctamente con JWT Admin y Prisma ORM.", true);
+            showStatus("El producto se agregó al catálogo correctamente.", true);
           }
           resetProductForm();
           await loadProductsTab();

@@ -16,10 +16,10 @@
 
     if (user) {
       var roleBadge = isAdmin
-        ? '<span class="badge-rol-usuario badge-rol-admin">ADMIN</span>'
-        : '<span class="badge-rol-usuario badge-rol-user">USER</span>';
+        ? '<span class="badge-rol-usuario badge-rol-admin">Administrador</span>'
+        : '<span class="badge-rol-usuario badge-rol-user">Cliente</span>';
       var adminBtn = isAdmin
-        ? '<a href="admin.html" class="boton-panel-admin" aria-label="Abrir Panel de Administracion">⚙️ Panel Admin</a>'
+        ? '<a href="admin.html" class="boton-panel-admin" aria-label="Abrir Centro de Gestión">⚙️ Gestión</a>'
         : '<a href="admin.html#mis-pedidos" class="btn-cerrar-sesion" style="text-decoration:none;">📦 Mis Pedidos</a>';
 
       container.innerHTML =

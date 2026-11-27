@@ -21,6 +21,12 @@
     products.forEach(function (p) {
       var tr = document.createElement("tr");
       var safeId = p.id_producto_db || p.id || "";
+      var displayCode = p.codigo || safeId;
+      var rawImg = String(p.imagen || "images/01_exoface-400.webp").trim();
+      var thumbImg = /\.webp$/i.test(rawImg) && !/-400\.webp$/i.test(rawImg)
+        ? rawImg.slice(0, -5) + "-400.webp"
+        : rawImg;
+      var altProd = "Miniatura clínica de " + (p.nombre || "producto") + " (" + (p.marca || "DERMAKOR") + ")";
       var stockDisp = Number(p.stock || 0);
       var stockRes = Number(p.stock_reservado || 0);
       var stockBadge = stockRes > 0
@@ -28,8 +34,13 @@
         : String(stockDisp);
 
       tr.innerHTML =
-        "<td><code>" + escapeHtml(safeId) + "</code></td>" +
-        "<td><strong>" + escapeHtml(p.nombre) + "</strong><br/><small>" + escapeHtml(p.marca || "Dermakor") + "</small></td>" +
+        "<td><code>" + escapeHtml(displayCode) + "</code>" +
+          (displayCode !== safeId ? "<br/><small style=\"color:#64748B;\">" + escapeHtml(safeId) + "</small>" : "") +
+        "</td>" +
+        '<td><div style="display:flex;align-items:center;gap:10px;">' +
+          '<img class="admin-prod-thumb" src="' + escapeHtml(thumbImg) + '" width="44" height="44" loading="lazy" decoding="async" alt="' + escapeHtml(altProd) + '" onerror="this.onerror=null;this.src=\'images/01_exoface-400.webp\';" />' +
+          "<div><strong>" + escapeHtml(p.nombre) + "</strong><br/><small>" + escapeHtml(p.marca || "Dermakor") + "</small></div>" +
+        "</div></td>" +
         "<td>" + escapeHtml(p.categoria || "Cuidado facial") + "</td>" +
         "<td>$" + Number(p.precio || 0).toFixed(2) + "</td>" +
         "<td>" + stockBadge + "</td>" +
@@ -51,12 +62,12 @@
   function orderEstadoMeta(rawEstado) {
     var st = String(rawEstado || "PAGADO").trim().toUpperCase();
     if (st === "PENDIENTE") {
-      return { text: "PENDIENTE · Stock Reservado", cls: "badge-semaforo por-vencer" };
+      return { text: "En espera · Stock reservado", cls: "badge-semaforo por-vencer" };
     }
     if (st === "CANCELADO" || st === "ANULADO") {
-      return { text: "CANCELADO · Stock Regresado", cls: "badge-semaforo vencido" };
+      return { text: "Anulado · Stock reingresado", cls: "badge-semaforo vencido" };
     }
-    return { text: st + " · Stock Restado", cls: "badge-semaforo vigente" };
+    return { text: "Confirmado · Stock descontado", cls: "badge-semaforo vigente" };
   }
 
   function renderOrdersTable(tbody, orders, handlers) {
@@ -82,11 +93,11 @@
 
       var tdId = document.createElement("td");
       var codeId = document.createElement("code");
-      codeId.textContent = o.id_pedido || o.id || "";
+      codeId.textContent = o.ped_numero || o.id_pedido || o.id || "";
       var smallFac = document.createElement("div");
       smallFac.style.fontSize = "11px";
       smallFac.style.color = "#475569";
-      smallFac.textContent = o.fac_numero || o.ped_numero || "";
+      smallFac.textContent = o.fac_numero ? ("Fact. " + o.fac_numero) : (o.id_pedido || "");
       tdId.appendChild(codeId);
       tdId.appendChild(smallFac);
       tr.appendChild(tdId);

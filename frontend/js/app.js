@@ -87,6 +87,7 @@ function construirHtmlImgResponsiva(imgUrl, altText, opciones) {
   var srcset = generarSrcsetWebp(imgUrl);
   var src = opts.usarMini ? obtenerSrcMiniWebp(imgUrl) : imgUrl;
   var srcsetAttr = srcset ? ' srcset="' + srcset + '" sizes="' + sizes + '"' : "";
+  var safeAlt = String(altText || "Producto dermocosmético clínico DERMAKOR").trim().replace(/"/g, "&quot;");
 
   return (
     "<img src=\"" + src + "\"" +
@@ -96,7 +97,7 @@ function construirHtmlImgResponsiva(imgUrl, altText, opciones) {
     ' width="' + width + '" height="' + height + '"' +
     lazyAttr +
     ' decoding="async"' +
-    ' alt="' + altText + '" />'
+    ' alt="' + safeAlt + '" />'
   );
 }
 
@@ -1183,7 +1184,7 @@ function renderizarDatosEnFichaProducto(prod) {
         imgElem.removeAttribute("srcset");
         imgElem.removeAttribute("sizes");
       }
-      imgElem.alt = prod.nombre;
+      imgElem.alt = "Envase clínico de " + prod.nombre + (prod.presentacion ? " (" + prod.presentacion + ")" : "") + " - " + (prod.marca || "DERMAKOR");
       var ph = boxImg.querySelector(".placeholder-vacio");
       if (ph) ph.remove();
     } else {
@@ -1533,7 +1534,7 @@ function abrirModalDetalle(idProducto) {
       imgElem.removeAttribute("srcset");
       imgElem.removeAttribute("sizes");
     }
-    imgElem.alt = prod.nombre;
+    imgElem.alt = "Fotografía clínica de " + prod.nombre + (prod.presentacion ? " (" + prod.presentacion + ")" : "") + " - " + (prod.marca || "DERMAKOR");
     if (boxImg.querySelector(".placeholder-vacio")) {
       boxImg.querySelector(".placeholder-vacio").remove();
     }

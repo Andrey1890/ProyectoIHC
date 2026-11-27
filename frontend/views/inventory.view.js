@@ -50,6 +50,22 @@
     return "kardex-inicial";
   }
 
+  function getKardexTipoLabel(tipo) {
+    var t = String(tipo || "").toUpperCase();
+    var map = {
+      SALDO_INICIAL: "Saldo inicial",
+      ENTRADA: "Entrada por compra",
+      RESERVA_PENDIENTE: "Reserva pendiente",
+      VENTA_APROBADA: "Venta confirmada",
+      SALIDA: "Venta confirmada",
+      RESERVA_INICIAL: "Apartado inicial",
+      DEVOLUCION_CANCELADA: "Reingreso por anulación",
+      AJUSTE_INGRESO: "Ajuste (+) ingreso",
+      AJUSTE_EGRESO: "Ajuste (-) salida"
+    };
+    return map[t] || t;
+  }
+
   function renderKardexTable(tbody, movimientos) {
     if (!tbody) return;
     clearEl(tbody);
@@ -71,7 +87,7 @@
       var tdTipo = document.createElement("td");
       var badge = document.createElement("span");
       badge.className = "kardex-badge " + getKardexTipoClass(m.tipo);
-      badge.textContent = String(m.tipo || "-");
+      badge.textContent = getKardexTipoLabel(m.tipo);
       tdTipo.appendChild(badge);
       tr.appendChild(tdTipo);
 
@@ -132,12 +148,12 @@
       var tr = document.createElement("tr");
 
       var tdLote = document.createElement("td");
-      var codeEl = document.createElement("code");
-      codeEl.textContent = l.id_lote || "";
+      var codeEl = document.createElement("strong");
+      codeEl.textContent = l.lot_numero || l.id_lote || "";
       var smallNum = document.createElement("div");
-      smallNum.textContent = l.lot_numero || "";
+      smallNum.textContent = l.id_lote || "";
       smallNum.style.fontSize = "11px";
-      smallNum.style.color = "#475569";
+      smallNum.style.color = "#64748B";
       tdLote.appendChild(codeEl);
       tdLote.appendChild(smallNum);
       tr.appendChild(tdLote);
@@ -215,12 +231,12 @@
       var estado = String(c.com_estado || "").trim().toUpperCase();
 
       var tdId = document.createElement("td");
-      var codeId = document.createElement("code");
-      codeId.textContent = idCompra;
+      var codeId = document.createElement("strong");
+      codeId.textContent = c.com_numero || idCompra;
       var numDiv = document.createElement("div");
-      numDiv.textContent = c.com_numero || "";
+      numDiv.textContent = idCompra;
       numDiv.style.fontSize = "11px";
-      numDiv.style.color = "#475569";
+      numDiv.style.color = "#64748B";
       tdId.appendChild(codeId);
       tdId.appendChild(numDiv);
       tr.appendChild(tdId);
@@ -357,12 +373,12 @@
     ajustes.forEach(function (a) {
       var tr = document.createElement("tr");
       var tdId = document.createElement("td");
-      var cEl = document.createElement("code");
-      cEl.textContent = a.id_ajuste || "";
+      var cEl = document.createElement("strong");
+      cEl.textContent = a.aju_numero || a.id_ajuste || "";
       var num = document.createElement("div");
-      num.textContent = a.aju_numero || "";
+      num.textContent = a.id_ajuste || "";
       num.style.fontSize = "11px";
-      num.style.color = "#475569";
+      num.style.color = "#64748B";
       tdId.appendChild(cEl);
       tdId.appendChild(num);
       tr.appendChild(tdId);

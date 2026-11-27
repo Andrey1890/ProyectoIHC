@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>DERMAKOR - Panel de Administración y Pedidos</title>
-  <meta name="description" content="Panel administrativo Full Stack MVC para gestión de catálogo, pedidos de clientes y entidades Supabase PostgreSQL." />
+  <title>DERMAKOR - Centro de Gestión y Pedidos</title>
+  <meta name="description" content="Centro de gestión comercial DERMAKOR para administrar catálogo, compras a proveedores, lotes, kárdex y pedidos de clientes." />
   <link rel="stylesheet" href="css/styles.css" />
 </head>
 <body data-pagina="admin">
@@ -42,36 +42,18 @@
 
   <main id="contenido-principal" class="vista-pagina">
     <div class="contenedor" style="padding-top: 28px; padding-bottom: 56px;">
-      <span style="font-size: 13px; color: #475569;"><a href="index.html" style="color:#475569;">Inicio</a> &gt; Administración y Pedidos</span>
-      <h1 style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Gestión de Pedidos y Administración</h1>
-      <p style="color: #475569; font-size: 14px; margin-bottom: 20px;">Control protegido mediante JWT y autorización por roles (<code>admin</code> / <code>user</code>).</p>
-
-      <section id="arquitectura-desacoplada-panel" aria-label="Estado de arquitectura desacoplada" style="background: #F8FAFC; border: 1px solid #CBD5E1; border-radius: 12px; padding: 16px 20px; margin-bottom: 20px;">
-        <h2 style="font-size: 15px; font-weight: 700; color: #0F172A; margin: 0 0 10px 0;">Arquitectura Full Stack Separada (3 Capas Independientes)</h2>
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 13px; color: #334155;">
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
-            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 3 — Frontend MVC</strong>
-            <span style="display: block;">Alojamiento: GitHub Pages</span>
-            <code id="arch-frontend-origin" style="font-size: 12px; color: #1E40AF; word-break: break-all;">Cargando...</code>
-          </div>
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
-            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 2 — Backend REST MVC</strong>
-            <span style="display: block;">Alojamiento: Vercel Serverless</span>
-            <code id="arch-backend-url" style="font-size: 12px; color: #1E40AF; word-break: break-all;">Cargando...</code>
-          </div>
-          <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
-            <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Capa 1 — Datos (Supabase + Prisma)</strong>
-            <span style="display: block;">ORM: Prisma sin SQL expuesto</span>
-            <span id="arch-db-status" style="font-weight: 600; color: #047857;">Verificando conexión...</span>
-          </div>
-        </div>
-      </section>
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <span style="font-size: 13px; color: #475569;"><a href="index.html" style="color:#475569;">Inicio</a> &gt; Centro de Gestión</span>
+        <a href="index.html" class="enlace-ver-mas">← Volver a la tienda</a>
+      </div>
+      <h1 id="admin-page-title" style="font-size: 28px; font-weight: 800; color: #0F172A; margin-top: 6px;">Centro de Gestión e Inventario</h1>
+      <p id="admin-page-subtitle" style="color: #475569; font-size: 14px; margin-bottom: 20px;">Administra productos, compras a proveedores, lotes con fecha de vencimiento, kárdex y pedidos de clientes.</p>
 
       <div id="admin-status-alert" class="alerta-mensaje" role="alert" aria-live="polite" style="display: none;"></div>
 
       <section id="admin-auth-guard" class="caja-formulario" style="display: none;">
-        <h2 class="subtitulo-formulario">Autenticación requerida</h2>
-        <p style="color: #475569; margin-bottom: 16px;">Inicia sesión para ver tus pedidos o administrar el catálogo (si posees rol <code>admin</code>).</p>
+        <h2 class="subtitulo-formulario">Inicia sesión para continuar</h2>
+        <p style="color: #475569; margin-bottom: 16px;">Accede con tu cuenta para consultar tus pedidos o gestionar el catálogo e inventario de la tienda.</p>
         <button type="button" class="boton-primario" onclick="abrirModalAuth()">Iniciar Sesión ahora →</button>
       </section>
 
@@ -95,21 +77,21 @@
           </button>
         </div>
 
-        <div class="admin-tabs-bar" role="tablist" aria-label="Secciones de administración y pedidos">
-          <button type="button" class="admin-tab-btn" data-tab="productos" data-admin-only="true">📦 Productos (CRUD Admin)</button>
+        <div class="admin-tabs-bar" role="tablist" aria-label="Secciones de gestión y pedidos">
+          <button type="button" class="admin-tab-btn" data-tab="productos" data-admin-only="true">📦 Catálogo</button>
           <button type="button" class="admin-tab-btn" data-tab="kardex" data-admin-only="true">📊 Kárdex</button>
-          <button type="button" class="admin-tab-btn" data-tab="lotes" data-admin-only="true">🏷️ Lotes y Caducidades</button>
-          <button type="button" class="admin-tab-btn" data-tab="compras" data-admin-only="true">🚚 Compras a Proveedores</button>
-          <button type="button" class="admin-tab-btn" data-tab="ajustes" data-admin-only="true">⚖️ Ajustes de Inventario</button>
+          <button type="button" class="admin-tab-btn" data-tab="lotes" data-admin-only="true">🏷️ Lotes y Vencimientos</button>
+          <button type="button" class="admin-tab-btn" data-tab="compras" data-admin-only="true">🚚 Compras y Recepción</button>
+          <button type="button" class="admin-tab-btn" data-tab="ajustes" data-admin-only="true">⚖️ Ajustes de Bodega</button>
           <button type="button" class="admin-tab-btn" data-tab="pedidos-admin" data-admin-only="true">🛍️ Ventas y Reservas</button>
-          <button type="button" class="admin-tab-btn" data-tab="tablas" data-admin-only="true">🗄️ CRUD Tablas BD</button>
+          <button type="button" class="admin-tab-btn" data-tab="tablas" data-admin-only="true">🗂️ Registros del Sistema</button>
           <button type="button" class="admin-tab-btn" data-tab="mis-pedidos">🧾 Mis Pedidos</button>
         </div>
 
-        <!-- TAB 1: CRUD PRODUCTOS ADMIN -->
+        <!-- TAB 1: CATÁLOGO DE PRODUCTOS -->
         <div class="admin-tab-panel" data-panel="productos" data-admin-only="true">
           <form id="form-admin-producto" class="caja-formulario" style="margin-bottom: 24px;">
-            <h2 class="subtitulo-formulario">Crear o Editar Producto (Rol Admin)</h2>
+            <h2 class="subtitulo-formulario">Registrar o editar producto del catálogo</h2>
             <div class="fila-formulario">
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="admin-prod-nombre">Nombre del producto *</label>
@@ -123,7 +105,17 @@
             <div class="fila-formulario tres">
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="admin-prod-categoria">Categoría *</label>
-                <input type="text" id="admin-prod-categoria" class="campo-control" value="Cuidado facial" required />
+                <select id="admin-prod-categoria" class="campo-control" required>
+                  <option value="Cuidado facial">Cuidado facial</option>
+                  <option value="Limpieza">Limpieza</option>
+                  <option value="Hidratación">Hidratación</option>
+                  <option value="Contorno de ojos">Contorno de ojos</option>
+                  <option value="Cuidado corporal">Cuidado corporal</option>
+                  <option value="Capilar">Capilar</option>
+                  <option value="Protección solar">Protección solar</option>
+                  <option value="Exosomas">Exosomas</option>
+                  <option value="Uso profesional">Uso profesional</option>
+                </select>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="admin-prod-precio">Precio PVP (USD) *</label>
@@ -135,11 +127,14 @@
               </div>
             </div>
             <div class="campo-grupo">
-              <label class="campo-etiqueta" for="admin-prod-imagen">Ruta de imagen WebP</label>
-              <input type="text" id="admin-prod-imagen" class="campo-control" value="images/01_exoface.webp" />
+              <label class="campo-etiqueta" for="admin-prod-imagen">Fotografía del producto</label>
+              <div style="display:flex; gap:12px; align-items:center;">
+                <img id="admin-prod-img-preview" src="images/01_exoface-400.webp" width="56" height="56" alt="Vista previa de fotografía del producto en edición" class="admin-prod-thumb" style="width:56px; height:56px;" />
+                <input type="text" id="admin-prod-imagen" class="campo-control" value="images/01_exoface.webp" placeholder="images/01_exoface.webp" />
+              </div>
             </div>
             <div style="display:flex; gap:10px; flex-wrap:wrap;">
-              <button type="submit" id="admin-prod-submit" class="boton-primario">Crear Producto (POST)</button>
+              <button type="submit" id="admin-prod-submit" class="boton-primario">Guardar nuevo producto</button>
               <button type="button" id="admin-prod-cancel" class="boton-secundario" style="display:none;">Cancelar edición</button>
             </div>
           </form>
@@ -148,7 +143,7 @@
             <table class="tabla-admin" aria-label="Tabla administrativa de productos">
               <thead>
                 <tr>
-                  <th>ID BD</th>
+                  <th>Código / Producto</th>
                   <th>Producto</th>
                   <th>Categoría</th>
                   <th>Precio</th>
@@ -301,7 +296,17 @@
               <div class="fila-formulario">
                 <div class="campo-grupo">
                   <label class="campo-etiqueta" for="quick-prod-categoria">Categoría *</label>
-                  <input type="text" id="quick-prod-categoria" class="campo-control" value="Cuidado facial" required />
+                  <select id="quick-prod-categoria" class="campo-control" required>
+                    <option value="Cuidado facial">Cuidado facial</option>
+                    <option value="Limpieza">Limpieza</option>
+                    <option value="Hidratación">Hidratación</option>
+                    <option value="Contorno de ojos">Contorno de ojos</option>
+                    <option value="Cuidado corporal">Cuidado corporal</option>
+                    <option value="Capilar">Capilar</option>
+                    <option value="Protección solar">Protección solar</option>
+                    <option value="Exosomas">Exosomas</option>
+                    <option value="Uso profesional">Uso profesional</option>
+                  </select>
                 </div>
                 <div class="campo-grupo">
                   <label class="campo-etiqueta" for="quick-prod-precio">Precio PVP (USD) *</label>
@@ -389,8 +394,14 @@
             </div>
             <div class="fila-formulario">
               <div class="campo-grupo">
-                <label class="campo-etiqueta" for="ajuste-motivo-input">Motivo (máx. 15 caracteres) *</label>
-                <input type="text" id="ajuste-motivo-input" class="campo-control" maxlength="15" value="CONTEO_FISICO" required placeholder="CADUCADO, MERMA, CONTEO_FISICO..." />
+                <label class="campo-etiqueta" for="ajuste-motivo-input">Motivo del ajuste *</label>
+                <select id="ajuste-motivo-input" class="campo-control" required>
+                  <option value="CONTEO_FISICO">Conteo físico de bodega</option>
+                  <option value="CADUCADO">Baja por vencimiento / caducidad</option>
+                  <option value="MERMA">Merma o envase dañado</option>
+                  <option value="DEVOLUCION">Devolución o reingreso</option>
+                  <option value="MUESTRA">Salida para muestra clínica</option>
+                </select>
               </div>
               <div class="campo-grupo">
                 <label class="campo-etiqueta" for="ajuste-obs-input">Observación *</label>
@@ -480,17 +491,17 @@
           </div>
         </div>
 
-        <!-- TAB 3: CRUD TABLAS BD (30 MODELOS PRISMA) -->
+        <!-- TAB 3: REGISTROS DEL SISTEMA -->
         <div class="admin-tab-panel" data-panel="tablas" data-admin-only="true" style="display:none;">
           <div class="caja-formulario" style="margin-bottom: 16px;">
             <div class="fila-formulario tres">
               <div class="campo-grupo">
-                <label class="campo-etiqueta" for="select-entidad-bd">Tabla / Entidad Supabase (30 modelos Prisma):</label>
+                <label class="campo-etiqueta" for="select-entidad-bd">Seleccionar registro del sistema:</label>
                 <select id="select-entidad-bd" class="campo-control"></select>
               </div>
               <div class="campo-grupo">
-                <label class="campo-etiqueta" for="crud-search-input">Buscar en tabla:</label>
-                <input type="search" id="crud-search-input" class="campo-control" placeholder="Filtrar por texto, ID o código..." />
+                <label class="campo-etiqueta" for="crud-search-input">Buscar registro:</label>
+                <input type="search" id="crud-search-input" class="campo-control" placeholder="Filtrar por nombre, código o detalle..." />
               </div>
               <div class="campo-grupo" style="display:flex; align-items:flex-end;">
                 <button type="button" id="crud-btn-nuevo" class="boton-primario">+ Nuevo registro</button>
@@ -502,7 +513,7 @@
           <div id="crud-form-container" style="display:none;"></div>
 
           <div class="tabla-admin-wrap">
-            <table class="tabla-admin" aria-label="Visor CRUD de entidades Supabase">
+            <table class="tabla-admin" aria-label="Tabla de registros del sistema">
               <thead id="admin-entidad-thead"></thead>
               <tbody id="admin-entidad-tbody"></tbody>
             </table>
@@ -527,6 +538,24 @@
             </table>
           </div>
         </div>
+
+        <details id="arquitectura-desacoplada-panel" class="diagnostico-sistema-collapsible" data-admin-only="true">
+          <summary>Estado del servicio: <span id="arch-service-pill" style="color:#047857; font-weight:700;">Verificando...</span> · Ver detalles técnicos de conexión</summary>
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px; font-size: 12px; color: #334155; margin-top: 12px;">
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+              <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Tienda Web</strong>
+              <code id="arch-frontend-origin" style="font-size: 11px; color: #1E40AF; word-break: break-all;">Cargando...</code>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+              <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Servidor de Servicios</strong>
+              <code id="arch-backend-url" style="font-size: 11px; color: #1E40AF; word-break: break-all;">Cargando...</code>
+            </div>
+            <div style="background: #FFFFFF; border: 1px solid #E2E8F0; border-radius: 8px; padding: 10px 12px;">
+              <strong style="display: block; color: #0F172A; margin-bottom: 4px;">Base de Datos</strong>
+              <span id="arch-db-status" style="font-weight: 600; color: #047857;">Verificando conexión...</span>
+            </div>
+          </div>
+        </details>
       </section>
     </div>
   </main>
@@ -606,7 +635,7 @@
   <footer class="pie-de-pagina">
     <div class="contenedor">
       <div class="footer-inferior">
-        <div>DERMAKOR Full Stack MVC • Catálogo, Carrito, JWT &amp; RBAC.</div>
+        <div>DERMAKOR Ecuador • Dermocosmética Clínica y Gestión Oficial.</div>
         <div>Ecuador • 2026.</div>
       </div>
     </div>

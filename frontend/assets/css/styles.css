@@ -2421,5 +2421,74 @@ textarea:focus-visible,
   color: #475569;
 }
 
+/* 9. Refinamiento Visual y Heurísticas UX (Nielsen & WCAG 2.2 AA) */
+.admin-guia-paso.activo {
+  border-color: var(--color-primario);
+  background: #EFF6FF;
+  box-shadow: 0 2px 8px rgba(0, 86, 179, 0.12);
+}
+
+.admin-prod-thumb {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: #FFFFFF;
+  border: 1px solid #E2E8F0;
+  padding: 2px;
+  flex-shrink: 0;
+}
+
+.diagnostico-sistema-collapsible {
+  margin-top: 28px;
+  font-size: 12px;
+  color: #475569;
+  background: #F8FAFC;
+  border: 1px solid #E2E8F0;
+  border-radius: 10px;
+  padding: 10px 14px;
+}
+
+.diagnostico-sistema-collapsible summary {
+  cursor: pointer;
+  font-weight: 600;
+  color: #334155;
+  list-style: none;
+}
+
+.diagnostico-sistema-collapsible summary::-webkit-details-marker {
+  display: none;
+}
+
+.tabla-admin td,
+.admin-resumen-value,
+.tarjeta-precio,
+.modal-precio {
+  font-variant-numeric: tabular-nums;
+}
+
+.tabla-admin tbody tr:hover {
+  background-color: #F8FAFC;
+}
+
+.caja-formulario {
+  border-radius: 14px;
+  box-shadow: 0 4px 14px rgba(15, 23, 42, 0.04);
+}
+
+#admin-status-alert {
+  border-left-width: 4px;
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.tarjeta-producto {
+  transition: transform 0.18s ease, box-shadow 0.18s ease, border-color 0.18s ease;
+}
+
+.tarjeta-producto:hover {
+  transform: translateY(-2px);
+}
+
+
 
 

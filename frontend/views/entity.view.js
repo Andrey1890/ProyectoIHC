@@ -8,13 +8,55 @@
     }
   }
 
+  var ENTITY_FRIENDLY_NAMES = {
+    proveedores: "Proveedores",
+    categorias: "Categorías",
+    lotes: "Lotes y vencimientos",
+    compras: "Órdenes de compra",
+    "compra-detalle": "Detalle de compras",
+    "ordenes-entrada": "Recepciones de bodega",
+    "orden-entrada-detalle": "Detalle de recepciones",
+    "ordenes-salida": "Despachos de bodega",
+    "orden-salida-detalle": "Detalle de despachos",
+    "ajustes-inventario": "Ajustes de bodega",
+    "ajuste-detalle": "Detalle de ajustes",
+    clientes: "Clientes",
+    facturas: "Facturas emitidas",
+    pagos: "Pagos registrados",
+    envios: "Envíos",
+    empleados: "Personal / Empleados",
+    departamentos: "Departamentos",
+    sedes: "Sedes",
+    ciudades: "Ciudades",
+    paises: "Países",
+    descuentos: "Cupones de descuento",
+    carritos: "Carritos activos",
+    "carrito-detalle": "Productos en carrito",
+    usuarios: "Cuentas de usuario",
+    roles: "Perfiles de acceso",
+    productos: "Catálogo de productos (solo consulta)",
+    "producto-imagenes": "Fotografías de productos",
+    pedidos: "Pedidos de clientes (solo consulta)",
+    "pedido-detalle": "Detalle de pedidos",
+    logs: "Bitácora de actividad (solo consulta)"
+  };
+
+  function getEntityLabel(ent) {
+    if (!ent) return "";
+    var base = ENTITY_FRIENDLY_NAMES[ent.slug] || ent.table;
+    if (ent.mode === "readonly" && base.indexOf("solo consulta") === -1) {
+      return base + " (solo consulta)";
+    }
+    return base;
+  }
+
   function renderEntityOptions(selectEl, entities) {
     if (!selectEl) return;
     clearEl(selectEl);
     (entities || []).forEach(function (ent) {
       var opt = document.createElement("option");
       opt.value = ent.slug;
-      opt.textContent = ent.table + (ent.mode === "readonly" ? " (solo lectura)" : "");
+      opt.textContent = getEntityLabel(ent);
       selectEl.appendChild(opt);
     });
   }
@@ -58,7 +100,7 @@
     var headTr = document.createElement("tr");
     fields.forEach(function (f) {
       var th = document.createElement("th");
-      th.textContent = f.name;
+      th.textContent = formatFieldLabel(f.name);
       headTr.appendChild(th);
     });
     if (!isReadonly) {
@@ -142,10 +184,23 @@
     id_sede: "Sede",
     id_producto: "Producto",
     id_categoria: "Categoría",
-    id_rol: "Rol",
+    id_rol: "Perfil / Rol",
     id_usuario: "Usuario",
     id_cliente: "Cliente",
     id_empleado: "Empleado",
+    id_departamento: "Departamento",
+    id_compra: "Orden de compra",
+    id_orden_entrada: "Recepción",
+    id_orden_salida: "Despacho",
+    id_lote: "Lote",
+    id_ajuste: "Ajuste",
+    id_pedido: "Pedido",
+    id_factura: "Factura",
+    id_pago: "Pago",
+    id_envio: "Envío",
+    id_descuento: "Cupón",
+    id_carrito: "Carrito",
+    id_imagen: "Imagen",
     prv_ruc: "RUC (13 dígitos)",
     prv_razon_social: "Razón social",
     prv_telefono: "Teléfono",
@@ -157,11 +212,19 @@
     lot_estado: "Estado del lote",
     usu_nombre: "Nombre completo",
     usu_email: "Correo electrónico",
+    usu_clave_hash: "Contraseña de acceso",
     usu_estado: "Estado"
   };
 
   function formatFieldLabel(fieldName) {
-    return FRIENDLY_LABELS[fieldName] ? (FRIENDLY_LABELS[fieldName] + " (" + fieldName + ")") : fieldName;
+    if (FRIENDLY_LABELS[fieldName]) return FRIENDLY_LABELS[fieldName];
+    var clean = String(fieldName || "").replace(
+      /^(?:prv|com|cde|lot|oen|oed|osa|osd|aju|ade|ped|pde|cli|emp|sed|cat|ciu|pai|des|fac|pag|env|usu|rol|dep|img|car|cad|log|pro)_/i,
+      ""
+    );
+    clean = clean.replace(/_/g, " ").trim();
+    if (!clean) return fieldName;
+    return clean.charAt(0).toUpperCase() + clean.slice(1);
   }
 
   function formatInputDateValue(rawVal, kind) {
@@ -196,7 +259,7 @@
 
     var title = document.createElement("h3");
     title.className = "subtitulo-formulario";
-    title.textContent = (mode === "edit" ? "Editar registro en " : "Nuevo registro en ") + entityMeta.table;
+    title.textContent = (mode === "edit" ? "Editar registro en " : "Nuevo registro en ") + (ENTITY_FRIENDLY_NAMES[entityMeta.slug] || entityMeta.table);
     form.appendChild(title);
 
     var grid = document.createElement("div");
@@ -217,7 +280,7 @@
       label.className = "campo-etiqueta";
       label.htmlFor = "crud-field-" + field.name;
       label.textContent = isUsuarioHash
-        ? "Contraseña (se cifra con bcrypt)"
+        ? "Contraseña de acceso"
         : formatFieldLabel(field.name) + (!field.optional && !field.hasDefault && !isAutoPkCreate ? " *" : "");
       group.appendChild(label);
 

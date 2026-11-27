@@ -32,9 +32,10 @@
     var stockNum = typeof prod.stock === "number" ? prod.stock : 25;
     var agotado = stockNum <= 0;
 
+    var altDesc = "Envase clínico de " + (prod.nombre || "producto DERMAKOR") + (prod.presentacion ? " (" + prod.presentacion + ")" : "");
     card.innerHTML =
       '<div class="tarjeta-producto-imagen">' +
-        renderResponsiveImg(prod.imagen, "Imagen de " + (prod.nombre || "producto")) +
+        renderResponsiveImg(prod.imagen, altDesc) +
       "</div>" +
       '<div class="tarjeta-producto-cuerpo">' +
         '<div class="tarjeta-marca">' + escapeHtml(prod.marca || "Dermakor") + " • " + escapeHtml(prod.categoria || "Cuidado") + "</div>" +
